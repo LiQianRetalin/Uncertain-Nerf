@@ -1,0 +1,60 @@
+expname = example_v5
+basedir = ./logs
+datadir = ./data/example
+dataset_type = llff_colmap
+
+factor = 4
+llffhold = 8
+no_ndc = True
+
+N_rand = 1024
+N_samples = 64
+N_importance = 64
+N_iters = 200000
+chunk = 32768
+netchunk = 65536
+
+netdepth = 2
+netwidth = 64
+dropout = 0.1
+hash_levels = 16
+hash_min_resolution = 16
+hash_max_resolution = 2048
+hash_features = 2
+hash_log2_size = 19
+multires_views = 4
+
+reliability_strength = 4.0
+teacher_ray_ratio = 0.2
+teacher_views = 8
+mc_samples = 4
+teacher_kappa = 2.0
+variance_beta = 0.001
+prior_ray_ratio = 0.3
+geo_gamma = 2.3
+reg_amplitude = 0.01
+reg_spatial = 0.001
+
+tukey_start = 6.0
+tukey_end = 4.685
+huber_start = 3.0
+huber_end = 1.345
+robust_anneal_steps = 20000
+
+depth_scale_warmup = 1000
+depth_scale_interval = 500
+depth_scale_ema = 0.1
+loss_calibration_steps = 500
+loss_ema_rho = 0.02
+alpha_geo = 0.5
+alpha_u = 0.5
+alpha_reg = 0.1
+
+lrate = 0.01
+lrate_min = 0.0001
+lr_warmup = 1000
+grad_clip = 1.0
+amp = True
+
+i_print = 100
+i_weights = 10000

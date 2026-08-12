@@ -1,0 +1,12 @@
+**/.ipynb_checkpoints
+**/__pycache__
+.pytest_cache/
+.venv/
+*.py[cod]
+*.png
+*.mp4
+*.npy
+*.npz
+*.dae
+data/*
+logs/*
