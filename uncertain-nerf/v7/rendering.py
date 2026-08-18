@@ -111,8 +111,11 @@ def query_field(field, points, rays_d, appearance=None, footprint=None, chunk=65
     active_indices = torch.where(active)[0]
     for start in range(0, len(active_indices), int(chunk)):
         indices = active_indices[start:start + int(chunk)]
-        output[indices] = field(flat_points[indices], flat_directions[indices],
-                                flat_appearance[indices], flat_footprint[indices])
+        values = field(flat_points[indices], flat_directions[indices],
+                       flat_appearance[indices], flat_footprint[indices])
+        # AMP may return fp16/bf16 while the sparse accumulation buffer follows
+        # the fp32 ray coordinates. Index assignment requires an exact dtype match.
+        output[indices] = values.to(output.dtype)
     return output.reshape(*points.shape[:-1], 5)
 
 

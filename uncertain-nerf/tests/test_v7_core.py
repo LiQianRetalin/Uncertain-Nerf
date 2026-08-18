@@ -76,3 +76,16 @@ def test_active_occupancy_grid_keeps_sparse_query_gradients():
         perturb=False, occupancy_grid=grid)["fine"]
     fine["rgb"].mean().backward()
     assert field.trunk[0].weight.grad is not None
+
+
+def test_sparse_query_accepts_autocast_output_dtype():
+    field = tiny_v7_field()
+    rays_o = torch.tensor([[0.0, 0.0, -2.0]])
+    rays_d = torch.tensor([[0.0, 0.0, 1.0]])
+    with torch.autocast("cpu", dtype=torch.bfloat16):
+        fine = render_rays(
+            field, rays_o, rays_d, 0.0, 5.0, torch.zeros(1, 3),
+            ray_radii=torch.full((1,), 0.01), n_samples=8, n_importance=0,
+            perturb=False)["fine"]
+    assert fine["rgb"].dtype == torch.float32
+    assert torch.isfinite(fine["rgb"]).all()
