@@ -1,0 +1,70 @@
+expname = example_v6_seed0
+basedir = ./logs-v6
+datadir = ./data/example
+
+# factor=2 is the default quality/speed compromise. Use factor=1 for final tables.
+factor = 2
+llffhold = 8
+val_every = 8
+aabb_scale = 1.25
+sampling_space = disparity
+
+N_rand = 1024
+N_samples = 64
+N_importance = 64
+N_iters = 100000
+chunk = 16384
+netchunk = 65536
+
+netdepth = 2
+netwidth = 64
+density_bias = -1.0
+appearance_dim = 8
+hash_backend = torch
+hash_levels = 16
+hash_min_resolution = 16
+hash_max_resolution = 2048
+hash_features = 2
+hash_log2_size = 19
+multires_views = 4
+
+teacher_ray_ratio = 0.1
+teacher_interval = 4
+teacher_views = 4
+teacher_photometric_weight = 0.7
+spatial_epsilon = 0.005
+tukey_start = 6.0
+tukey_end = 4.685
+huber_start = 3.0
+huber_end = 1.345
+robust_anneal_steps = 20000
+
+prior_ray_ratio = 0.3
+geo_gamma = 2.3
+depth_scale_warmup = 1000
+depth_scale_interval = 500
+depth_scale_ema = 0.1
+variance_min = 0.0001
+variance_max = 0.05
+
+coarse_loss_weight = 0.1
+lambda_nll = 0.05
+lambda_geo = 0.1
+lambda_teacher = 0.1
+lambda_spatial = 0.0001
+lambda_distortion = 0.001
+lambda_appearance = 0.0001
+
+lrate = 0.01
+lrate_appearance = 0.001
+lrate_min = 0.0001
+lr_warmup = 1000
+grad_clip = 1.0
+amp = True
+
+seed = 0
+i_print = 100
+i_eval = 5000
+eval_max_views = 0
+i_weights = 10000
+target_psnr = 25.0

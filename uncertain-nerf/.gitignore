@@ -2,6 +2,7 @@
 **/__pycache__
 .pytest_cache/
 .venv/
+.venv-v6/
 *.py[cod]
 *.png
 *.mp4
@@ -10,3 +11,4 @@
 *.dae
 data/*
 logs/*
+logs-v6/

@@ -1,4 +1,8 @@
-# Uncertain-NeRF V5
+# Uncertain-NeRF V5 / uncertain-nerf-v6
+
+V6 已作为独立、与 V5 检查点不兼容的新版本加入。面向新手的完整方法、Ubuntu 安装、训练、推理、指标评测、三随机种子和基线对比流程见 [V6_GUIDE.md](V6_GUIDE.md)。V6 入口为 `run_nerf_v6.py`，默认配置为 `configs/llff_colmap_v6.txt`。
+
+以下内容是原 V5 使用说明。
 
 这是基于 `nerf-pytorch` 的不确定性感知 NeRF 实现，面向具有反光、烟尘、遮挡、弱纹理和噪声深度先验的真实多视图场景。
 
