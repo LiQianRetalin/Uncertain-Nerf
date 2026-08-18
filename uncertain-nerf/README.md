@@ -1,6 +1,8 @@
-# Uncertain-NeRF V5 / uncertain-nerf-v6
+# Uncertain-NeRF V5 / V6 / V7
 
-V6 已作为独立、与 V5 检查点不兼容的新版本加入。面向新手的完整方法、Ubuntu 安装、训练、推理、指标评测、三随机种子和基线对比流程见 [V6_GUIDE.md](V6_GUIDE.md)。V6 入口为 `run_nerf_v6.py`，默认配置为 `configs/llff_colmap_v6.txt`。
+V7 已作为独立、与 V5/V6 检查点不兼容的新版本加入。V7 严格按“梯度纠错 → 静态场景关闭 appearance → 关闭 spatial → 可见性 Teacher → 终止分布几何 → 自适应采样 → mip-aware HashGrid → 最后加速”的顺序实现。远程训练、渲染和图形化 Git 同步的完整步骤见 [V7_GUIDE.md](V7_GUIDE.md)。入口为 `run_nerf_v7.py`，正确性配置为 `configs/llff_colmap_v7.txt`，最后的加速配置为 `configs/llff_colmap_v7_fast.txt`。
+
+V6 的原始说明仍见 [V6_GUIDE.md](V6_GUIDE.md)。
 
 以下内容是原 V5 使用说明。
 

@@ -1,0 +1,11 @@
+# Use only after the correctness V7 run is stable. Parser defaults mirror the base config.
+# Requires tiny-cuda-nn and starts a separate training run/checkpoint family.
+hash_backend = tcnn
+use_occupancy_grid = True
+amp = True
+occupancy_resolution = 128
+occupancy_threshold = 0.01
+occupancy_decay = 0.95
+occupancy_warmup = 10000
+occupancy_update_interval = 16
+occupancy_update_samples = 262144

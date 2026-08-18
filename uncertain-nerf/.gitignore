@@ -3,6 +3,7 @@
 .pytest_cache/
 .venv/
 .venv-v6/
+.venv-v7/
 *.py[cod]
 *.png
 *.mp4
@@ -12,3 +13,4 @@
 data/*
 logs/*
 logs-v6/
+logs-v7/
