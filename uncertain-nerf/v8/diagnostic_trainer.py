@@ -243,13 +243,10 @@ class DiagnosticTrainer(TrainerV7):
 
         # The renderer concatenates reconstruction and uncertainty channels, so
         # their otherwise isolated branches still share a small autograd node.
-        # Preserve that graph only until the immediately following UQ backward;
-        # the isolation assertion above guarantees that the second pass cannot
-        # change reconstruction gradients.
-        self.scaler.scale(reconstruction_loss).backward(
-            retain_graph=self.uq_optimizer is not None)
-        if self.uq_optimizer is not None:
-            self.scaler.scale(uq_loss).backward()
+        # One backward pass avoids retaining and traversing the full render graph
+        # twice; the isolation assertion above guarantees that uq_loss cannot
+        # contribute reconstruction gradients.
+        self.scaler.scale(reconstruction_loss + uq_loss).backward()
         self.scaler.unscale_(self.reconstruction_optimizer)
         if self.uq_optimizer is not None:
             self.scaler.unscale_(self.uq_optimizer)

@@ -19,8 +19,12 @@ def create_scene(root: Path, camera_model="PINHOLE", radial_k=-0.08):
         image[..., 0] = index * 40
         image[..., 1] = np.arange(16, dtype=np.uint8)[None, :] * 8
         imageio.imwrite(image_dir / f"frame{index:03d}.png", image)
+        # LLFF/NeRF camera space looks down -Z.  The COLMAP fixture below uses
+        # +Z depth, so poses_bounds must store the corresponding backward axis;
+        # otherwise every generated ray points away from the sparse scene AABB.
+        rotation = np.diag([1.0, 1.0, -1.0])
         pose = np.concatenate(
-            [np.eye(3), np.array([[center], [0.0], [0.0]]), np.array([[16.0], [16.0], [12.0]])],
+            [rotation, np.array([[center], [0.0], [0.0]]), np.array([[16.0], [16.0], [12.0]])],
             axis=1,
         )
         poses_bounds.append(np.concatenate([pose.reshape(-1), [1.0, 4.0]]))
