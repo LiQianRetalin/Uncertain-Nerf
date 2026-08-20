@@ -241,9 +241,13 @@ class DiagnosticTrainer(TrainerV7):
                 for gradient in geometry_gradients
                 if gradient is not None))
 
-        self.scaler.scale(reconstruction_loss).backward()
-        if self.uq_optimizer is not None:
-            self.scaler.scale(uq_loss).backward()
+        # The renderer concatenates reconstruction and uncertainty channels, so
+        # their otherwise isolated branches still share a small autograd node.
+        # Backpropagating the two losses separately would either traverse a
+        # freed graph or require retain_graph=True on every V7.5 step.  A single
+        # backward pass avoids both problems; the isolation assertion above
+        # guarantees that uq_loss contributes no reconstruction gradients.
+        self.scaler.scale(reconstruction_loss + uq_loss).backward()
         self.scaler.unscale_(self.reconstruction_optimizer)
         if self.uq_optimizer is not None:
             self.scaler.unscale_(self.uq_optimizer)
