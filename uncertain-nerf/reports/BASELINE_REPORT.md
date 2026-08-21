@@ -1,10 +1,14 @@
-# V8 Baseline 阶段报告
+# A0 Baseline 恢复报告
 
-状态：等待 L6 正式训练。
+状态：旧 diagnostic baseline 已停止；等待原始 A0 在 L6 正式训练。
 
-固定配置：`configs/v8_baseline.txt`  
+原 `configs/v8_baseline.txt` 运行已失败并停止。完整证据见
+`reports/STOP_BASELINE_FAILURE.md`。该配置实际复用了 V7 重建主干，不能作为原始
+A0 验收。新的 A0 固定配置为 `configs/a0_fern.txt`，执行手册为
+`A0_RECOVERY_GUIDE.md`。
+
 验收场景：fern，factor=2，seed=0  
-代码版本：待首次 V8 commit 后填写。
+代码版本：待 A0 恢复提交后填写。
 
 | 指标 | 结果 |
 |---|---:|

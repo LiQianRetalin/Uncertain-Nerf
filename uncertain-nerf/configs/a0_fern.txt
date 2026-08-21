@@ -1,0 +1,35 @@
+# Genuine A0: classic coarse/fine NeRF, not the V5--V8 HashGrid trunk.
+expname = fern_a0_original_seed0
+basedir = ./logs-a0
+datadir = ./data/nerf_llff_data/fern
+factor = 2
+llffhold = 8
+val_every = 8
+
+netdepth = 8
+netwidth = 256
+netdepth_fine = 8
+netwidth_fine = 256
+multires = 10
+multires_views = 4
+use_viewdirs = True
+
+N_rand = 1024
+N_samples = 64
+N_importance = 64
+N_iters = 200000
+chunk = 4096
+netchunk = 65536
+raw_noise_std = 1.0
+coarse_loss_weight = 1.0
+
+lrate = 0.0005
+lrate_decay = 250
+grad_clip = 0
+
+seed = 0
+i_print = 100
+i_eval = 5000
+eval_max_views = 0
+i_weights = 10000
+target_psnr = 25.0

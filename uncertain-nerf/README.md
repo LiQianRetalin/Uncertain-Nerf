@@ -134,6 +134,11 @@ CPU 可运行单元测试和小型端到端测试；完整训练建议使用 CUD
 
 ## 6. V8 分阶段入口
 
-V8 当前只开放无 uncertainty baseline 和严格隔离的 V7.5 诊断门；SDF、反射、
-参与介质和 post-hoc UQ 必须在这两组完成验收后才能进入。仓库审计、冻结清单、
-L6 环境检查、图形化 Git 同步顺序以及训练/渲染停止条件见 `V8_GUIDE.md`。
+V7 重建主干去掉 uncertainty 后的诊断 baseline 已在 fern/factor=2/seed=0 上失败：
+100000 步 test PSNR 为 21.9691 dB，20000 步早停检查点为 22.6042 dB。因此 V7.5
+和 V8-Core 当前保持停止。证据见 `reports/STOP_BASELINE_FAILURE.md`。
+
+真正的原始 NeRF A0 已改为独立入口 `run_nerf_a0.py`，不复用 V5--V8 HashGrid、
+COLMAP 几何损失、Mip 或混合采样。图形化 Git、L6 smoke、正式训练、渲染和验收顺序
+见 `A0_RECOVERY_GUIDE.md`。只有 A0 恢复历史正常质量后才允许重新建立 V7.5 门；
+SDF、反射、参与介质和 post-hoc UQ 仍未开放。
