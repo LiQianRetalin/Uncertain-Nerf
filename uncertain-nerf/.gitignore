@@ -5,6 +5,7 @@
 .venv-v6/
 .venv-v7/
 .venv-v8/
+.venv-gsplat153/
 *.py[cod]
 *.png
 *.mp4
@@ -17,3 +18,6 @@ logs-v6/
 logs-v7/
 logs-v8/
 logs-a0/
+logs-gsplat/
+external/
+/tmp/

@@ -1,0 +1,32 @@
+{
+  "protocol": "puri-v8-robot-screen-1",
+  "candidate": "gsplat-1.5.3-default",
+  "input_mode": "rgb_only",
+  "integration": {
+    "external_pose_api": true,
+    "single_raster_pass": true,
+    "rendering_mlp": false,
+    "sh_degree": 3
+  },
+  "clean": {
+    "dataset": "llff_fern_factor2_14_3_3",
+    "psnr_db": 0.0,
+    "ssim": 0.0,
+    "lpips": 1.0
+  },
+  "robust": {
+    "dataset": "nerf_on_the_go_patio_high_static_mask",
+    "static_psnr_db": 0.0,
+    "floater_pixel_rate": 1.0
+  },
+  "runtime": {
+    "device": "NVIDIA_L20",
+    "width": 640,
+    "height": 480,
+    "render_fps": 0.0,
+    "render_p95_ms": 1000000.0,
+    "map_update_p95_ms": 1000000.0,
+    "peak_vram_mb": 1000000.0,
+    "model_size_mb": 1000000.0
+  }
+}

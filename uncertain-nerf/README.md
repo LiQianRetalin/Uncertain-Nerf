@@ -132,7 +132,13 @@ pytest -q
 
 CPU 可运行单元测试和小型端到端测试；完整训练建议使用 CUDA。原版 NeRF `.tar` 检查点与 V5 网络结构不兼容，加载时会明确报错。
 
-## 6. V8 分阶段入口
+## 6. V8 历史入口与当前机器人路线
+
+> **2026-08-27 更新：** CamP + Zip-NeRF 最终评测失败，aligned PSNR 仅
+> 17.4028 dB，低于 27.20 dB 门槛 9.7972 dB。该路线与下述旧 NeRF 门控链均已
+> 停止，不再调参或追加训练。当前唯一入口改为 [ROBOT_GAUSSIAN_GUIDE.md](ROBOT_GAUSSIAN_GUIDE.md)：
+> gsplat 显式 Gaussian 地图主干、RGB-only、外部位姿接口，并为 Fast-LIVO2 和
+> FPGA 流水线保留边界。
 
 V7 重建主干去掉 uncertainty 后的诊断 baseline 已在 fern/factor=2/seed=0 上失败：
 100000 步 test PSNR 为 21.9691 dB，20000 步早停检查点为 22.6042 dB。因此 V7.5
@@ -140,5 +146,5 @@ V7 重建主干去掉 uncertainty 后的诊断 baseline 已在 fern/factor=2/see
 
 真正的原始 NeRF A0 已改为独立入口 `run_nerf_a0.py`，不复用 V5--V8 HashGrid、
 COLMAP 几何损失、Mip 或混合采样。图形化 Git、L6 smoke、正式训练、渲染和验收顺序
-见 `A0_RECOVERY_GUIDE.md`。只有 A0 恢复历史正常质量后才允许重新建立 V7.5 门；
-SDF、反射、参与介质和 post-hoc UQ 仍未开放。
+见 `A0_RECOVERY_GUIDE.md`。这些文件现在只作历史复现实验记录，不再阻塞或授权当前
+Gaussian 机器人路线。CamP 最终证据见 `reports/CAMP_ZIPNERF_FINAL_FAILURE.md`。

@@ -1,0 +1,71 @@
+diff --git a/examples/datasets/colmap.py b/examples/datasets/colmap.py
+index 6c21f2c..1550a34 100644
+--- a/examples/datasets/colmap.py
++++ b/examples/datasets/colmap.py
+@@ -355,6 +355,7 @@ class Dataset:
+         self,
+         parser: Parser,
+         split: str = "train",
++        val_every: int = 8,
+         patch_size: Optional[int] = None,
+         load_depths: bool = False,
+     ):
+@@ -363,10 +364,17 @@ class Dataset:
+         self.patch_size = patch_size
+         self.load_depths = load_depths
+         indices = np.arange(len(self.parser.image_names))
++        test = indices[:: self.parser.test_every]
++        train_and_val = indices[~np.isin(indices, test)]
++        val = train_and_val[::val_every] if val_every > 0 else np.array([], dtype=int)
+         if split == "train":
+-            self.indices = indices[indices % self.parser.test_every != 0]
++            self.indices = train_and_val[~np.isin(train_and_val, val)]
++        elif split == "val":
++            self.indices = val
++        elif split == "test":
++            self.indices = test
+         else:
+-            self.indices = indices[indices % self.parser.test_every == 0]
++            raise ValueError(f"Unknown split: {split}")
+ 
+     def __len__(self):
+         return len(self.indices)
+diff --git a/examples/simple_trainer.py b/examples/simple_trainer.py
+index 6a30be7..7e8478b 100644
+--- a/examples/simple_trainer.py
++++ b/examples/simple_trainer.py
+@@ -59,6 +59,10 @@ class Config:
+     result_dir: str = "results/garden"
+     # Every N images there is a test image
+     test_every: int = 8
++    # Every N non-test images there is a validation image
++    val_every: int = 8
++    # Evaluation split; keep val during training and set test for final ckpt eval
++    eval_split: Literal["val", "test"] = "val"
+     # Random crop size for training  (experimental)
+     patch_size: Optional[int] = None
+     # A global scaler that applies to the scene size related parameters
+@@ -340,10 +344,13 @@ class Runner:
+         self.trainset = Dataset(
+             self.parser,
+             split="train",
++            val_every=cfg.val_every,
+             patch_size=cfg.patch_size,
+             load_depths=cfg.depth_loss,
+         )
+-        self.valset = Dataset(self.parser, split="val")
++        self.valset = Dataset(
++            self.parser, split=cfg.eval_split, val_every=cfg.val_every
++        )
+         self.scene_scale = self.parser.scene_scale * 1.1 * cfg.global_scale
+         print("Scene scale:", self.scene_scale)
+ 
+@@ -1175,7 +1182,7 @@ def main(local_rank: int, world_rank, world_size: int, cfg: Config):
+         for k in runner.splats.keys():
+             runner.splats[k].data = torch.cat([ckpt["splats"][k] for ckpt in ckpts])
+         step = ckpts[0]["step"]
+-        runner.eval(step=step)
++        runner.eval(step=step, stage=cfg.eval_split)
+         runner.render_traj(step=step)
+         if cfg.compression is not None:
+             runner.run_compression(step=step)

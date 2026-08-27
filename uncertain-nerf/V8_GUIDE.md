@@ -1,8 +1,9 @@
 # PURI-NeRF V8 第一批实施与 L6 执行手册
 
-> **停止通知（2026-08-20）：** 本文第 9--11 节的旧 diagnostic baseline 已完成并
-> 触发 `reports/STOP_BASELINE_FAILURE.md`。不要再按本文启动 baseline 或 V7.5。
-> 当前唯一允许的后续步骤是 `A0_RECOVERY_GUIDE.md` 中的原始 NeRF A0 恢复门。
+> **归档通知（2026-08-27）：** 本文是旧 NeRF 诊断链的执行记录。CamP + Zip-NeRF
+> 最终 aligned PSNR 为 17.4028 dB，路线已完整淘汰。不要再按本文启动 baseline、
+> V7.5、CamP 或 Zip-NeRF；当前入口为 `ROBOT_GAUSSIAN_GUIDE.md`。
+> 本文其余“允许的后续步骤”均为历史说明，不再代表当前授权。
 
 本文只覆盖已获准的第一批：仓库审计、V5–V7 冻结、无 uncertainty baseline、
 V7.5 旁路 UQ。当前禁止进入 SDF、反射、参与介质或 post-hoc UQ。
