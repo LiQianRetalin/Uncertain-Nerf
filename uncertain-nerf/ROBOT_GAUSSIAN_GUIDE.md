@@ -65,9 +65,11 @@ training_summary.json
 bash scripts/prepare_gsplat_robot_baseline.sh ./external/gsplat-v1.5.3
 ```
 
-依赖按 gsplat v1.5.3 官方 `examples/requirements.txt` 安装。脚本不自动安装或更换
-PyTorch/CUDA，避免破坏 L6 上已有环境；它只会取得固定 gsplat 提交、初始化其 GLM
-源码子模块并应用本项目的数据划分补丁。
+环境固定为独立 Python 3.10、PyTorch 2.4.0 + CUDA 12.1，以及 gsplat v1.5.3 官方
+`pt24cu121-cp310` 预编译 wheel。这样和服务器 `nvcc 12.1` 一致，也不依赖现有
+Python 3.13/PyTorch 2.13 环境。只安装 trainer 实际导入的依赖，不安装 bilagrid、
+视频编码器或其他未启用模块。源码 checkout 只承载固定 trainer 和数据划分补丁，
+不编译其中的 CUDA 源码。
 
 服务器继续复用已经存在的数据目录 `./data/nerf_llff_data/fern`，数据不进入 Git。
 在准备 gsplat 或安装新环境前，先用旧 `.venv-v7` 做只读预检：
@@ -77,8 +79,16 @@ bash scripts/check_gsplat_server.sh ./data/nerf_llff_data/fern 6
 ```
 
 该命令必须报告 Fern `PASS`，并输出 L20、CUDA compiler、G++、Python 和 PyTorch
-版本。gsplat 将使用独立的 `.venv-gsplat153`；不得向 `.venv-v7` 安装 gsplat 或其
-依赖。新环境的精确安装命令要以这次预检输出为准。
+版本。gsplat 使用独立的 `.venv-gsplat153`；不得向 `.venv-v7` 安装 gsplat 或其
+依赖。预检通过后执行：
+
+```bash
+bash scripts/setup_gsplat_robot_env.sh 6
+bash scripts/prepare_gsplat_robot_baseline.sh ./external/gsplat-v1.5.3
+```
+
+环境脚本会核对官方 wheel 的 SHA-256，并执行一次 32x32 单 Gaussian GPU
+rasterization、fused SSIM 和 LPIPS 自检；只有输出 `decision=PASS` 才能开始训练。
 
 ## 4. 三项短筛
 
@@ -146,11 +156,13 @@ Gaussian mapper 异步消费关键帧；定位线程不等待地图优化。位�
 视频生成，仅保留训练、JSON 指标和 checkpoint。
 
 ```bash
-bash scripts/train_gsplat_robot_baseline.sh \
+PURI_GSPLAT_PYTHON=./.venv-gsplat153/bin/python \
+  bash scripts/train_gsplat_robot_baseline.sh \
   ./external/gsplat-v1.5.3 ./data/nerf_llff_data/fern \
   ./logs-gsplat/fern_default_seed0 6 1000
 
-bash scripts/evaluate_gsplat_robot_baseline.sh \
+PURI_GSPLAT_PYTHON=./.venv-gsplat153/bin/python \
+  bash scripts/evaluate_gsplat_robot_baseline.sh \
   ./external/gsplat-v1.5.3 ./data/nerf_llff_data/fern \
   ./logs-gsplat/fern_default_seed0 6 \
   ./logs-gsplat/fern_default_seed0/ckpts/ckpt_999_rank0.pt

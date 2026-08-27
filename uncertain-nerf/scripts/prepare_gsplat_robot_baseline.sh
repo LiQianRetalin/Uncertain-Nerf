@@ -12,7 +12,7 @@ PATCH_PATH="${ROOT_DIR}/patches/gsplat_v1.5.3_robot_screen.patch"
 EXPECTED_COMMIT="937e29912570c372bed6747a5c9bf85fed877bae"
 
 if [[ ! -e "${TARGET_DIR}" ]]; then
-  git clone --depth 1 --branch v1.5.3 --recurse-submodules \
+  git clone --depth 1 --branch v1.5.3 \
     https://github.com/nerfstudio-project/gsplat.git "${TARGET_DIR}"
 elif [[ ! -d "${TARGET_DIR}/.git" ]]; then
   echo "TARGET_DIR exists but is not a git checkout: ${TARGET_DIR}"
@@ -22,12 +22,6 @@ fi
 ACTUAL_COMMIT="$(git -C "${TARGET_DIR}" rev-parse HEAD)"
 if [[ "${ACTUAL_COMMIT}" != "${EXPECTED_COMMIT}" ]]; then
   echo "Expected gsplat ${EXPECTED_COMMIT}, got ${ACTUAL_COMMIT}"
-  exit 2
-fi
-
-git -C "${TARGET_DIR}" submodule update --init --recursive --depth 1
-if [[ ! -f "${TARGET_DIR}/gsplat/cuda/csrc/third_party/glm/glm/glm.hpp" ]]; then
-  echo "Required gsplat GLM submodule is incomplete"
   exit 2
 fi
 
