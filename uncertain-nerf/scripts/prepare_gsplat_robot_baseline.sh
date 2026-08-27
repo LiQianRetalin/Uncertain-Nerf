@@ -10,10 +10,11 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TARGET_DIR="$1"
 PATCH_PATH="${ROOT_DIR}/patches/gsplat_v1.5.3_robot_screen.patch"
 EXPECTED_COMMIT="937e29912570c372bed6747a5c9bf85fed877bae"
+REPOSITORY="${PURI_GSPLAT_REPOSITORY:-https://github.com/nerfstudio-project/gsplat.git}"
 
 if [[ ! -e "${TARGET_DIR}" ]]; then
   git clone --depth 1 --branch v1.5.3 \
-    https://github.com/nerfstudio-project/gsplat.git "${TARGET_DIR}"
+    "${REPOSITORY}" "${TARGET_DIR}"
 elif [[ ! -d "${TARGET_DIR}/.git" ]]; then
   echo "TARGET_DIR exists but is not a git checkout: ${TARGET_DIR}"
   exit 2

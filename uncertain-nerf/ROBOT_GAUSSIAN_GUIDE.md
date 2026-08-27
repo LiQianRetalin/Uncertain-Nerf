@@ -80,11 +80,15 @@ bash scripts/check_gsplat_server.sh ./data/nerf_llff_data/fern 6
 
 该命令必须报告 Fern `PASS`，并输出 L20、CUDA compiler、G++、Python 和 PyTorch
 版本。gsplat 使用独立的 `.venv-gsplat153`；不得向 `.venv-v7` 安装 gsplat 或其
-依赖。预检通过后执行：
+依赖。服务器若不能访问 GitHub，先把本地生成的单一离线包上传到项目 `tmp/`，核对
+SHA-256 后解压；PyPI、PyTorch 和 Anaconda 依赖仍从各自可访问的官方源取得。
+
+离线包就位后执行：
 
 ```bash
 bash scripts/setup_gsplat_robot_env.sh 6
-bash scripts/prepare_gsplat_robot_baseline.sh ./external/gsplat-v1.5.3
+PURI_GSPLAT_REPOSITORY=./tmp/gsplat153-offline/gsplat-v1.5.3.bundle \
+  bash scripts/prepare_gsplat_robot_baseline.sh ./external/gsplat-v1.5.3
 ```
 
 环境脚本会核对官方 wheel 的 SHA-256，并执行一次 32x32 单 Gaussian GPU
