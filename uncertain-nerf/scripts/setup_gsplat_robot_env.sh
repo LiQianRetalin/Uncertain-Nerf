@@ -59,6 +59,7 @@ fi
   "${OFFLINE_DIR}/pycolmap" "${OFFLINE_DIR}/nerfview"
 
 CUDA_VISIBLE_DEVICES="${GPU_ID}" MAX_JOBS=4 \
+  NVCC_APPEND_FLAGS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2" \
   "${PYTHON_BIN}" -m pip install --no-build-isolation \
   "${OFFLINE_DIR}/fused-ssim"
 

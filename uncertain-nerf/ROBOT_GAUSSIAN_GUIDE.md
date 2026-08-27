@@ -93,6 +93,8 @@ PURI_GSPLAT_REPOSITORY=./tmp/gsplat153-offline/gsplat-v1.5.3.bundle \
 
 环境脚本会核对官方 wheel 的 SHA-256，并执行一次 32x32 单 Gaussian GPU
 rasterization、fused SSIM 和 LPIPS 自检；只有输出 `decision=PASS` 才能开始训练。
+`fused_ssim` 编译被限定为 `_FORTIFY_SOURCE=2`，以兼容服务器较新的 glibc 头文件与
+CUDA 12.1；该设置只作用于这个安装子进程，不改变系统编译器、CUDA 或运行时性能。
 
 ## 4. 三项短筛
 
