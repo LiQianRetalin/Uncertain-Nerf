@@ -49,7 +49,7 @@ if [[ "$("${PYTHON_BIN}" -c 'import sys; print(f"{sys.version_info.major}.{sys.v
 fi
 
 "${PYTHON_BIN}" -m pip install \
-  "setuptools==75.1.0" "wheel==0.44.0" "ninja==1.11.1.1"
+  "setuptools==75.1.0" "wheel==0.44.0" "ninja==1.11.1.4"
 "${PYTHON_BIN}" -m pip install \
   "torch==2.4.0" "torchvision==0.19.0" \
   --index-url https://download.pytorch.org/whl/cu121
