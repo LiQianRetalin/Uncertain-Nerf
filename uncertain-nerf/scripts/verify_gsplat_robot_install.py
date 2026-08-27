@@ -19,6 +19,7 @@ def main() -> int:
     import imageio
     import nerfview
     import pycolmap
+    import splines
     import torchmetrics
     import tyro
     import viser
@@ -87,6 +88,7 @@ def main() -> int:
     print(f"tyro={version('tyro')}")
     print(f"viser={version('viser')}")
     print(f"nerfview={version('nerfview')}")
+    print(f"splines={version('splines')}")
     return 0
 
 
