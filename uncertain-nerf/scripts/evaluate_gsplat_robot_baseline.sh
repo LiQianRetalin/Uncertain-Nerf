@@ -6,6 +6,7 @@ if [[ "$#" -ne 5 ]]; then
   exit 2
 fi
 
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GSPLAT_DIR="$(realpath "$1")"
 DATA_DIR="$(realpath "$2")"
 mkdir -p "$3"
@@ -29,6 +30,7 @@ if ! [[ "${GPU_ID}" =~ ^[0-9]+$ ]]; then
 fi
 
 cd "${GSPLAT_DIR}/examples"
+PYTHONPATH="${ROOT_DIR}:${GSPLAT_DIR}:${PYTHONPATH:-}" \
 CUDA_VISIBLE_DEVICES="${GPU_ID}" "${PYTHON_BIN}" simple_trainer.py default \
   --disable_viewer \
   --disable_video \

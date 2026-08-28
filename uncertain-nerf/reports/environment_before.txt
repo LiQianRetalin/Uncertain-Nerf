@@ -1,0 +1,73 @@
+PURI-GS environment audit (before changes)
+Audit date: 2026-08-28 Asia/Shanghai
+
+Repository
+  Branch: dev
+  Commit: 7baf0db443dc8be2e9f7d4dba591da162171435d
+  Initial worktree: clean (dev...origin/dev)
+  Project root: E:\6-Project\1-UncertainNerf\uncertain-nerf
+  Server project path recorded by repository: /home/chenglong/Uncertain-Nerf/uncertain-nerf
+
+Host operating system
+  Windows: Microsoft Windows 11 Home China, 10.0.26200 build 26200
+  PowerShell: 7.6.4
+  WSL: Ubuntu 22.04, kernel 6.6.87.2-microsoft-standard-WSL2
+
+Python environments found
+  Windows Conda base: Python 3.13.12, D:\Miniconda\python.exe
+  Existing project WSL environment: .venv-v6, Python 3.10.12
+  Windows python command: Microsoft Store placeholder; not a usable environment
+
+GPU and CUDA
+  GPU: NVIDIA GeForce RTX 5070 Ti Laptop GPU
+  VRAM: 12227 MiB
+  Driver: 595.79
+  Driver-advertised CUDA capability: 13.2
+  Existing WSL PyTorch CUDA runtime: 12.8
+  torch.cuda.is_available(): True
+  WSL nvcc: MISSING
+  WSL g++: 11.4.0
+
+Existing WSL project environment packages
+  torch: 2.11.0+cu128
+  torchvision: 0.26.0+cu128
+  numpy: 2.2.6
+  Pillow: 12.3.0
+  pytest: 9.1.1
+  scipy: 1.15.3
+  opencv-python-headless: 5.0.0.93
+  gsplat: MISSING
+  tyro: MISSING
+  torchmetrics: MISSING
+  fused-ssim: MISSING
+
+Pinned gsplat source
+  Version/tag: v1.5.3
+  Commit: 937e29912570c372bed6747a5c9bf85fed877bae
+  Local source: external/gsplat-v1.5.3 (ignored external checkout)
+  Deployment: tracked patch patches/gsplat_v1.5.3_robot_screen.patch
+  Local install state: not installed into .venv-v6
+  Existing server environment recorded by project: .venv-gsplat153
+  Recorded server stack: Python 3.10, torch 2.4.0 cu121, pinned prebuilt gsplat 1.5.3 wheel
+
+Environment modifications made in this phase
+  None. No package was installed, upgraded, downgraded, compiled, or removed.
+
+Reason
+  The existing WSL environment is sufficient for pure PyTorch A1 unit/loss tests,
+  but its torch 2.11/cu128 ABI is incompatible with the existing pt2.4/cu121 gsplat
+  wheel. Installing that wheel would require a forbidden silent PyTorch/CUDA change.
+  Building gsplat against torch 2.11 would recompile the core CUDA rasterizer and
+  requires explicit user confirmation.
+
+Rollback
+  No environment rollback is needed because the environment was not changed.
+
+Validation result
+  PASS: Python syntax checks on Windows and WSL.
+  PASS: torch import, CUDA visibility, one-step/multi-step loss forward/backward.
+  PASS: checkpoint save/load and metric smoke.
+  PASS: tracked gsplat patch reverse-apply check against pinned commit.
+  PASS: complete repository test suite, 68 passed.
+  PENDING: actual gsplat CUDA rasterization/trainer smoke in .venv-gsplat153.
+  No environment_after.txt is generated because no environment change occurred.

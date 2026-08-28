@@ -1,22 +1,69 @@
 diff --git a/examples/datasets/colmap.py b/examples/datasets/colmap.py
-index 6c21f2c..1550a34 100644
+index 6c21f2c..c892089 100644
 --- a/examples/datasets/colmap.py
 +++ b/examples/datasets/colmap.py
-@@ -355,6 +355,7 @@ class Dataset:
+@@ -28,6 +28,12 @@ def _get_rel_paths(path_dir: str) -> List[str]:
+     return paths
+
+
++def _is_png_file(path: str) -> bool:
++    """Detect PNG payloads even when a downloaded dataset keeps a JPG suffix."""
++    with open(path, "rb") as f:
++        return f.read(8) == b"\x89PNG\r\n\x1a\n"
++
++
+ def _resize_image_folder(image_dir: str, resized_dir: str, factor: int) -> str:
+     """Resize image folder."""
+     print(f"Downscaling images by {factor}x from {image_dir} to {resized_dir}.")
+@@ -190,7 +196,12 @@ class Parser:
+         # so we need to map between the two sorted lists of files.
+         colmap_files = sorted(_get_rel_paths(colmap_image_dir))
+         image_files = sorted(_get_rel_paths(image_dir))
+-        if factor > 1 and os.path.splitext(image_files[0])[1].lower() == ".jpg":
++        first_image_path = os.path.join(image_dir, image_files[0])
++        if (
++            factor > 1
++            and os.path.splitext(image_files[0])[1].lower() in {".jpg", ".jpeg"}
++            and not _is_png_file(first_image_path)
++        ):
+             image_dir = _resize_image_folder(
+                 colmap_image_dir, image_dir + "_png", factor=factor
+             )
+@@ -355,6 +366,9 @@ class Dataset:
          self,
          parser: Parser,
          split: str = "train",
 +        val_every: int = 8,
++        train_keyword: Optional[str] = None,
++        test_keyword: Optional[str] = None,
          patch_size: Optional[int] = None,
          load_depths: bool = False,
      ):
-@@ -363,10 +364,17 @@ class Dataset:
+@@ -363,10 +377,35 @@ class Dataset:
          self.patch_size = patch_size
          self.load_depths = load_depths
          indices = np.arange(len(self.parser.image_names))
-+        test = indices[:: self.parser.test_every]
-+        train_and_val = indices[~np.isin(indices, test)]
-+        val = train_and_val[::val_every] if val_every > 0 else np.array([], dtype=int)
++        if (train_keyword is None) != (test_keyword is None):
++            raise ValueError("train_keyword and test_keyword must be provided together")
++        if train_keyword is not None:
++            names = [name.casefold() for name in self.parser.image_names]
++            train_and_val = indices[
++                [train_keyword.casefold() in name for name in names]
++            ]
++            test = indices[[test_keyword.casefold() in name for name in names]]
++            if len(train_and_val) == 0 or len(test) == 0:
++                raise ValueError("keyword split produced an empty train or test set")
++            if np.intersect1d(train_and_val, test).size:
++                raise ValueError("keyword train and test splits overlap")
++            val = np.array([], dtype=int)
++        else:
++            test = indices[:: self.parser.test_every]
++            train_and_val = indices[~np.isin(indices, test)]
++            val = (
++                train_and_val[::val_every]
++                if val_every > 0
++                else np.array([], dtype=int)
++            )
          if split == "train":
 -            self.indices = indices[indices % self.parser.test_every != 0]
 +            self.indices = train_and_val[~np.isin(train_and_val, val)]
@@ -31,10 +78,22 @@ index 6c21f2c..1550a34 100644
      def __len__(self):
          return len(self.indices)
 diff --git a/examples/simple_trainer.py b/examples/simple_trainer.py
-index 6a30be7..7e8478b 100644
+index 6a30be7..f2ea999 100644
 --- a/examples/simple_trainer.py
 +++ b/examples/simple_trainer.py
-@@ -59,6 +59,10 @@ class Config:
+@@ -30,6 +30,11 @@ from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
+ from typing_extensions import Literal, assert_never
+ from utils import AppearanceOptModule, CameraOptModule, knn, rgb_to_sh, set_random_seed
+
++from puri_gs.responsibility import (
++    ResponsibilityConfig,
++    responsibility_weighted_l1,
++)
++
+ from gsplat import export_splats
+ from gsplat.compression import PngCompression
+ from gsplat.distributed import cli
+@@ -59,6 +64,13 @@ class Config:
      result_dir: str = "results/garden"
      # Every N images there is a test image
      test_every: int = 8
@@ -42,25 +101,129 @@ index 6a30be7..7e8478b 100644
 +    val_every: int = 8
 +    # Evaluation split; keep val during training and set test for final ckpt eval
 +    eval_split: Literal["val", "test"] = "val"
++    # Optional explicit filename-keyword split for degraded datasets.
++    train_keyword: Optional[str] = None
++    test_keyword: Optional[str] = None
      # Random crop size for training  (experimental)
      patch_size: Optional[int] = None
      # A global scaler that applies to the scene size related parameters
-@@ -340,10 +344,13 @@ class Runner:
+@@ -105,6 +117,13 @@ class Config:
+     init_scale: float = 1.0
+     # Weight for SSIM loss
+     ssim_lambda: float = 0.2
++    # PURI-GS A1 is opt-in so the official default CLI remains an exact baseline.
++    responsibility_enabled: bool = False
++    responsibility_start_step: int = 3000
++    responsibility_threshold: float = 1.5
++    responsibility_min_weight: float = 0.2
++    responsibility_pool_size: int = 3
++    responsibility_epsilon: float = 1e-6
+
+     # Near plane clipping distance
+     near_plane: float = 0.01
+@@ -313,6 +332,14 @@ class Runner:
+         self.local_rank = local_rank
+         self.world_size = world_size
+         self.device = f"cuda:{local_rank}"
++        self.responsibility_config = ResponsibilityConfig(
++            enabled=cfg.responsibility_enabled,
++            start_step=cfg.responsibility_start_step,
++            threshold=cfg.responsibility_threshold,
++            min_weight=cfg.responsibility_min_weight,
++            pool_size=cfg.responsibility_pool_size,
++            epsilon=cfg.responsibility_epsilon,
++        )
+
+         # Where to dump results.
+         os.makedirs(cfg.result_dir, exist_ok=True)
+@@ -340,10 +367,39 @@ class Runner:
          self.trainset = Dataset(
              self.parser,
              split="train",
 +            val_every=cfg.val_every,
++            train_keyword=cfg.train_keyword,
++            test_keyword=cfg.test_keyword,
              patch_size=cfg.patch_size,
              load_depths=cfg.depth_loss,
          )
 -        self.valset = Dataset(self.parser, split="val")
 +        self.valset = Dataset(
-+            self.parser, split=cfg.eval_split, val_every=cfg.val_every
++            self.parser,
++            split=cfg.eval_split,
++            val_every=cfg.val_every,
++            train_keyword=cfg.train_keyword,
++            test_keyword=cfg.test_keyword,
 +        )
++        if world_rank == 0:
++            split = {
++                "protocol": (
++                    "filename-keyword"
++                    if cfg.train_keyword is not None
++                    else "every-nth-test"
++                ),
++                "train_keyword": cfg.train_keyword,
++                "test_keyword": cfg.test_keyword,
++                "train": [self.parser.image_names[i] for i in self.trainset.indices],
++                cfg.eval_split: [
++                    self.parser.image_names[i] for i in self.valset.indices
++                ],
++            }
++            with open(f"{cfg.result_dir}/dataset_split.json", "w") as f:
++                json.dump(split, f, indent=2)
++            print(
++                f"Dataset split: train={len(self.trainset)}, "
++                f"{cfg.eval_split}={len(self.valset)}"
++            )
          self.scene_scale = self.parser.scene_scale * 1.1 * cfg.global_scale
          print("Scene scale:", self.scene_scale)
+
+@@ -680,7 +736,13 @@ class Runner:
+             )
+
+             # loss
+-            l1loss = F.l1_loss(colors, pixels)
++            l1loss, responsibility = responsibility_weighted_l1(
++                colors,
++                pixels,
++                config=self.responsibility_config,
++                step=step,
++                valid_mask=masks,
++            )
+             ssimloss = 1.0 - fused_ssim(
+                 colors.permute(0, 3, 1, 2), pixels.permute(0, 3, 1, 2), padding="valid"
+             )
+@@ -716,6 +778,19 @@ class Runner:
  
-@@ -1175,7 +1182,7 @@ def main(local_rank: int, world_rank, world_size: int, cfg: Config):
+             loss.backward()
+
++            if (
++                world_rank == 0
++                and responsibility is not None
++                and step == max_steps - 1
++            ):
++                responsibility_image = (
++                    responsibility[0].detach().clamp(0, 1).mul(255).byte().cpu().numpy()
++                )
++                imageio.imwrite(
++                    f"{self.render_dir}/responsibility_step{step:04d}.png",
++                    responsibility_image,
++                )
++
+             desc = f"loss={loss.item():.3f}| " f"sh degree={sh_degree_to_use}| "
+             if cfg.depth_loss:
+                 desc += f"depth loss={depthloss.item():.6f}| "
+@@ -739,6 +814,10 @@ class Runner:
+                 self.writer.add_scalar("train/loss", loss.item(), step)
+                 self.writer.add_scalar("train/l1loss", l1loss.item(), step)
+                 self.writer.add_scalar("train/ssimloss", ssimloss.item(), step)
++                if responsibility is not None:
++                    self.writer.add_scalar(
++                        "train/responsibility_mean", responsibility.mean().item(), step
++                    )
+                 self.writer.add_scalar("train/num_GS", len(self.splats["means"]), step)
+                 self.writer.add_scalar("train/mem", mem, step)
+                 if cfg.depth_loss:
+@@ -1175,7 +1254,7 @@ def main(local_rank: int, world_rank, world_size: int, cfg: Config):
          for k in runner.splats.keys():
              runner.splats[k].data = torch.cat([ckpt["splats"][k] for ckpt in ckpts])
          step = ckpts[0]["step"]

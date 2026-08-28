@@ -1,0 +1,133 @@
+--- a/examples/simple_trainer.py
++++ b/examples/simple_trainer.py
+@@ -32,0 +33,5 @@
++from puri_gs.responsibility import (
++    ResponsibilityConfig,
++    responsibility_weighted_l1,
++)
++
+@@ -65,0 +71,3 @@
++    # Optional explicit filename-keyword split for degraded datasets.
++    train_keyword: Optional[str] = None
++    test_keyword: Optional[str] = None
+@@ -111,0 +120,7 @@
++    # PURI-GS A1 is opt-in so the official default CLI remains an exact baseline.
++    responsibility_enabled: bool = False
++    responsibility_start_step: int = 3000
++    responsibility_threshold: float = 1.5
++    responsibility_min_weight: float = 0.2
++    responsibility_pool_size: int = 3
++    responsibility_epsilon: float = 1e-6
+@@ -319,0 +335,8 @@
++        self.responsibility_config = ResponsibilityConfig(
++            enabled=cfg.responsibility_enabled,
++            start_step=cfg.responsibility_start_step,
++            threshold=cfg.responsibility_threshold,
++            min_weight=cfg.responsibility_min_weight,
++            pool_size=cfg.responsibility_pool_size,
++            epsilon=cfg.responsibility_epsilon,
++        )
+@@ -347,0 +371,2 @@
++            train_keyword=cfg.train_keyword,
++            test_keyword=cfg.test_keyword,
+@@ -352 +377,5 @@
+-            self.parser, split=cfg.eval_split, val_every=cfg.val_every
++            self.parser,
++            split=cfg.eval_split,
++            val_every=cfg.val_every,
++            train_keyword=cfg.train_keyword,
++            test_keyword=cfg.test_keyword,
+@@ -353,0 +383,20 @@
++        if world_rank == 0:
++            split = {
++                "protocol": (
++                    "filename-keyword"
++                    if cfg.train_keyword is not None
++                    else "every-nth-test"
++                ),
++                "train_keyword": cfg.train_keyword,
++                "test_keyword": cfg.test_keyword,
++                "train": [self.parser.image_names[i] for i in self.trainset.indices],
++                cfg.eval_split: [
++                    self.parser.image_names[i] for i in self.valset.indices
++                ],
++            }
++            with open(f"{cfg.result_dir}/dataset_split.json", "w") as f:
++                json.dump(split, f, indent=2)
++            print(
++                f"Dataset split: train={len(self.trainset)}, "
++                f"{cfg.eval_split}={len(self.valset)}"
++            )
+@@ -690 +739,7 @@
+-            l1loss = F.l1_loss(colors, pixels)
++            l1loss, responsibility = responsibility_weighted_l1(
++                colors,
++                pixels,
++                config=self.responsibility_config,
++                step=step,
++                valid_mask=masks,
++            )
+@@ -725,0 +781,13 @@
++            if (
++                world_rank == 0
++                and responsibility is not None
++                and step == max_steps - 1
++            ):
++                responsibility_image = (
++                    responsibility[0].detach().clamp(0, 1).mul(255).byte().cpu().numpy()
++                )
++                imageio.imwrite(
++                    f"{self.render_dir}/responsibility_step{step:04d}.png",
++                    responsibility_image,
++                )
++
+@@ -748,0 +817,4 @@
++                if responsibility is not None:
++                    self.writer.add_scalar(
++                        "train/responsibility_mean", responsibility.mean().item(), step
++                    )
+--- a/examples/datasets/colmap.py
++++ b/examples/datasets/colmap.py
+@@ -30,0 +31,6 @@
++def _is_png_file(path: str) -> bool:
++    """Detect PNG payloads even when a downloaded dataset keeps a JPG suffix."""
++    with open(path, "rb") as f:
++        return f.read(8) == b"\x89PNG\r\n\x1a\n"
++
++
+@@ -193 +199,6 @@
+-        if factor > 1 and os.path.splitext(image_files[0])[1].lower() == ".jpg":
++        first_image_path = os.path.join(image_dir, image_files[0])
++        if (
++            factor > 1
++            and os.path.splitext(image_files[0])[1].lower() in {".jpg", ".jpeg"}
++            and not _is_png_file(first_image_path)
++        ):
+@@ -358,0 +370,2 @@
++        train_keyword: Optional[str] = None,
++        test_keyword: Optional[str] = None,
+@@ -367,3 +380,21 @@
+-        test = indices[:: self.parser.test_every]
+-        train_and_val = indices[~np.isin(indices, test)]
+-        val = train_and_val[::val_every] if val_every > 0 else np.array([], dtype=int)
++        if (train_keyword is None) != (test_keyword is None):
++            raise ValueError("train_keyword and test_keyword must be provided together")
++        if train_keyword is not None:
++            names = [name.casefold() for name in self.parser.image_names]
++            train_and_val = indices[
++                [train_keyword.casefold() in name for name in names]
++            ]
++            test = indices[[test_keyword.casefold() in name for name in names]]
++            if len(train_and_val) == 0 or len(test) == 0:
++                raise ValueError("keyword split produced an empty train or test set")
++            if np.intersect1d(train_and_val, test).size:
++                raise ValueError("keyword train and test splits overlap")
++            val = np.array([], dtype=int)
++        else:
++            test = indices[:: self.parser.test_every]
++            train_and_val = indices[~np.isin(indices, test)]
++            val = (
++                train_and_val[::val_every]
++                if val_every > 0
++                else np.array([], dtype=int)
++            )

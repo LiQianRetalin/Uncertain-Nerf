@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "profile": "a1",
+  "base_profile": "b1",
+  "gsplat_version": "1.5.3",
+  "seed": 42,
+  "training": {
+    "data_factor": 4,
+    "test_every": 8,
+    "sh_degree": 3,
+    "ssim_lambda": 0.2
+  },
+  "strategy": {
+    "type": "default",
+    "absgrad": true,
+    "grow_grad2d": 0.0006
+  },
+  "responsibility": {
+    "enabled": true,
+    "start_step": 3000,
+    "threshold": 1.5,
+    "min_weight": 0.2,
+    "pool_size": 3,
+    "epsilon": 1e-6
+  }
+}

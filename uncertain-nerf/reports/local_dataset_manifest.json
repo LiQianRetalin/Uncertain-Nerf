@@ -1,0 +1,1671 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-08-28T10:02:12.105912+00:00",
+  "root": "E:\\7-DataSet\\nerf数据集",
+  "read_only": true,
+  "allowed_operations": [
+    "directory listing",
+    "file counting",
+    "small image header sampling",
+    "COLMAP header checks",
+    "README and split metadata checks"
+  ],
+  "datasets": [
+    {
+      "name": "mipnerf360",
+      "path": "E:\\7-DataSet\\nerf数据集\\mipnerf360",
+      "status": "PARTIAL",
+      "reason": "download/extraction is incomplete; no clean conclusion is allowed",
+      "missing_items": [
+        "bicycle",
+        "bonsai",
+        "counter",
+        "garden",
+        "kitchen",
+        "room",
+        "stump"
+      ],
+      "scenes": [
+        {
+          "scene": "bicycle",
+          "path": "E:\\7-DataSet\\nerf数据集\\mipnerf360\\bicycle",
+          "status": "MISSING",
+          "reason": "expected Mip-NeRF 360 scene directory is absent",
+          "missing_items": [
+            "scene directory"
+          ]
+        },
+        {
+          "scene": "bonsai",
+          "path": "E:\\7-DataSet\\nerf数据集\\mipnerf360\\bonsai",
+          "status": "MISSING",
+          "reason": "expected Mip-NeRF 360 scene directory is absent",
+          "missing_items": [
+            "scene directory"
+          ]
+        },
+        {
+          "scene": "counter",
+          "path": "E:\\7-DataSet\\nerf数据集\\mipnerf360\\counter",
+          "status": "MISSING",
+          "reason": "expected Mip-NeRF 360 scene directory is absent",
+          "missing_items": [
+            "scene directory"
+          ]
+        },
+        {
+          "scene": "garden",
+          "path": "E:\\7-DataSet\\nerf数据集\\mipnerf360\\garden",
+          "status": "MISSING",
+          "reason": "expected Mip-NeRF 360 scene directory is absent",
+          "missing_items": [
+            "scene directory"
+          ]
+        },
+        {
+          "scene": "kitchen",
+          "path": "E:\\7-DataSet\\nerf数据集\\mipnerf360\\kitchen",
+          "status": "MISSING",
+          "reason": "expected Mip-NeRF 360 scene directory is absent",
+          "missing_items": [
+            "scene directory"
+          ]
+        },
+        {
+          "scene": "room",
+          "path": "E:\\7-DataSet\\nerf数据集\\mipnerf360\\room",
+          "status": "MISSING",
+          "reason": "expected Mip-NeRF 360 scene directory is absent",
+          "missing_items": [
+            "scene directory"
+          ]
+        },
+        {
+          "scene": "stump",
+          "path": "E:\\7-DataSet\\nerf数据集\\mipnerf360\\stump",
+          "status": "MISSING",
+          "reason": "expected Mip-NeRF 360 scene directory is absent",
+          "missing_items": [
+            "scene directory"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nerf_example_data",
+      "path": "E:\\7-DataSet\\nerf数据集\\nerf_example_data",
+      "status": "READY",
+      "reason": "one or more COLMAP scenes were detected",
+      "missing_items": [],
+      "scenes": [
+        {
+          "scene": "fern",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_example_data\\nerf_llff_data\\fern",
+          "status": "READY",
+          "reason": "current gsplat COLMAP loader requirements are satisfied",
+          "missing_items": [],
+          "warnings": [],
+          "counts": {
+            "images": 20,
+            "images_4": 20,
+            "colmap_cameras": 1,
+            "colmap_images": 20,
+            "colmap_points3D": 10091
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 20
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "image000.png",
+                "width": 1008,
+                "height": 756
+              },
+              {
+                "file": "image010.png",
+                "width": 1008,
+                "height": 756
+              },
+              {
+                "file": "image019.png",
+                "width": 1008,
+                "height": 756
+              }
+            ],
+            "errors": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "nerf_llff_data",
+      "path": "E:\\7-DataSet\\nerf数据集\\nerf_llff_data",
+      "status": "READY",
+      "reason": "one or more COLMAP scenes were detected",
+      "missing_items": [],
+      "scenes": [
+        {
+          "scene": "fern",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_llff_data\\fern",
+          "status": "READY",
+          "reason": "current gsplat COLMAP loader requirements are satisfied",
+          "missing_items": [],
+          "warnings": [],
+          "counts": {
+            "images": 20,
+            "images_4": 20,
+            "colmap_cameras": 1,
+            "colmap_images": 20,
+            "colmap_points3D": 10091
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 20
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "image000.png",
+                "width": 1008,
+                "height": 756
+              },
+              {
+                "file": "image010.png",
+                "width": 1008,
+                "height": 756
+              },
+              {
+                "file": "image019.png",
+                "width": 1008,
+                "height": 756
+              }
+            ],
+            "errors": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "nerf_on-the-go",
+      "path": "E:\\7-DataSet\\nerf数据集\\nerf_on-the-go",
+      "status": "UNSUPPORTED_FORMAT",
+      "reason": "a minimal transforms-to-COLMAP-compatible adapter is required",
+      "missing_items": [
+        "current-loader-compatible COLMAP model"
+      ],
+      "scenes": [
+        {
+          "scene": "arcdetriomphe",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_on-the-go\\on-the-go\\arcdetriomphe",
+          "status": "UNSUPPORTED_FORMAT",
+          "reason": "poses are stored in transforms JSON; current gsplat entry expects COLMAP",
+          "missing_items": [
+            "COLMAP sparse/0 model"
+          ],
+          "counts": {
+            "images": 226,
+            "transforms_json": 1
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "frame_0000.jpg",
+                "width": 1920,
+                "height": 1080
+              },
+              {
+                "file": "frame_1240.jpg",
+                "width": 1920,
+                "height": 1080
+              },
+              {
+                "file": "frame_2360.jpg",
+                "width": 1920,
+                "height": 1080
+              }
+            ],
+            "errors": []
+          }
+        },
+        {
+          "scene": "corner",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_on-the-go\\on-the-go\\corner",
+          "status": "UNSUPPORTED_FORMAT",
+          "reason": "poses are stored in transforms JSON; current gsplat entry expects COLMAP",
+          "missing_items": [
+            "COLMAP sparse/0 model"
+          ],
+          "counts": {
+            "images": 122,
+            "transforms_json": 1
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "IMG_7106.JPG",
+                "width": 4032,
+                "height": 3024
+              },
+              {
+                "file": "IMG_7196.JPG",
+                "width": 4032,
+                "height": 3024
+              },
+              {
+                "file": "IMG_7263.JPG",
+                "width": 4032,
+                "height": 3024
+              }
+            ],
+            "errors": []
+          }
+        },
+        {
+          "scene": "drone",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_on-the-go\\on-the-go\\drone",
+          "status": "UNSUPPORTED_FORMAT",
+          "reason": "poses are stored in transforms JSON; current gsplat entry expects COLMAP",
+          "missing_items": [
+            "COLMAP sparse/0 model"
+          ],
+          "counts": {
+            "images": 237,
+            "transforms_json": 1
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "DJI_0002.JPG",
+                "width": 4032,
+                "height": 3024
+              },
+              {
+                "file": "DJI_0590.JPG",
+                "width": 4032,
+                "height": 3024
+              },
+              {
+                "file": "DJI_0997.JPG",
+                "width": 4032,
+                "height": 3024
+              }
+            ],
+            "errors": []
+          }
+        },
+        {
+          "scene": "fountain",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_on-the-go\\on-the-go\\fountain",
+          "status": "UNSUPPORTED_FORMAT",
+          "reason": "poses are stored in transforms JSON; current gsplat entry expects COLMAP",
+          "missing_items": [
+            "COLMAP sparse/0 model"
+          ],
+          "counts": {
+            "images": 185,
+            "transforms_json": 1
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "IMG_6385.JPG",
+                "width": 4032,
+                "height": 3024
+              },
+              {
+                "file": "IMG_6479.JPG",
+                "width": 4032,
+                "height": 3024
+              },
+              {
+                "file": "IMG_6571.JPG",
+                "width": 4032,
+                "height": 3024
+              }
+            ],
+            "errors": []
+          }
+        },
+        {
+          "scene": "mountain",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_on-the-go\\on-the-go\\mountain",
+          "status": "UNSUPPORTED_FORMAT",
+          "reason": "poses are stored in transforms JSON; current gsplat entry expects COLMAP",
+          "missing_items": [
+            "COLMAP sparse/0 model"
+          ],
+          "counts": {
+            "images": 131,
+            "transforms_json": 1
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "IMG_7811.JPG",
+                "width": 4032,
+                "height": 3024
+              },
+              {
+                "file": "IMG_7884.JPG",
+                "width": 4032,
+                "height": 3024
+              },
+              {
+                "file": "IMG_7951.JPG",
+                "width": 4032,
+                "height": 3024
+              }
+            ],
+            "errors": []
+          }
+        },
+        {
+          "scene": "patio",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_on-the-go\\on-the-go\\patio",
+          "status": "UNSUPPORTED_FORMAT",
+          "reason": "poses are stored in transforms JSON; current gsplat entry expects COLMAP",
+          "missing_items": [
+            "COLMAP sparse/0 model"
+          ],
+          "counts": {
+            "images": 125,
+            "transforms_json": 1
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "frame_0000.jpg",
+                "width": 1920,
+                "height": 1080
+              },
+              {
+                "file": "frame_1550.jpg",
+                "width": 1920,
+                "height": 1080
+              },
+              {
+                "file": "frame_9800.jpg",
+                "width": 1920,
+                "height": 1080
+              }
+            ],
+            "errors": []
+          }
+        },
+        {
+          "scene": "patio_high",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_on-the-go\\on-the-go\\patio_high",
+          "status": "UNSUPPORTED_FORMAT",
+          "reason": "poses are stored in transforms JSON; current gsplat entry expects COLMAP",
+          "missing_items": [
+            "COLMAP sparse/0 model"
+          ],
+          "counts": {
+            "images": 267,
+            "transforms_json": 1
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "IMG_8467.JPG",
+                "width": 4032,
+                "height": 3024
+              },
+              {
+                "file": "IMG_8606.JPG",
+                "width": 4032,
+                "height": 3024
+              },
+              {
+                "file": "IMG_8748.JPG",
+                "width": 4032,
+                "height": 3024
+              }
+            ],
+            "errors": []
+          }
+        },
+        {
+          "scene": "spot",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_on-the-go\\on-the-go\\spot",
+          "status": "UNSUPPORTED_FORMAT",
+          "reason": "poses are stored in transforms JSON; current gsplat entry expects COLMAP",
+          "missing_items": [
+            "COLMAP sparse/0 model"
+          ],
+          "counts": {
+            "images": 179,
+            "transforms_json": 1
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "IMG_8220.JPG",
+                "width": 4032,
+                "height": 3024
+              },
+              {
+                "file": "IMG_8313.JPG",
+                "width": 4032,
+                "height": 3024
+              },
+              {
+                "file": "IMG_8430.JPG",
+                "width": 4032,
+                "height": 3024
+              }
+            ],
+            "errors": []
+          }
+        },
+        {
+          "scene": "statue",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_on-the-go\\on-the-go\\statue",
+          "status": "UNSUPPORTED_FORMAT",
+          "reason": "poses are stored in transforms JSON; current gsplat entry expects COLMAP",
+          "missing_items": [
+            "COLMAP sparse/0 model"
+          ],
+          "counts": {
+            "images": 170,
+            "transforms_json": 1
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "IMG_6586.JPG",
+                "width": 4032,
+                "height": 3024
+              },
+              {
+                "file": "IMG_6706.JPG",
+                "width": 4032,
+                "height": 3024
+              },
+              {
+                "file": "IMG_6790.JPG",
+                "width": 4032,
+                "height": 3024
+              }
+            ],
+            "errors": []
+          }
+        },
+        {
+          "scene": "train",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_on-the-go\\on-the-go\\train",
+          "status": "UNSUPPORTED_FORMAT",
+          "reason": "poses are stored in transforms JSON; current gsplat entry expects COLMAP",
+          "missing_items": [
+            "COLMAP sparse/0 model"
+          ],
+          "counts": {
+            "images": 180,
+            "transforms_json": 1
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "IMG_7302.JPG",
+                "width": 4032,
+                "height": 3024
+              },
+              {
+                "file": "IMG_7392.JPG",
+                "width": 4032,
+                "height": 3024
+              },
+              {
+                "file": "IMG_7493.JPG",
+                "width": 4032,
+                "height": 3024
+              }
+            ],
+            "errors": []
+          }
+        },
+        {
+          "scene": "train_station",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_on-the-go\\on-the-go\\train_station",
+          "status": "UNSUPPORTED_FORMAT",
+          "reason": "poses are stored in transforms JSON; current gsplat entry expects COLMAP",
+          "missing_items": [
+            "COLMAP sparse/0 model"
+          ],
+          "counts": {
+            "images": 207,
+            "transforms_json": 1
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "IMG_6793.JPG",
+                "width": 4032,
+                "height": 3024
+              },
+              {
+                "file": "IMG_6925.JPG",
+                "width": 4032,
+                "height": 3024
+              },
+              {
+                "file": "IMG_7071.JPG",
+                "width": 4032,
+                "height": 3024
+              }
+            ],
+            "errors": []
+          }
+        },
+        {
+          "scene": "tree",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_on-the-go\\on-the-go\\tree",
+          "status": "UNSUPPORTED_FORMAT",
+          "reason": "poses are stored in transforms JSON; current gsplat entry expects COLMAP",
+          "missing_items": [
+            "COLMAP sparse/0 model"
+          ],
+          "counts": {
+            "images": 212,
+            "transforms_json": 1
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "IMG_6160.JPG",
+                "width": 4032,
+                "height": 3024
+              },
+              {
+                "file": "IMG_6266.JPG",
+                "width": 4032,
+                "height": 3024
+              },
+              {
+                "file": "IMG_6373.JPG",
+                "width": 4032,
+                "height": 3024
+              }
+            ],
+            "errors": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "nerf_raw",
+      "path": "E:\\7-DataSet\\nerf数据集\\nerf_raw",
+      "status": "PARTIAL",
+      "reason": "one or more COLMAP scenes were detected",
+      "missing_items": [],
+      "scenes": [
+        {
+          "scene": "bikes",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_raw\\rawnerf\\scenes\\bikes",
+          "status": "PARTIAL",
+          "reason": "current gsplat COLMAP loader requirements are incomplete",
+          "missing_items": [
+            "images_4/",
+            "images_4 image files",
+            "images_4 count (0) != registered cameras (45)"
+          ],
+          "warnings": [
+            "original image count (45) differs from images_4 count (0); unregistered originals are not loader inputs"
+          ],
+          "counts": {
+            "images": 45,
+            "images_4": 0,
+            "colmap_cameras": 1,
+            "colmap_images": 45,
+            "colmap_points3D": 10013
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [],
+            "errors": []
+          }
+        },
+        {
+          "scene": "candle",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_raw\\rawnerf\\scenes\\candle",
+          "status": "PARTIAL",
+          "reason": "current gsplat COLMAP loader requirements are incomplete",
+          "missing_items": [
+            "images_4/",
+            "images_4 image files",
+            "images_4 count (0) != registered cameras (173)"
+          ],
+          "warnings": [
+            "original image count (77) differs from images_4 count (0); unregistered originals are not loader inputs"
+          ],
+          "counts": {
+            "images": 77,
+            "images_4": 0,
+            "colmap_cameras": 1,
+            "colmap_images": 173,
+            "colmap_points3D": 15203
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [],
+            "errors": []
+          }
+        },
+        {
+          "scene": "candlefiat",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_raw\\rawnerf\\scenes\\candlefiat",
+          "status": "PARTIAL",
+          "reason": "current gsplat COLMAP loader requirements are incomplete",
+          "missing_items": [
+            "images_4/",
+            "images_4 image files",
+            "images_4 count (0) != registered cameras (52)"
+          ],
+          "warnings": [
+            "original image count (52) differs from images_4 count (0); unregistered originals are not loader inputs"
+          ],
+          "counts": {
+            "images": 52,
+            "images_4": 0,
+            "colmap_cameras": 1,
+            "colmap_images": 52,
+            "colmap_points3D": 6718
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [],
+            "errors": []
+          }
+        },
+        {
+          "scene": "gardenlights",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_raw\\rawnerf\\scenes\\gardenlights",
+          "status": "PARTIAL",
+          "reason": "current gsplat COLMAP loader requirements are incomplete",
+          "missing_items": [
+            "images_4/",
+            "images_4 image files",
+            "images_4 count (0) != registered cameras (91)"
+          ],
+          "warnings": [
+            "original image count (91) differs from images_4 count (0); unregistered originals are not loader inputs"
+          ],
+          "counts": {
+            "images": 91,
+            "images_4": 0,
+            "colmap_cameras": 1,
+            "colmap_images": 91,
+            "colmap_points3D": 37529
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [],
+            "errors": []
+          }
+        },
+        {
+          "scene": "livingroom",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_raw\\rawnerf\\scenes\\livingroom",
+          "status": "PARTIAL",
+          "reason": "current gsplat COLMAP loader requirements are incomplete",
+          "missing_items": [
+            "images_4/",
+            "images_4 image files",
+            "images_4 count (0) != registered cameras (50)"
+          ],
+          "warnings": [
+            "original image count (50) differs from images_4 count (0); unregistered originals are not loader inputs"
+          ],
+          "counts": {
+            "images": 50,
+            "images_4": 0,
+            "colmap_cameras": 1,
+            "colmap_images": 50,
+            "colmap_points3D": 8160
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [],
+            "errors": []
+          }
+        },
+        {
+          "scene": "morningkitchen",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_raw\\rawnerf\\scenes\\morningkitchen",
+          "status": "PARTIAL",
+          "reason": "current gsplat COLMAP loader requirements are incomplete",
+          "missing_items": [
+            "images_4/",
+            "images_4 image files",
+            "images_4 count (0) != registered cameras (53)"
+          ],
+          "warnings": [
+            "original image count (53) differs from images_4 count (0); unregistered originals are not loader inputs"
+          ],
+          "counts": {
+            "images": 53,
+            "images_4": 0,
+            "colmap_cameras": 1,
+            "colmap_images": 53,
+            "colmap_points3D": 12293
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [],
+            "errors": []
+          }
+        },
+        {
+          "scene": "nightstreet",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_raw\\rawnerf\\scenes\\nightstreet",
+          "status": "PARTIAL",
+          "reason": "current gsplat COLMAP loader requirements are incomplete",
+          "missing_items": [
+            "images_4/",
+            "images_4 image files",
+            "images_4 count (0) != registered cameras (49)"
+          ],
+          "warnings": [
+            "original image count (49) differs from images_4 count (0); unregistered originals are not loader inputs"
+          ],
+          "counts": {
+            "images": 49,
+            "images_4": 0,
+            "colmap_cameras": 1,
+            "colmap_images": 49,
+            "colmap_points3D": 6124
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [],
+            "errors": []
+          }
+        },
+        {
+          "scene": "notchbush",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_raw\\rawnerf\\scenes\\notchbush",
+          "status": "PARTIAL",
+          "reason": "current gsplat COLMAP loader requirements are incomplete",
+          "missing_items": [
+            "images_4/",
+            "images_4 image files",
+            "images_4 count (0) != registered cameras (63)"
+          ],
+          "warnings": [
+            "original image count (63) differs from images_4 count (0); unregistered originals are not loader inputs"
+          ],
+          "counts": {
+            "images": 63,
+            "images_4": 0,
+            "colmap_cameras": 1,
+            "colmap_images": 63,
+            "colmap_points3D": 10452
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [],
+            "errors": []
+          }
+        },
+        {
+          "scene": "parkstatue",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_raw\\rawnerf\\scenes\\parkstatue",
+          "status": "PARTIAL",
+          "reason": "current gsplat COLMAP loader requirements are incomplete",
+          "missing_items": [
+            "images_4/",
+            "images_4 image files",
+            "images_4 count (0) != registered cameras (51)"
+          ],
+          "warnings": [
+            "original image count (51) differs from images_4 count (0); unregistered originals are not loader inputs"
+          ],
+          "counts": {
+            "images": 51,
+            "images_4": 0,
+            "colmap_cameras": 1,
+            "colmap_images": 51,
+            "colmap_points3D": 6184
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [],
+            "errors": []
+          }
+        },
+        {
+          "scene": "scooter",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_raw\\rawnerf\\scenes\\scooter",
+          "status": "PARTIAL",
+          "reason": "current gsplat COLMAP loader requirements are incomplete",
+          "missing_items": [
+            "images_4/",
+            "images_4 image files",
+            "images_4 count (0) != registered cameras (54)"
+          ],
+          "warnings": [
+            "original image count (54) differs from images_4 count (0); unregistered originals are not loader inputs"
+          ],
+          "counts": {
+            "images": 54,
+            "images_4": 0,
+            "colmap_cameras": 1,
+            "colmap_images": 54,
+            "colmap_points3D": 4284
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [],
+            "errors": []
+          }
+        },
+        {
+          "scene": "sharpshadow",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_raw\\rawnerf\\scenes\\sharpshadow",
+          "status": "PARTIAL",
+          "reason": "current gsplat COLMAP loader requirements are incomplete",
+          "missing_items": [
+            "images_4/",
+            "images_4 image files",
+            "images_4 count (0) != registered cameras (36)"
+          ],
+          "warnings": [
+            "original image count (36) differs from images_4 count (0); unregistered originals are not loader inputs"
+          ],
+          "counts": {
+            "images": 36,
+            "images_4": 0,
+            "colmap_cameras": 1,
+            "colmap_images": 36,
+            "colmap_points3D": 15505
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [],
+            "errors": []
+          }
+        },
+        {
+          "scene": "stove",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_raw\\rawnerf\\scenes\\stove",
+          "status": "PARTIAL",
+          "reason": "current gsplat COLMAP loader requirements are incomplete",
+          "missing_items": [
+            "images_4/",
+            "images_4 image files",
+            "images_4 count (0) != registered cameras (106)"
+          ],
+          "warnings": [
+            "original image count (106) differs from images_4 count (0); unregistered originals are not loader inputs"
+          ],
+          "counts": {
+            "images": 106,
+            "images_4": 0,
+            "colmap_cameras": 1,
+            "colmap_images": 106,
+            "colmap_points3D": 21819
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [],
+            "errors": []
+          }
+        },
+        {
+          "scene": "streetcorner",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_raw\\rawnerf\\scenes\\streetcorner",
+          "status": "PARTIAL",
+          "reason": "current gsplat COLMAP loader requirements are incomplete",
+          "missing_items": [
+            "images_4/",
+            "images_4 image files",
+            "images_4 count (0) != registered cameras (57)"
+          ],
+          "warnings": [
+            "original image count (57) differs from images_4 count (0); unregistered originals are not loader inputs"
+          ],
+          "counts": {
+            "images": 57,
+            "images_4": 0,
+            "colmap_cameras": 1,
+            "colmap_images": 57,
+            "colmap_points3D": 8958
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [],
+            "errors": []
+          }
+        },
+        {
+          "scene": "windowlegovary",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_raw\\rawnerf\\scenes\\windowlegovary",
+          "status": "PARTIAL",
+          "reason": "current gsplat COLMAP loader requirements are incomplete",
+          "missing_items": [
+            "images_4/",
+            "images_4 image files",
+            "images_4 count (0) != registered cameras (104)"
+          ],
+          "warnings": [
+            "original image count (104) differs from images_4 count (0); unregistered originals are not loader inputs"
+          ],
+          "counts": {
+            "images": 104,
+            "images_4": 0,
+            "colmap_cameras": 1,
+            "colmap_images": 104,
+            "colmap_points3D": 17790
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [],
+            "errors": []
+          }
+        },
+        {
+          "scene": "officetest",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_raw\\rawnerf\\testscenes\\officetest",
+          "status": "PARTIAL",
+          "reason": "current gsplat COLMAP loader requirements are incomplete",
+          "missing_items": [
+            "images_4/",
+            "images_4 image files",
+            "images_4 count (0) != registered cameras (112)"
+          ],
+          "warnings": [],
+          "counts": {
+            "images": 0,
+            "images_4": 0,
+            "colmap_cameras": 1,
+            "colmap_images": 112,
+            "colmap_points3D": 35063
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [],
+            "errors": []
+          }
+        },
+        {
+          "scene": "pianotest",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_raw\\rawnerf\\testscenes\\pianotest",
+          "status": "PARTIAL",
+          "reason": "current gsplat COLMAP loader requirements are incomplete",
+          "missing_items": [
+            "images_4/",
+            "images_4 image files",
+            "images_4 count (0) != registered cameras (102)"
+          ],
+          "warnings": [],
+          "counts": {
+            "images": 0,
+            "images_4": 0,
+            "colmap_cameras": 1,
+            "colmap_images": 102,
+            "colmap_points3D": 38637
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [],
+            "errors": []
+          }
+        },
+        {
+          "scene": "yuccatest",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_raw\\rawnerf\\testscenes\\yuccatest",
+          "status": "PARTIAL",
+          "reason": "current gsplat COLMAP loader requirements are incomplete",
+          "missing_items": [
+            "images_4/",
+            "images_4 image files",
+            "images_4 count (0) != registered cameras (101)"
+          ],
+          "warnings": [],
+          "counts": {
+            "images": 0,
+            "images_4": 0,
+            "colmap_cameras": 1,
+            "colmap_images": 101,
+            "colmap_points3D": 7348
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [],
+            "errors": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "nerf_ref",
+      "path": "E:\\7-DataSet\\nerf数据集\\nerf_ref",
+      "status": "UNSUPPORTED_FORMAT",
+      "reason": "no current-loader-compatible COLMAP scene was detected",
+      "missing_items": [
+        "COLMAP scene with images_4 and sparse/0"
+      ],
+      "scenes": []
+    },
+    {
+      "name": "nerf_ref_real",
+      "path": "E:\\7-DataSet\\nerf数据集\\nerf_ref_real",
+      "status": "READY",
+      "reason": "one or more COLMAP scenes were detected",
+      "missing_items": [],
+      "scenes": [
+        {
+          "scene": "gardenspheres",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_ref_real\\gardenspheres",
+          "status": "READY",
+          "reason": "current gsplat COLMAP loader requirements are satisfied",
+          "missing_items": [],
+          "warnings": [],
+          "counts": {
+            "images": 151,
+            "images_4": 151,
+            "colmap_cameras": 1,
+            "colmap_images": 151,
+            "colmap_points3D": 136151
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 151
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "PXL_20210225_140013394.jpg",
+                "width": 988,
+                "height": 742
+              },
+              {
+                "file": "PXL_20210225_140531366.jpg",
+                "width": 988,
+                "height": 742
+              },
+              {
+                "file": "PXL_20210225_141623954.jpg",
+                "width": 988,
+                "height": 742
+              }
+            ],
+            "errors": []
+          }
+        },
+        {
+          "scene": "sedan",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_ref_real\\sedan",
+          "status": "READY",
+          "reason": "current gsplat COLMAP loader requirements are satisfied",
+          "missing_items": [],
+          "warnings": [],
+          "counts": {
+            "images": 158,
+            "images_4": 158,
+            "colmap_cameras": 1,
+            "colmap_images": 158,
+            "colmap_points3D": 71759
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 158
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "_DSC1450.jpg",
+                "width": 1292,
+                "height": 840
+              },
+              {
+                "file": "_DSC1530.jpg",
+                "width": 1292,
+                "height": 840
+              },
+              {
+                "file": "_DSC1611.jpg",
+                "width": 1292,
+                "height": 840
+              }
+            ],
+            "errors": []
+          }
+        },
+        {
+          "scene": "toycar",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_ref_real\\toycar",
+          "status": "READY",
+          "reason": "current gsplat COLMAP loader requirements are satisfied",
+          "missing_items": [],
+          "warnings": [],
+          "counts": {
+            "images": 122,
+            "images_4": 122,
+            "colmap_cameras": 1,
+            "colmap_images": 122,
+            "colmap_points3D": 106455
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 122
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "PXL_20210225_132226757.jpg",
+                "width": 1002,
+                "height": 753
+              },
+              {
+                "file": "PXL_20210225_132740184.jpg",
+                "width": 1002,
+                "height": 753
+              },
+              {
+                "file": "PXL_20210225_133139853.jpg",
+                "width": 1002,
+                "height": 753
+              }
+            ],
+            "errors": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "nerf_robustnerf",
+      "path": "E:\\7-DataSet\\nerf数据集\\nerf_robustnerf",
+      "status": "PARTIAL",
+      "reason": "COLMAP scenes are present; use filename keywords, not every-eighth splits",
+      "missing_items": [
+        "statue"
+      ],
+      "split_protocol": {
+        "train_keyword": "clutter",
+        "test_keyword": "extra",
+        "clean_keyword": "clean"
+      },
+      "recommended_first_dynamic_scene": "android",
+      "scenes": [
+        {
+          "scene": "android",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_robustnerf\\robustnerf\\android",
+          "status": "READY",
+          "reason": "current gsplat COLMAP loader requirements are satisfied",
+          "missing_items": [],
+          "warnings": [],
+          "counts": {
+            "images": 263,
+            "images_4": 263,
+            "colmap_cameras": 1,
+            "colmap_images": 263,
+            "colmap_points3D": 112790
+          },
+          "split_keyword_counts": {
+            "clean": 122,
+            "clutter": 122,
+            "extra": 19,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "0clean019.JPG",
+                "width": 1008,
+                "height": 756
+              },
+              {
+                "file": "1extra009.JPG",
+                "width": 1008,
+                "height": 756
+              },
+              {
+                "file": "2clutter140.JPG",
+                "width": 1008,
+                "height": 756
+              }
+            ],
+            "errors": []
+          }
+        },
+        {
+          "scene": "crab1",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_robustnerf\\robustnerf\\crab1",
+          "status": "READY",
+          "reason": "current gsplat COLMAP loader requirements are satisfied",
+          "missing_items": [],
+          "warnings": [
+            "original image count (150) differs from images_4 count (143); unregistered originals are not loader inputs"
+          ],
+          "counts": {
+            "images": 150,
+            "images_4": 143,
+            "colmap_cameras": 1,
+            "colmap_images": 143,
+            "colmap_points3D": 64750
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 72,
+            "extra": 71,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "1extra001.png",
+                "width": 864,
+                "height": 864
+              },
+              {
+                "file": "2clutter000.png",
+                "width": 864,
+                "height": 864
+              },
+              {
+                "file": "2clutter071.png",
+                "width": 864,
+                "height": 864
+              }
+            ],
+            "errors": []
+          }
+        },
+        {
+          "scene": "crab2",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_robustnerf\\robustnerf\\crab2",
+          "status": "READY",
+          "reason": "current gsplat COLMAP loader requirements are satisfied",
+          "missing_items": [],
+          "warnings": [],
+          "counts": {
+            "images": 412,
+            "images_4": 412,
+            "colmap_cameras": 1,
+            "colmap_images": 412,
+            "colmap_points3D": 129873
+          },
+          "split_keyword_counts": {
+            "clean": 109,
+            "clutter": 109,
+            "extra": 194,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "0clean1.jpg",
+                "width": 864,
+                "height": 864
+              },
+              {
+                "file": "1extra187.jpg",
+                "width": 864,
+                "height": 864
+              },
+              {
+                "file": "2clutter99.jpg",
+                "width": 864,
+                "height": 864
+              }
+            ],
+            "errors": []
+          }
+        },
+        {
+          "scene": "statue",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_robustnerf\\robustnerf\\statue",
+          "status": "PARTIAL",
+          "reason": "current gsplat COLMAP loader requirements are incomplete",
+          "missing_items": [
+            "images_4 count (416) != registered cameras (415)"
+          ],
+          "warnings": [],
+          "counts": {
+            "images": 416,
+            "images_4": 416,
+            "colmap_cameras": 1,
+            "colmap_images": 415,
+            "colmap_points3D": 291533
+          },
+          "split_keyword_counts": {
+            "clean": 142,
+            "clutter": 255,
+            "extra": 19,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "0clean019.JPG",
+                "width": 1008,
+                "height": 756
+              },
+              {
+                "file": "2clutter066.JPG",
+                "width": 1008,
+                "height": 756
+              },
+              {
+                "file": "2clutter273.JPG",
+                "width": 1008,
+                "height": 756
+              }
+            ],
+            "errors": []
+          }
+        },
+        {
+          "scene": "yoda",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_robustnerf\\robustnerf\\yoda",
+          "status": "READY",
+          "reason": "current gsplat COLMAP loader requirements are satisfied",
+          "missing_items": [],
+          "warnings": [],
+          "counts": {
+            "images": 420,
+            "images_4": 420,
+            "colmap_cameras": 1,
+            "colmap_images": 420,
+            "colmap_points3D": 163145
+          },
+          "split_keyword_counts": {
+            "clean": 109,
+            "clutter": 109,
+            "extra": 202,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "0clean1.jpg",
+                "width": 864,
+                "height": 864
+              },
+              {
+                "file": "1extra190.jpg",
+                "width": 864,
+                "height": 864
+              },
+              {
+                "file": "2clutter99.jpg",
+                "width": 864,
+                "height": 864
+              }
+            ],
+            "errors": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "nerf_synthetic",
+      "path": "E:\\7-DataSet\\nerf数据集\\nerf_synthetic",
+      "status": "PARTIAL",
+      "reason": "a minimal transforms-to-COLMAP-compatible adapter is required",
+      "missing_items": [
+        "current-loader-compatible COLMAP model"
+      ],
+      "scenes": [
+        {
+          "scene": "lego",
+          "path": "E:\\7-DataSet\\nerf数据集\\nerf_synthetic\\lego",
+          "status": "PARTIAL",
+          "reason": "images or transforms metadata are incomplete",
+          "missing_items": [
+            "COLMAP sparse/0 model"
+          ],
+          "counts": {
+            "images": 0,
+            "transforms_json": 3
+          },
+          "image_samples": {
+            "samples": [],
+            "errors": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "SeathruNeRF_dataset",
+      "path": "E:\\7-DataSet\\nerf数据集\\SeathruNeRF_dataset",
+      "status": "PARTIAL",
+      "reason": "one or more COLMAP scenes were detected",
+      "missing_items": [],
+      "scenes": [
+        {
+          "scene": "Curasao",
+          "path": "E:\\7-DataSet\\nerf数据集\\SeathruNeRF_dataset\\SeathruNeRF_dataset\\Curasao",
+          "status": "PARTIAL",
+          "reason": "current gsplat COLMAP loader requirements are incomplete",
+          "missing_items": [
+            "images_4/",
+            "images_4 image files",
+            "images_4 count (0) != registered cameras (21)"
+          ],
+          "warnings": [],
+          "counts": {
+            "images": 0,
+            "images_4": 0,
+            "colmap_cameras": 1,
+            "colmap_images": 21,
+            "colmap_points3D": 25837
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [],
+            "errors": []
+          }
+        },
+        {
+          "scene": "IUI3-RedSea",
+          "path": "E:\\7-DataSet\\nerf数据集\\SeathruNeRF_dataset\\SeathruNeRF_dataset\\IUI3-RedSea",
+          "status": "PARTIAL",
+          "reason": "current gsplat COLMAP loader requirements are incomplete",
+          "missing_items": [
+            "images_4/",
+            "images_4 image files",
+            "images_4 count (0) != registered cameras (29)"
+          ],
+          "warnings": [],
+          "counts": {
+            "images": 0,
+            "images_4": 0,
+            "colmap_cameras": 1,
+            "colmap_images": 29,
+            "colmap_points3D": 21907
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [],
+            "errors": []
+          }
+        },
+        {
+          "scene": "JapaneseGradens-RedSea",
+          "path": "E:\\7-DataSet\\nerf数据集\\SeathruNeRF_dataset\\SeathruNeRF_dataset\\JapaneseGradens-RedSea",
+          "status": "PARTIAL",
+          "reason": "current gsplat COLMAP loader requirements are incomplete",
+          "missing_items": [
+            "images_4/",
+            "images_4 image files",
+            "images_4 count (0) != registered cameras (20)"
+          ],
+          "warnings": [],
+          "counts": {
+            "images": 0,
+            "images_4": 0,
+            "colmap_cameras": 1,
+            "colmap_images": 20,
+            "colmap_points3D": 21140
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [],
+            "errors": []
+          }
+        },
+        {
+          "scene": "Panama",
+          "path": "E:\\7-DataSet\\nerf数据集\\SeathruNeRF_dataset\\SeathruNeRF_dataset\\Panama",
+          "status": "PARTIAL",
+          "reason": "current gsplat COLMAP loader requirements are incomplete",
+          "missing_items": [
+            "images_4/",
+            "images_4 image files",
+            "images_4 count (0) != registered cameras (18)"
+          ],
+          "warnings": [],
+          "counts": {
+            "images": 0,
+            "images_4": 0,
+            "colmap_cameras": 1,
+            "colmap_images": 18,
+            "colmap_points3D": 22501
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 0
+          },
+          "image_samples": {
+            "samples": [],
+            "errors": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "_SeathruNeRF_download_temporary_files",
+      "path": "E:\\7-DataSet\\nerf数据集\\_SeathruNeRF_download_temporary_files",
+      "status": "UNSUPPORTED_FORMAT",
+      "reason": "no current-loader-compatible COLMAP scene was detected",
+      "missing_items": [
+        "COLMAP scene with images_4 and sparse/0"
+      ],
+      "scenes": []
+    }
+  ],
+  "recommendations": {
+    "smoke_scene": "E:\\7-DataSet\\nerf数据集\\nerf_example_data\\nerf_llff_data\\fern",
+    "first_dynamic_scene": "android",
+    "clean_scenes_after_download": [
+      "garden",
+      "room"
+    ]
+  }
+}

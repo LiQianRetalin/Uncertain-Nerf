@@ -1,0 +1,68 @@
+# PURI-GS Phase 1：B0/B1 配置与启动检查
+
+## 配置结论
+
+三份配置使用 JSON-compatible YAML，可用 Python 标准库读取，无新增 PyYAML 依赖。
+
+| 字段 | B0 | B1 | A1 |
+|---|---:|---:|---:|
+| strategy | DefaultStrategy | DefaultStrategy | DefaultStrategy |
+| absgrad | false | true | true |
+| grow_grad2d | 0.0002 | 0.0006 | 0.0006 |
+| responsibility | false | false | true |
+| data_factor / test_every / SH / DSSIM | 相同 | 相同 | 相同 |
+| seed | 42 | 42 | 42 |
+
+A1 暂时以 B1 为直接基底，使 `B1 vs A1` 只隔离责任损失。最终强基线仍需 Mip-NeRF 360 clean 比较后才能确认；当前不得声称 B1 已胜出。
+
+## 启动器
+
+`run_puri_gs.py` 完成以下检查：
+
+- gsplat commit 必须精确为 v1.5.3 固定 commit；
+- 跟踪补丁必须已经应用且可反向检查；
+- 数据必须存在 `images_<factor>` 与 `sparse/0` 三个 COLMAP 文件；
+- 动态协议必须同时提供非空 train/test keyword；
+- 输出目录非空时停止，避免覆盖实验；
+- 写入 `config.yaml`、`run_command.txt`、`git_commit.txt`、`environment.json`；
+- trainer 写入包含实际文件名的 `dataset_split.json`。
+
+## 已完成检查
+
+- 配置读取与字段约束：PASS。
+- B0/B1/A1 Linux dry-run：PASS。
+- Fern 与 Android 路径/文件检查：PASS。
+- Windows/WSL Python 语法：PASS。
+- gsplat 补丁反向应用检查：PASS。
+- 既有 gsplat 协议和 reproduction gate 回归测试：PASS。
+- 仓库全量测试：`71 passed in 24.24s`。
+- 已创建隔离的 `.venv-gsplat153`，固定版本导入和 CPU checkpoint 往返：PASS。
+- 实际 gsplat CUDA 最小前向：FAIL，错误为 `no kernel image is available for execution on the device`。
+
+## 本地 CUDA smoke 阻断
+
+本机 RTX 5070 Ti Laptop GPU 的 compute capability 为 `sm_120`。固定的
+PyTorch 2.4.0+cu121 只包含至 `sm_90` 的内核；现有 gsplat wheel 经
+`cuobjdump` 检查只包含 `sm_70/75/80/86/90` cubin，且不包含 PTX。
+
+真实调用已经进入 gsplat 的 `projection_ewa_3dgs_packed_fwd`，随后因没有
+可执行 kernel image 停止。因此没有重复启动 B0/B1/A1 三次必然失败的训练，
+也没有把纯 PyTorch loss smoke 记为真实 rasterization smoke。
+
+要完成本门禁需二选一并由用户决定：
+
+1. 在支持该固定 wheel 的 GPU（例如已有固定服务器环境对应的 `sm_90` GPU）上运行；
+2. 用户另行授权更换本地 PyTorch/CUDA 并针对 `sm_120` 重编译核心 rasterizer。
+
+第二条会改变核心环境和二进制，已有本地 CUDA smoke 必须全部重跑；本轮未执行。
+
+## Phase 1 状态
+
+配置与启动检查完成，但 B0/B1 的真实 rasterization、反向、checkpoint smoke
+被本机 GPU/固定二进制架构不兼容阻断，因此尚未达到“B0/B1 baseline smoke 完成”的 Git 里程碑。
+
+用户随后明确授权使用已有 L20 服务器，并允许为代码同步执行必要 Git 操作。
+因此 `scripts/run_puri_gs_cuda_smoke.sh` 将作为服务器验证候选随 `dev` 提交：它要求
+服务器工作区干净、固定环境可用、物理 GPU 为空闲 NVIDIA L20，并依次执行 B0/B1/A1
+各 10 步、三份 checkpoint 独立评测、有限值检查和 A1 responsibility map 检查。
+该同步提交不代表 smoke 已通过；只有服务器生成 `decision=PASS` 后才完成本里程碑。

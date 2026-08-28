@@ -45,6 +45,7 @@ if ! [[ "${GPU_ID}" =~ ^[0-9]+$ ]]; then
 fi
 
 cd "${GSPLAT_DIR}/examples"
+PYTHONPATH="${ROOT_DIR}:${GSPLAT_DIR}:${PYTHONPATH:-}" \
 CUDA_VISIBLE_DEVICES="${GPU_ID}" "${PYTHON_BIN}" simple_trainer.py default \
   --disable_viewer \
   --disable_video \
