@@ -58,14 +58,16 @@ PyTorch 2.4.0+cu121 只包含至 `sm_90` 的内核；现有 gsplat wheel 经
 
 ## Phase 1 状态
 
-配置与启动检查完成，但 B0/B1 的真实 rasterization、反向、checkpoint smoke
-被本机 GPU/固定二进制架构不兼容阻断，因此尚未达到“B0/B1 baseline smoke 完成”的 Git 里程碑。
+配置与启动检查完成。虽然本机 GPU 与固定二进制架构不兼容，但随后已在保持
+PyTorch 2.4.0+cu121 和 gsplat 1.5.3+pt24cu121 不变的 L20 服务器上完成
+B0/B1 的真实 rasterization、反向、checkpoint 保存和独立加载评测。因此
+“B0/B1 baseline smoke 完成”的 Git 里程碑已经达到。
 
 用户随后明确授权使用已有 L20 服务器，并允许为代码同步执行必要 Git 操作。
-因此 `scripts/run_puri_gs_cuda_smoke.sh` 将作为服务器验证候选随 `dev` 提交：它要求
+因此 `scripts/run_puri_gs_cuda_smoke.sh` 随 `dev` 提交：它要求
 服务器工作区干净、固定环境可用、物理 GPU 为空闲 NVIDIA L20，并依次执行 B0/B1/A1
 各 10 步、三份 checkpoint 独立评测、有限值检查和 A1 responsibility map 检查。
-该同步提交不代表 smoke 已通过；只有服务器生成 `decision=PASS` 后才完成本里程碑。
+服务器最终已生成 `decision=PASS`，完成本里程碑。
 
 ## L20 服务器首次 smoke 诊断
 
@@ -87,3 +89,27 @@ B0 在 step 0 的 rasterization 前失败。原因不是 CUDA、数据或 wheel�
 `gsplat` runtime 必须从固定 wheel 导入。启动器不再继承任意外部 `PYTHONPATH`，服务器
 脚本还会记录实际 `gsplat.__file__`，一旦指向 external checkout 就在训练前停止。
 没有下载 GLM、初始化子模块或重编译核心 rasterizer。
+
+## L20 服务器最终 smoke 结果
+
+修复随 `dev` commit `4f6fb3386caf70ebca66bf5cb3a0d8e4b7003a53`
+推送后，使用相同 Fern 数据、GPU 6 和新结果目录重新运行。训练前检查确认：
+
+- GPU：NVIDIA L20，compute capability `sm_89`；
+- PyTorch：`2.4.0+cu121`，torch CUDA：`12.1`；
+- gsplat：`1.5.3+pt24cu121`；
+- `gsplat.__file__` 指向 `.venv-gsplat153/lib/python3.10/site-packages`，未被源码树遮蔽；
+- 真实 rasterization 前向/反向：PASS；
+- checkpoint roundtrip：PASS；
+- Fern split：17 train / 3 test；
+- 三种配置均训练 10 step，均保存并独立加载 `ckpt_9_rank0.pt`；
+- 所有检查最终判定：`decision=PASS`。
+
+| 配置 | PSNR | SSIM | LPIPS | GS 数 | checkpoint bytes | 训练显存 GiB | 10-step trainer time s |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| B0 | 11.232206 | 0.426360 | 0.936244 | 10091 | 2384058 | 0.131077 | 0.744124 |
+| B1 | 11.232204 | 0.426360 | 0.936245 | 10091 | 2384058 | 0.131077 | 0.715672 |
+| A1 | 11.218639 | 0.426121 | 0.936116 | 10091 | 2384058 | 0.134024 | 0.815875 |
+
+这些数值仅用于证明三条路径在同一真实 CUDA 栈中可执行、可反向、可保存并可评测。
+10 step 尚未到正常增密和收敛阶段，不用于选择 B0/B1，也不构成 A1 效果结论。

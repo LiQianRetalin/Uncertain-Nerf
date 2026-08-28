@@ -3,7 +3,8 @@ Audit date: 2026-08-28 Asia/Shanghai
 
 Repository
   Branch: dev
-  Commit: 7baf0db443dc8be2e9f7d4dba591da162171435d
+  Local environment snapshot commit: 7baf0db443dc8be2e9f7d4dba591da162171435d
+  L20 smoke code commit: 4f6fb3386caf70ebca66bf5cb3a0d8e4b7003a53
   Project root: E:\6-Project\1-UncertainNerf\uncertain-nerf
   Existing project environment .venv-v6: unchanged
 
@@ -69,12 +70,18 @@ Validation result
     RuntimeError: CUDA error: no kernel image is available for execution on the device
   FAIL: real gsplat projection_ewa_3dgs_packed_fwd invocation.
     RuntimeError: CUDA error: no kernel image is available for execution on the device
-  BLOCKED: Fern B0/B1/A1 10-step trainer smoke, trainer checkpoint evaluation,
-    and A1 trainer responsibility-map verification.
+  PASS on authorized L20 server: fixed-wheel real CUDA forward/backward.
+  PASS on authorized L20 server: Fern B0/B1/A1 10-step trainer smoke.
+  PASS on authorized L20 server: all three trainer checkpoints saved and
+    independently loaded for test evaluation.
+  PASS on authorized L20 server: A1 responsibility map, shape 755 x 1007,
+    range 51..255, 202 unique values.
+  PASS on authorized L20 server: final smoke_summary.json decision=PASS.
 
 Decision
   The fixed pt2.4/cu121 wheel cannot execute on this local sm_120 GPU because
   neither PyTorch nor the gsplat wheel contains sm_120 code, and the gsplat wheel
-  contains no PTX for forward JIT. Repeating B0/B1/A1 would fail before the first
-  training step. No result from the pure-PyTorch loss smoke is reported as a real
-  gsplat CUDA result.
+  contains no PTX for forward JIT. The fixed stack does execute on the authorized
+  NVIDIA L20 server without any software-stack change; its B0/B1/A1 real CUDA
+  smoke is the authoritative trainer validation. No result from the local
+  pure-PyTorch loss smoke is reported as a real gsplat CUDA result.

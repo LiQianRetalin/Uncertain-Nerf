@@ -71,21 +71,12 @@
 `projection_ewa_3dgs_packed_fwd`。调用在第一步前停止：本机 GPU 为 `sm_120`，
 而固定 PyTorch 和 gsplat wheel 只支持至 `sm_90`；wheel 也不含 PTX。
 
-因此以下验证仍需在兼容该固定 wheel 的 GPU 上完成：
+用户授权后，以上验证已在兼容固定 wheel 的 NVIDIA L20（`sm_89`）上完成，
+没有改变 PyTorch、CUDA、gsplat 或核心 rasterizer。已验证 gsplat/tyro import、
+真实 CUDA rasterization、Gaussian 参数反向、DefaultStrategy 训练前后处理、
+官方 trainer checkpoint 保存和独立加载，以及 A1 最终 responsibility map。
 
-- gsplat/tyro import；
-- 单次 CUDA rasterization；
-- Gaussian 参数反向梯度；
-- DefaultStrategy 前后处理；
-- checkpoint 由官方 trainer 保存并加载；
-- A1 最终 responsibility map。
-
-完成这一步只有两条路径，均需要用户决定：
-
-1. 在已有、兼容的服务器 `.venv-gsplat153` 与 GPU 上运行；或
-2. 另行授权针对本地 `sm_120` 更换 PyTorch/CUDA 并重编译核心 CUDA rasterizer。
-
-本轮没有静默采用第二条，也没有安装已无法到达的 trainer-only/fused-ssim 依赖。
+本轮没有采用针对本地 `sm_120` 更换 PyTorch/CUDA 或重编译 rasterizer 的路径。
 正式 A1 配置仍保持 `responsibility_start_step=3000`；10-step smoke 启动器可显式
 覆盖为 3，并把实际生效配置写入结果目录，保证短 smoke 真正覆盖 A1 路径。
 
@@ -94,14 +85,19 @@
 随后独立加载各 checkpoint 评测，并生成 `smoke_summary.json`。A1 必须额外存在
 `renders/responsibility_step0009.png`；脚本记录其形状、最小值、最大值和唯一值数量。
 
-L20 首次运行在 B0 step 0 前因源码包遮蔽固定 wheel 而停止，尚未进入 B1/A1，
-因此没有 A1 结果可判断。修复只调整 Python 导入路径，不改变 A1 损失、配置、
-DefaultStrategy、CUDA wheel 或实验预算。
+L20 首次运行在 B0 step 0 前因源码包遮蔽固定 wheel 而停止。修复只调整 Python
+导入路径，不改变 A1 损失、配置、DefaultStrategy、CUDA wheel 或实验预算。
+第二次运行的 B0/B1/A1 均完成 10 step，并分别保存、加载和评测 checkpoint。
+
+A1 输出的 `responsibility_step0009.png` 形状为 `755 x 1007`，像素值范围
+`51..255`，共有 202 个唯一值。下界 51 与 `q_min=0.2` 的 8-bit 表示一致，
+同时非恒定图证明责任计算和平滑路径真实生效。A1 测试指标为 PSNR 11.218639、
+SSIM 0.426121、LPIPS 0.936116；这些仅是 10-step 可运行性证据，不用于算法判断。
 
 ## A1 门禁状态
 
 - 代码级与纯 PyTorch smoke：PASS。
-- 实际 gsplat smoke：BLOCKED（本地 `sm_120` 与固定 pt2.4/cu121 wheel 不兼容）。
+- 实际 gsplat L20 smoke：PASS（B0/B1/A1 真实 CUDA 10 step、反向、checkpoint 与评测）。
 - 动态 10k short screening：NOT RUN。
 - clean 门禁：BLOCKED BY MIPNERF360 PARTIAL。
 - A2/A3：未实现，符合阶段约束。
