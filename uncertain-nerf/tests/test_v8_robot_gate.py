@@ -7,7 +7,7 @@ from v8_robot.pose_contract import parse_pose_packet
 
 
 LIMITS = {
-    "protocol": "puri-v8-robot-screen-1",
+    "protocol": "puri-v8-robot-screen-2",
     "clean_psnr_db_min": 27.2,
     "robust_static_psnr_db_min": 20.0,
     "robust_floater_pixel_rate_max": 0.1,
@@ -24,7 +24,7 @@ LIMITS = {
 
 def passing_metrics():
     return {
-        "protocol": "puri-v8-robot-screen-1",
+        "protocol": "puri-v8-robot-screen-2",
         "candidate": "gsplat-test",
         "input_mode": "rgb_only",
         "integration": {

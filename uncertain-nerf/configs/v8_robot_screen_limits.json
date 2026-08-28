@@ -1,5 +1,5 @@
 {
-  "protocol": "puri-v8-robot-screen-1",
+  "protocol": "puri-v8-robot-screen-2",
   "clean_psnr_db_min": 27.2,
   "robust_static_psnr_db_min": 20.0,
   "robust_floater_pixel_rate_max": 0.1,

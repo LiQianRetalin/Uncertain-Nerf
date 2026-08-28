@@ -33,10 +33,10 @@ CUDA_VISIBLE_DEVICES="${GPU_ID}" "${PYTHON_BIN}" simple_trainer.py default \
   --disable_viewer \
   --disable_video \
   --data_dir "${DATA_DIR}" \
-  --data_factor 2 \
+  --data_factor 4 \
   --result_dir "${RESULT_DIR}" \
   --test_every 8 \
-  --val_every 8 \
+  --val_every 0 \
   --eval_split test \
   --sh_degree 3 \
   --ckpt "${CHECKPOINT}"

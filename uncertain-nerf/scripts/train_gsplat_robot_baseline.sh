@@ -31,8 +31,8 @@ if ! git -C "${GSPLAT_DIR}" apply --reverse --check --ignore-whitespace \
   echo "Required robot screen split patch is not applied"
   exit 2
 fi
-if [[ ! -d "${DATA_DIR}/sparse/0" || ! -d "${DATA_DIR}/images_2" ]]; then
-  echo "Fern data must contain sparse/0 and images_2"
+if [[ ! -d "${DATA_DIR}/sparse/0" || ! -d "${DATA_DIR}/images_4" ]]; then
+  echo "Dataset must contain sparse/0 and images_4"
   exit 2
 fi
 if ! [[ "${MAX_STEPS}" =~ ^[1-9][0-9]*$ ]]; then
@@ -49,13 +49,13 @@ CUDA_VISIBLE_DEVICES="${GPU_ID}" "${PYTHON_BIN}" simple_trainer.py default \
   --disable_viewer \
   --disable_video \
   --data_dir "${DATA_DIR}" \
-  --data_factor 2 \
+  --data_factor 4 \
   --result_dir "${RESULT_DIR}" \
   --test_every 8 \
-  --val_every 8 \
-  --eval_split val \
+  --val_every 0 \
+  --eval_split test \
   --max_steps "${MAX_STEPS}" \
-  --eval_steps "${MAX_STEPS}" \
+  --eval_steps -1 \
   --save_steps "${MAX_STEPS}" \
   --sh_degree 3 \
   --tb_every 0

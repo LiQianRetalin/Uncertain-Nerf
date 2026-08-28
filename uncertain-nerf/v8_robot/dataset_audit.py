@@ -51,8 +51,10 @@ def audit_fern_dataset(dataset: str | Path, expected_images: int = 20) -> dict[s
 
     original_images = _image_files(root / "images", {".jpg", ".jpeg", ".png"})
     half_images = _image_files(root / "images_2", {".png"})
+    quarter_images = _image_files(root / "images_4", {".png"})
     original_stems, originals_unique = _unique_stems(original_images)
     half_stems, halves_unique = _unique_stems(half_images)
+    _, quarters_unique = _unique_stems(quarter_images)
 
     if not root.is_dir():
         failures.append("dataset root does not exist")
@@ -62,10 +64,16 @@ def audit_fern_dataset(dataset: str | Path, expected_images: int = 20) -> dict[s
         )
     if len(half_images) != expected_images:
         failures.append(f"images_2 count is {len(half_images)}, expected {expected_images}")
-    if not originals_unique or not halves_unique:
+    if len(quarter_images) != expected_images:
+        failures.append(
+            f"images_4 count is {len(quarter_images)}, expected {expected_images}"
+        )
+    if not originals_unique or not halves_unique or not quarters_unique:
         failures.append("duplicate image stems make frame matching ambiguous")
     if original_stems != half_stems:
         failures.append("images and images_2 do not contain the same frame stems")
+    # gsplat's pinned COLMAP parser maps downsampled files to COLMAP image names
+    # by sorted position, so images_4 may validly use image000.png-style names.
 
     dimensions: set[tuple[int, int]] = set()
     for image in half_images:
@@ -75,6 +83,19 @@ def audit_fern_dataset(dataset: str | Path, expected_images: int = 20) -> dict[s
             failures.append(f"cannot read {image.name}: {error}")
     if len(dimensions) > 1:
         failures.append("images_2 contains inconsistent image dimensions")
+
+    quarter_dimensions: set[tuple[int, int]] = set()
+    for image in quarter_images:
+        try:
+            quarter_dimensions.add(_png_dimensions(image))
+        except (OSError, ValueError) as error:
+            failures.append(f"cannot read images_4/{image.name}: {error}")
+    if len(quarter_dimensions) > 1:
+        failures.append("images_4 contains inconsistent image dimensions")
+    if quarter_dimensions and quarter_dimensions != {(1008, 756)}:
+        failures.append(
+            "images_4 dimensions must be 1008x756 for the Fern reproduction protocol"
+        )
 
     sparse = root / "sparse" / "0"
     colmap_counts: dict[str, int | None] = {}
@@ -117,7 +138,7 @@ def audit_fern_dataset(dataset: str | Path, expected_images: int = 20) -> dict[s
         failures.append(f"cannot read poses_bounds.npy: {error}")
 
     return {
-        "protocol": "puri-v8-fern-data-audit-1",
+        "protocol": "puri-v8-fern-data-audit-2",
         "dataset": str(root),
         "decision": "PASS" if not failures else "FAIL",
         "failures": failures,
@@ -125,11 +146,15 @@ def audit_fern_dataset(dataset: str | Path, expected_images: int = 20) -> dict[s
         "counts": {
             "images": len(original_images),
             "images_2": len(half_images),
+            "images_4": len(quarter_images),
             "colmap_cameras": colmap_counts.get("cameras.bin"),
             "colmap_images": colmap_counts.get("images.bin"),
             "colmap_points3D": colmap_counts.get("points3D.bin"),
         },
         "images_2_dimensions": [list(value) for value in sorted(dimensions)],
+        "images_4_dimensions": [
+            list(value) for value in sorted(quarter_dimensions)
+        ],
         "poses_bounds_shape": poses_shape,
         "read_only": True,
     }

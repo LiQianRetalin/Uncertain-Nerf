@@ -1,0 +1,20 @@
+{
+  "protocol": "puri-gsplat153-garden-reproduction-1",
+  "candidate": "gsplat-1.5.3-default",
+  "dataset": "mipnerf360-garden-factor4-test-every8",
+  "seed": 42,
+  "steps": 30000,
+  "reference": {
+    "psnr": 27.32,
+    "ssim": 0.865,
+    "lpips": 0.075,
+    "num_GS": 5840000
+  },
+  "acceptance": {
+    "psnr_min": 26.82,
+    "ssim_min": 0.85,
+    "lpips_max": 0.1,
+    "num_GS_min": 4500000,
+    "num_GS_max": 7000000
+  }
+}
