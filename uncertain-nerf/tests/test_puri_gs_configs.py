@@ -104,3 +104,25 @@ def test_train_launchers_do_not_shadow_the_pinned_gsplat_wheel():
         script = (ROOT / "scripts" / name).read_text(encoding="utf-8")
         assert 'PYTHONPATH="${ROOT_DIR}"' in script
         assert '${ROOT_DIR}:${GSPLAT_DIR}' not in script
+
+
+def test_android_short_screen_keeps_the_fixed_protocol_and_validates_outputs():
+    script = (
+        ROOT / "scripts" / "run_puri_gs_android_short_screen.sh"
+    ).read_text(encoding="utf-8")
+    assert 'MAX_STEPS=10000' in script
+    assert 'FINAL_STEP=9999' in script
+    assert 'TRAIN_KEYWORD="clutter"' in script
+    assert 'TEST_KEYWORD="extra"' in script
+    assert '"${TRAIN_COUNT}" -ne 122' in script
+    assert '"${TEST_COUNT}" -ne 19' in script
+    assert "--responsibility-start-step" not in script
+    assert "puri_gs_b0_default.yaml" in script
+    assert "puri_gs_b1_absgrad.yaml" in script
+    assert "puri_gs_a1_responsibility.yaml" in script
+    assert "ckpt_9999_rank0.pt" in script
+    assert "responsibility_step9999.png" in script
+    assert "short_screen_summary.json" in script
+    assert 'PYTHONPATH="${ROOT_DIR}"' in script
+    assert "STOP_GSPLAT_SHADOWED" in script
+    assert "refusing to overwrite" in script
