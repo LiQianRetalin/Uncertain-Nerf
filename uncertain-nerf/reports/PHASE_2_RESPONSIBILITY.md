@@ -98,29 +98,53 @@ SSIM 0.426121、LPIPS 0.936116；这些仅是 10-step 可运行性证据，不�
 
 - 代码级与纯 PyTorch smoke：PASS。
 - 实际 gsplat L20 smoke：PASS（B0/B1/A1 真实 CUDA 10 step、反向、checkpoint 与评测）。
-- 动态 10k short screening：NOT RUN。
-- clean 门禁：BLOCKED BY MIPNERF360 PARTIAL。
+- 动态 10k short screening：FAIL（A1 相对 B1 仅 `+0.264969 dB`，低于 `+0.30 dB` 停止线）。
+- clean 门禁：NOT RUN；Mip-NeRF 360 仍为 PARTIAL，但当前 A1 已先触发动态停止条件。
 - A2/A3：未实现，符合阶段约束。
 
-因此当前不能判断 A1 算法效果，也不能进入 A2。
+因此当前 A1 配置按既定门禁停止，不进入 A2。不得用 SSIM 小幅提升或效率通过
+替代动态质量门禁，也不得自动调参、叠加增密控制或后验不确定性来掩盖本次失败。
 
-## 预备的 Android 10k 精确命令
+## Android 10k 动态短筛结果
 
-以下命令只在本地里程碑提交并 push、服务器 pull 后执行。当前仅记录，不应立即运行。
+执行代码 commit：`32a7d787d6886d847061a853c66f7de90f2eebe4`。
+结果目录：`logs-puri/android_short10k_seed42_32a7d78`。
+固定协议为 Android、122 张 `clutter` 训练图、19 张 `extra` 测试图、seed 42、
+data factor 4、同一 NVIDIA L20、每种方法 10000 step。三份 checkpoint 均成功
+保存并独立加载，19 张测试渲染均生成，执行有效性判定为 `PASS_EXECUTION`。
 
-```bash
-cd /home/chenglong/Uncertain-Nerf/uncertain-nerf
+| 配置 | PSNR | SSIM | LPIPS | GS 数 | VRAM GiB | 训练时间 s | 平均 FPS |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| B0 | 24.446428 | 0.816510 | 0.173634 | 1539570 | 2.307857 | 192.8573 | 36.5820 |
+| B1 | 24.312067 | 0.814057 | 0.176871 | 942722 | 1.440276 | 154.0084 | 38.6641 |
+| A1 | 24.577036 | 0.818569 | 0.170200 | 888383 | 1.363403 | 157.1901 | 37.0902 |
 
-PURI_GSPLAT_PYTHON=./.venv-gsplat153/bin/python bash scripts/train_puri_gs.sh configs/puri_gs_b0_default.yaml ./external/gsplat-v1.5.3 ./data/nerf_robustnerf/robustnerf/android ./logs-puri/android_b0_seed42_short10k 6 10000 4 clutter extra
+A1 相对 B1：
 
-PURI_GSPLAT_PYTHON=./.venv-gsplat153/bin/python bash scripts/train_puri_gs.sh configs/puri_gs_b1_absgrad.yaml ./external/gsplat-v1.5.3 ./data/nerf_robustnerf/robustnerf/android ./logs-puri/android_b1_seed42_short10k 6 10000 4 clutter extra
+- PSNR：`+0.264969 dB`，未达到 `+0.30 dB` 最低继续线，更未达到 `+0.8 dB` 优先目标；
+- SSIM：`+0.004512`；
+- LPIPS 相对改善：`3.7716%`，未达到 `10%` 替代门槛；
+- Gaussian 数比例：`0.94236`；
+- VRAM 比例：`0.94663`；
+- 训练时间比例：`1.02066`；
+- 渲染 FPS 比例：`0.95929`。
 
-PURI_GSPLAT_PYTHON=./.venv-gsplat153/bin/python bash scripts/train_puri_gs.sh configs/puri_gs_a1_responsibility.yaml ./external/gsplat-v1.5.3 ./data/nerf_robustnerf/robustnerf/android ./logs-puri/android_a1_seed42_short10k 6 10000 4 clutter extra
-```
+A1 相对 B0 的 PSNR 也只提升 `+0.130608 dB`。B1 在本场景的 PSNR 比 B0
+低 `0.134361 dB`，因此不能根据本次动态短筛把 B1 宣布为强基线；B0/B1 的
+最终选择仍需要完整 clean 数据，但不影响 A1 已触发动态停止条件的判断。
 
-预期日志均包含 `Dataset split: train=122, test=19`、`Model initialized`、有限 loss，并在成功后产生 `ckpts/ckpt_9999_rank0.pt`。A1 额外产生 `renders/responsibility_step9999.png`。
+责任图尺寸为 `755 x 1007`，像素范围 `51..255`，均值对应 `q=0.91009`。
+其中 38.697% 像素被不同程度降权，16.569% 低于 `q=0.8`，5.627% 低于
+`q=0.5`，0.808% 达到 `q_min=0.2`。降权响应广泛分布于纹理和物体边缘，
+而不是明显紧凑的单一干扰区域，存在抑制静态高频结构的风险。由于数据没有提供
+该责任图对应帧的官方动态 mask，本报告不伪造动态 mask 指标，也不把所有暗区
+武断标记为动态或静态；定量质量停止条件已经足以作出 FAIL 决策。
 
-任一命令出现以下情况立即停止：split 数量不符、import/CUDA 错误、NaN/Inf、OOM、checkpoint 缺失、A1 责任图大面积压低静态区域，或相同预算/配置无法保证。
+同一测试视图的 B0/B1/A1 渲染差异细微，A1 未呈现足以推翻定量门禁的明显
+鬼影消除。效率侧满足短筛约束，但效率通过不能代替退化质量提升。
+
+本轮结论只适用于当前唯一 A1 配置和单场景单随机种子短筛，不作为论文最终数据；
+但根据预先确定的停止条件，已经足以阻止继续实施 A2。
 
 ## 最小服务器数据
 
