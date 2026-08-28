@@ -63,7 +63,7 @@ Validation result
   PASS: versions match torch 2.4.0+cu121 and gsplat 1.5.3+pt24cu121.
   PASS: CPU checkpoint save/load roundtrip.
   PASS: pip check (no broken requirements in the installed core stack).
-  PASS: repository regression suite, 71 passed in 24.24s.
+  PASS: repository regression suite, 72 passed in 24.51s.
   PASS: Python syntax checks and git diff --check.
   FAIL: minimal PyTorch CUDA forward/backward.
     RuntimeError: CUDA error: no kernel image is available for execution on the device

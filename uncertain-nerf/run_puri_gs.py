@@ -257,10 +257,10 @@ def main() -> int:
 
     env = os.environ.copy()
     env["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
-    python_path = [str(PROJECT_ROOT), str(gsplat_dir)]
-    if env.get("PYTHONPATH"):
-        python_path.append(env["PYTHONPATH"])
-    env["PYTHONPATH"] = os.pathsep.join(python_path)
+    # Run the patched example file from the source checkout, but import gsplat itself
+    # from the pinned installed wheel. Adding gsplat_dir here shadows the wheel and
+    # incorrectly triggers the source checkout's JIT-extension fallback.
+    env["PYTHONPATH"] = str(PROJECT_ROOT)
     completed = subprocess.run(
         command,
         cwd=gsplat_dir / "examples",

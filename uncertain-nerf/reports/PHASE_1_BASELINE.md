@@ -35,7 +35,7 @@ A1 暂时以 B1 为直接基底，使 `B1 vs A1` 只隔离责任损失。最终�
 - Windows/WSL Python 语法：PASS。
 - gsplat 补丁反向应用检查：PASS。
 - 既有 gsplat 协议和 reproduction gate 回归测试：PASS。
-- 仓库全量测试：`71 passed in 24.24s`。
+- 仓库全量测试：`72 passed in 24.51s`。
 - 已创建隔离的 `.venv-gsplat153`，固定版本导入和 CPU checkpoint 往返：PASS。
 - 实际 gsplat CUDA 最小前向：FAIL，错误为 `no kernel image is available for execution on the device`。
 
@@ -66,3 +66,24 @@ PyTorch 2.4.0+cu121 只包含至 `sm_90` 的内核；现有 gsplat wheel 经
 服务器工作区干净、固定环境可用、物理 GPU 为空闲 NVIDIA L20，并依次执行 B0/B1/A1
 各 10 步、三份 checkpoint 独立评测、有限值检查和 A1 responsibility map 检查。
 该同步提交不代表 smoke 已通过；只有服务器生成 `decision=PASS` 后才完成本里程碑。
+
+## L20 服务器首次 smoke 诊断
+
+首次服务器运行已经确认：
+
+- 物理 GPU 6 是空闲 NVIDIA L20；
+- 固定环境版本正确；
+- 已安装 wheel 的真实 rasterization 前向/反向：PASS；
+- wheel 路径的 checkpoint 保存/加载：PASS；
+- Fern 解析为 20 张图，split 为 17 train / 3 test；
+- B0 正确初始化 10091 个 Gaussian。
+
+B0 在 step 0 的 rasterization 前失败。原因不是 CUDA、数据或 wheel，而是启动器把
+`external/gsplat-v1.5.3` 加入 `PYTHONPATH`，使 `simple_trainer.py` 的
+`import gsplat` 遮蔽已安装 wheel，错误进入源码 checkout 的 JIT fallback；该 checkout
+没有 GLM 子模块，因而报 `glm/gtc/type_ptr.hpp` 缺失。
+
+修复保持软件栈不变：外部 checkout 只提供打补丁后的 example trainer 和 dataset loader，
+`gsplat` runtime 必须从固定 wheel 导入。启动器不再继承任意外部 `PYTHONPATH`，服务器
+脚本还会记录实际 `gsplat.__file__`，一旦指向 external checkout 就在训练前停止。
+没有下载 GLM、初始化子模块或重编译核心 rasterizer。

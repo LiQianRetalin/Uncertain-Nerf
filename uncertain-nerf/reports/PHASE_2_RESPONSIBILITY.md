@@ -43,7 +43,7 @@
 仓库在增加 smoke 生效配置记录与安装验证后，最终全量回归结果：
 
 ```text
-71 passed in 24.24s
+72 passed in 24.51s
 ```
 
 ### Fern 真实图像 10-step loss smoke
@@ -93,6 +93,10 @@
 脚本会在相同 Fern split、相同 10-step 预算和同一物理 L20 上顺序运行三种配置，
 随后独立加载各 checkpoint 评测，并生成 `smoke_summary.json`。A1 必须额外存在
 `renders/responsibility_step0009.png`；脚本记录其形状、最小值、最大值和唯一值数量。
+
+L20 首次运行在 B0 step 0 前因源码包遮蔽固定 wheel 而停止，尚未进入 B1/A1，
+因此没有 A1 结果可判断。修复只调整 Python 导入路径，不改变 A1 损失、配置、
+DefaultStrategy、CUDA wheel 或实验预算。
 
 ## A1 门禁状态
 

@@ -95,10 +95,21 @@ bash "${ROOT_DIR}/scripts/prepare_gsplat_robot_baseline.sh" "${GSPLAT_DIR}" \
   2>&1 | tee "${RESULT_ROOT}/gsplat_patch.log"
 
 echo "Verifying pinned environment and real CUDA forward/backward..."
-CUDA_VISIBLE_DEVICES="${GPU_ID}" "${PYTHON_BIN}" \
+CUDA_VISIBLE_DEVICES="${GPU_ID}" PYTHONPATH="${ROOT_DIR}" "${PYTHON_BIN}" \
   "${ROOT_DIR}/scripts/verify_gsplat_robot_install.py" \
   --expected-gpu "NVIDIA L20" \
   2>&1 | tee "${RESULT_ROOT}/environment_verify.log"
+
+GSPLAT_RUNTIME_PATH="$(
+  CUDA_VISIBLE_DEVICES="${GPU_ID}" PYTHONPATH="${ROOT_DIR}" "${PYTHON_BIN}" \
+    -c 'import pathlib, gsplat; print(pathlib.Path(gsplat.__file__).resolve())'
+)"
+echo "gsplat_runtime_path=${GSPLAT_RUNTIME_PATH}" | \
+  tee "${RESULT_ROOT}/gsplat_runtime_path.txt"
+if [[ "${GSPLAT_RUNTIME_PATH}" == "${GSPLAT_DIR}"/* ]]; then
+  echo "STOP_GSPLAT_SHADOWED: trainer would import source instead of the fixed wheel"
+  exit 3
+fi
 
 run_training() {
   local label="$1"
@@ -152,7 +163,7 @@ run_evaluation b1 puri_gs_b1_absgrad.yaml
 run_evaluation a1 puri_gs_a1_responsibility.yaml
 
 echo "Validating checkpoints, splits, metrics, and responsibility map..."
-CUDA_VISIBLE_DEVICES="${GPU_ID}" "${PYTHON_BIN}" - \
+CUDA_VISIBLE_DEVICES="${GPU_ID}" PYTHONPATH="${ROOT_DIR}" "${PYTHON_BIN}" - \
   "${RESULT_ROOT}" <<'PY' | tee "${RESULT_ROOT}/smoke_summary.stdout"
 import json
 import math

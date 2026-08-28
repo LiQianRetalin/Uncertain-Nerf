@@ -90,3 +90,17 @@ def test_cuda_architecture_gate_accepts_l20_but_rejects_blackwell_major_12():
     assert _has_compatible_architecture((8, 9), compiled)
     assert _has_compatible_architecture((9, 0), compiled)
     assert not _has_compatible_architecture((12, 0), compiled)
+
+
+def test_train_launchers_do_not_shadow_the_pinned_gsplat_wheel():
+    launcher = (ROOT / "run_puri_gs.py").read_text(encoding="utf-8")
+    assert 'env["PYTHONPATH"] = str(PROJECT_ROOT)' in launcher
+    assert "str(PROJECT_ROOT), str(gsplat_dir)" not in launcher
+
+    for name in (
+        "train_gsplat_robot_baseline.sh",
+        "evaluate_gsplat_robot_baseline.sh",
+    ):
+        script = (ROOT / "scripts" / name).read_text(encoding="utf-8")
+        assert 'PYTHONPATH="${ROOT_DIR}"' in script
+        assert '${ROOT_DIR}:${GSPLAT_DIR}' not in script
