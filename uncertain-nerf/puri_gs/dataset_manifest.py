@@ -415,6 +415,11 @@ def render_manifest_markdown(manifest: dict[str, Any]) -> str:
         )
 
     mip = next(item for item in manifest["datasets"] if item["name"] == "mipnerf360")
+    mip_gate = (
+        "- 当前状态为 READY；可按固定协议使用 garden 与 room 进行 clean 短筛。"
+        if mip["status"] == "READY"
+        else "- 在状态变为 READY 前，不进行 B0/B1 clean 正式比较、稀疏视角实验或最终 clean 结论。"
+    )
     lines.extend(
         [
             "",
@@ -423,7 +428,7 @@ def render_manifest_markdown(manifest: dict[str, Any]) -> str:
             f"- status: **{mip['status']}**",
             f"- missing_items: `{json.dumps(mip['missing_items'], ensure_ascii=False)}`",
             f"- reason: {mip['reason']}",
-            "- 在状态变为 READY 前，不进行 B0/B1 clean 正式比较、稀疏视角实验或最终 clean 结论。",
+            mip_gate,
             "",
             "## RobustNeRF 场景",
             "",
@@ -450,7 +455,11 @@ def render_manifest_markdown(manifest: dict[str, Any]) -> str:
             f"- 代码 smoke 场景：`{recommendations['smoke_scene']}`",
             f"- 第一个动态场景：`{recommendations['first_dynamic_scene']}`（格式完整且协议最简单）。",
             "- RobustNeRF 固定划分：文件名含 `clutter` 的图像训练，含 `extra` 的干净图像测试；不采用每 8 张抽一张。",
-            "- clean 候选：Mip-NeRF 360 下载完整后使用 `garden` 与 `room`；当前不生效。",
+            (
+                "- clean 场景：`garden` 与 `room` 已 READY，可执行固定 Phase 2B 短筛。"
+                if mip["status"] == "READY"
+                else "- clean 候选：Mip-NeRF 360 下载完整后使用 `garden` 与 `room`；当前不生效。"
+            ),
             "- NeRF On-the-go 当前为 transforms JSON，需后续单独批准的最小格式适配；本阶段不转换。",
             "",
         ]

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at_utc": "2026-08-28T10:02:12.105912+00:00",
+  "generated_at_utc": "2026-08-29T00:47:11.978907+00:00",
   "root": "E:\\7-DataSet\\nerf数据集",
   "read_only": true,
   "allowed_operations": [
@@ -14,80 +14,296 @@
     {
       "name": "mipnerf360",
       "path": "E:\\7-DataSet\\nerf数据集\\mipnerf360",
-      "status": "PARTIAL",
-      "reason": "download/extraction is incomplete; no clean conclusion is allowed",
-      "missing_items": [
-        "bicycle",
-        "bonsai",
-        "counter",
-        "garden",
-        "kitchen",
-        "room",
-        "stump"
-      ],
+      "status": "READY",
+      "reason": "all seven official scenes satisfy the current loader",
+      "missing_items": [],
       "scenes": [
         {
           "scene": "bicycle",
-          "path": "E:\\7-DataSet\\nerf数据集\\mipnerf360\\bicycle",
-          "status": "MISSING",
-          "reason": "expected Mip-NeRF 360 scene directory is absent",
-          "missing_items": [
-            "scene directory"
-          ]
+          "path": "E:\\7-DataSet\\nerf数据集\\mipnerf360\\360_v2\\bicycle",
+          "status": "READY",
+          "reason": "current gsplat COLMAP loader requirements are satisfied",
+          "missing_items": [],
+          "warnings": [],
+          "counts": {
+            "images": 194,
+            "images_4": 194,
+            "colmap_cameras": 1,
+            "colmap_images": 194,
+            "colmap_points3D": 54275
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 194
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "_DSC8679.JPG",
+                "width": 1237,
+                "height": 822
+              },
+              {
+                "file": "_DSC8777.JPG",
+                "width": 1237,
+                "height": 822
+              },
+              {
+                "file": "_DSC8873.JPG",
+                "width": 1237,
+                "height": 822
+              }
+            ],
+            "errors": []
+          }
         },
         {
           "scene": "bonsai",
-          "path": "E:\\7-DataSet\\nerf数据集\\mipnerf360\\bonsai",
-          "status": "MISSING",
-          "reason": "expected Mip-NeRF 360 scene directory is absent",
-          "missing_items": [
-            "scene directory"
-          ]
+          "path": "E:\\7-DataSet\\nerf数据集\\mipnerf360\\360_v2\\bonsai",
+          "status": "READY",
+          "reason": "current gsplat COLMAP loader requirements are satisfied",
+          "missing_items": [],
+          "warnings": [],
+          "counts": {
+            "images": 292,
+            "images_4": 292,
+            "colmap_cameras": 1,
+            "colmap_images": 292,
+            "colmap_points3D": 206613
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 292
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "DSCF5565.JPG",
+                "width": 780,
+                "height": 520
+              },
+              {
+                "file": "DSCF5711.JPG",
+                "width": 780,
+                "height": 520
+              },
+              {
+                "file": "DSCF5856.JPG",
+                "width": 780,
+                "height": 520
+              }
+            ],
+            "errors": []
+          }
         },
         {
           "scene": "counter",
-          "path": "E:\\7-DataSet\\nerf数据集\\mipnerf360\\counter",
-          "status": "MISSING",
-          "reason": "expected Mip-NeRF 360 scene directory is absent",
-          "missing_items": [
-            "scene directory"
-          ]
+          "path": "E:\\7-DataSet\\nerf数据集\\mipnerf360\\360_v2\\counter",
+          "status": "READY",
+          "reason": "current gsplat COLMAP loader requirements are satisfied",
+          "missing_items": [],
+          "warnings": [],
+          "counts": {
+            "images": 240,
+            "images_4": 240,
+            "colmap_cameras": 1,
+            "colmap_images": 240,
+            "colmap_points3D": 155767
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 240
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "DSCF5857.JPG",
+                "width": 779,
+                "height": 519
+              },
+              {
+                "file": "DSCF5977.JPG",
+                "width": 779,
+                "height": 519
+              },
+              {
+                "file": "DSCF6096.JPG",
+                "width": 779,
+                "height": 519
+              }
+            ],
+            "errors": []
+          }
         },
         {
           "scene": "garden",
-          "path": "E:\\7-DataSet\\nerf数据集\\mipnerf360\\garden",
-          "status": "MISSING",
-          "reason": "expected Mip-NeRF 360 scene directory is absent",
-          "missing_items": [
-            "scene directory"
-          ]
+          "path": "E:\\7-DataSet\\nerf数据集\\mipnerf360\\360_v2\\garden",
+          "status": "READY",
+          "reason": "current gsplat COLMAP loader requirements are satisfied",
+          "missing_items": [],
+          "warnings": [],
+          "counts": {
+            "images": 185,
+            "images_4": 185,
+            "colmap_cameras": 1,
+            "colmap_images": 185,
+            "colmap_points3D": 138766
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 185
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "DSC07956.JPG",
+                "width": 1297,
+                "height": 840
+              },
+              {
+                "file": "DSC08048.JPG",
+                "width": 1297,
+                "height": 840
+              },
+              {
+                "file": "DSC08140.JPG",
+                "width": 1297,
+                "height": 840
+              }
+            ],
+            "errors": []
+          }
         },
         {
           "scene": "kitchen",
-          "path": "E:\\7-DataSet\\nerf数据集\\mipnerf360\\kitchen",
-          "status": "MISSING",
-          "reason": "expected Mip-NeRF 360 scene directory is absent",
-          "missing_items": [
-            "scene directory"
-          ]
+          "path": "E:\\7-DataSet\\nerf数据集\\mipnerf360\\360_v2\\kitchen",
+          "status": "READY",
+          "reason": "current gsplat COLMAP loader requirements are satisfied",
+          "missing_items": [],
+          "warnings": [],
+          "counts": {
+            "images": 279,
+            "images_4": 279,
+            "colmap_cameras": 1,
+            "colmap_images": 279,
+            "colmap_points3D": 241367
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 279
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "DSCF0656.JPG",
+                "width": 779,
+                "height": 520
+              },
+              {
+                "file": "DSCF0795.JPG",
+                "width": 779,
+                "height": 520
+              },
+              {
+                "file": "DSCF0934.JPG",
+                "width": 779,
+                "height": 520
+              }
+            ],
+            "errors": []
+          }
         },
         {
           "scene": "room",
-          "path": "E:\\7-DataSet\\nerf数据集\\mipnerf360\\room",
-          "status": "MISSING",
-          "reason": "expected Mip-NeRF 360 scene directory is absent",
-          "missing_items": [
-            "scene directory"
-          ]
+          "path": "E:\\7-DataSet\\nerf数据集\\mipnerf360\\360_v2\\room",
+          "status": "READY",
+          "reason": "current gsplat COLMAP loader requirements are satisfied",
+          "missing_items": [],
+          "warnings": [],
+          "counts": {
+            "images": 311,
+            "images_4": 311,
+            "colmap_cameras": 1,
+            "colmap_images": 311,
+            "colmap_points3D": 112627
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 311
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "DSCF4667.JPG",
+                "width": 779,
+                "height": 519
+              },
+              {
+                "file": "DSCF4822.JPG",
+                "width": 779,
+                "height": 519
+              },
+              {
+                "file": "DSCF4977.JPG",
+                "width": 779,
+                "height": 519
+              }
+            ],
+            "errors": []
+          }
         },
         {
           "scene": "stump",
-          "path": "E:\\7-DataSet\\nerf数据集\\mipnerf360\\stump",
-          "status": "MISSING",
-          "reason": "expected Mip-NeRF 360 scene directory is absent",
-          "missing_items": [
-            "scene directory"
-          ]
+          "path": "E:\\7-DataSet\\nerf数据集\\mipnerf360\\360_v2\\stump",
+          "status": "READY",
+          "reason": "current gsplat COLMAP loader requirements are satisfied",
+          "missing_items": [],
+          "warnings": [],
+          "counts": {
+            "images": 125,
+            "images_4": 125,
+            "colmap_cameras": 1,
+            "colmap_images": 125,
+            "colmap_points3D": 32049
+          },
+          "split_keyword_counts": {
+            "clean": 0,
+            "clutter": 0,
+            "extra": 0,
+            "other": 125
+          },
+          "image_samples": {
+            "samples": [
+              {
+                "file": "_DSC9213.JPG",
+                "width": 1245,
+                "height": 825
+              },
+              {
+                "file": "_DSC9275.JPG",
+                "width": 1245,
+                "height": 825
+              },
+              {
+                "file": "_DSC9338.JPG",
+                "width": 1245,
+                "height": 825
+              }
+            ],
+            "errors": []
+          }
         }
       ]
     },

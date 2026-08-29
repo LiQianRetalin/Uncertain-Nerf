@@ -48,3 +48,13 @@ def test_manifest_marks_mip_partial_and_detects_keyword_dynamic_split(tmp_path):
     rendered = render_manifest_markdown(manifest)
     assert "PARTIAL" in rendered
     json.dumps(manifest)
+
+
+def test_manifest_enables_clean_screen_only_when_all_mip_scenes_are_ready(tmp_path):
+    data_root = tmp_path / "nerf-data"
+    for scene in ("bicycle", "bonsai", "counter", "garden", "kitchen", "room", "stump"):
+        _colmap_scene(data_root / "mipnerf360" / "360_v2" / scene, ["image000.png"])
+    manifest = scan_dataset_root(data_root)
+    rendered = render_manifest_markdown(manifest)
+    assert "当前状态为 READY" in rendered
+    assert "garden` 与 `room` 已 READY" in rendered
