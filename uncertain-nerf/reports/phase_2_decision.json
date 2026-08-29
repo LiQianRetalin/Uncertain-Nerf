@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "phase": "PURI-GS Phase 2A-2B",
+  "decision": "A1_REJECT",
+  "training_commit": "128535bbc69940af53bc574a55e81fe6a8be060d",
+  "android_result_commit": "32a7d787d6886d847061a853c66f7de90f2eebe4",
+  "android_pairwise": {
+    "decision": "PAIRWISE_STABLE",
+    "test_count": 19,
+    "embedded_ground_truth_identical": true,
+    "A1_minus_B1": {
+      "psnr_mean": 0.2586494245027241,
+      "psnr_median": 0.21550750732421875,
+      "psnr_improved_count": 15,
+      "psnr_improved_ratio": 0.7894736842105263,
+      "psnr_bootstrap_ci95": [
+        0.10685178606133712,
+        0.4295763567874306
+      ],
+      "ssim_mean": 0.004267965492449309,
+      "lpips_mean": -0.006618141343719081
+    }
+  },
+  "responsibility_selectivity": {
+    "classification": "MODERATE_EDGE_SENSITIVITY",
+    "frame_count": 8,
+    "frozen_parameters": true,
+    "backward_calls": 0,
+    "rasterizations_per_frame": 1,
+    "spearman_degradation_vs_gradient_mean": 0.3528834464665527,
+    "spearman_degradation_vs_residual_mean": 0.732958238844422,
+    "edge_overlap_q_0_8_mean": 0.223214063920463,
+    "edge_overlap_q_0_5_mean": 0.18088773221165566
+  },
+  "clean_screen": {
+    "execution_decision": "PASS_EXECUTION",
+    "numeric_decision": "CLEAN_FAIL",
+    "primary_baseline": "b1",
+    "baseline_label": "efficiency-strong baseline",
+    "mean_A1_minus_B1": {
+      "psnr": -0.17280066624665835,
+      "ssim": 0.0000634671976932899,
+      "lpips": 0.00023560771623100385
+    },
+    "per_scene_A1_minus_B1_psnr": {
+      "garden": 0.10408647855122766,
+      "room": -0.44968781104454436
+    },
+    "per_scene_A1_over_B1_fps_ratio": {
+      "garden": 1.016338665435075,
+      "room": 1.0520048476552446
+    },
+    "failure_triggers": [
+      "mean A1-B1 PSNR is below -0.15 dB",
+      "room A1-B1 PSNR is below -0.30 dB"
+    ],
+    "visual_review": "No catastrophic texture damage was obvious in the 18 sampled canvases; visual sampling does not override the numeric hard-gate failure."
+  },
+  "efficiency": {
+    "fps_gate_pass": true,
+    "gaussian_or_vram_ok": true
+  },
+  "decision_basis": [
+    "PAIRWISE_STABLE",
+    "MODERATE_EDGE_SENSITIVITY",
+    "CLEAN_FAIL"
+  ],
+  "evidence": {
+    "archive": "puri_gs_phase2_evidence_128535b.tar.gz",
+    "sha256": "575557E482A102B9C1FABB1687A8963F3C94E02C3F84BF5EC37AB4CBA7C94419"
+  },
+  "next_actions": [
+    "freeze A1 as a historical ablation",
+    "do not enter A2",
+    "do not implement A3 based on 1-q",
+    "do not tune A1 or run 30k/another seed",
+    "redesign dynamic-selectivity evidence before proposing a new method"
+  ]
+}
