@@ -34,57 +34,70 @@ Dataset[item]["camtoworld"] -> 当前视图 camera-to-world
 深度固定为 `RGB+ED` 的 expected camera-z；完整审计见
 `reports/PHASE_3_DEPTH_SEMANTICS.md`。
 
-## 2. 本地派生数据
+## 2. Parser-exact 派生数据
 
-已生成且不进入 Git：
+合成图必须来自固定 gsplat `Parser/Dataset` 最终交给训练器的 post-resize、
+post-undistortion 图像。不能直接读取数据集自带的 JPEG `images_4`：固定解析器会从
+原图生成 `images_4_png`，奇数尺寸的舍入可能相差 1 像素，并导致 clean 图也不一致。
+
+旧的 `room_cvtr_synthetic_v1` 不满足该约束，不得用于验证。修正版使用新目录且不
+进入 Git：
 
 ```text
-E:\7-DataSet\PURI-GS-derived\room_cvtr_synthetic_v1
+/home/chenglong/Uncertain-Nerf/uncertain-nerf/tmp/room_cvtr_synthetic_v2
 ```
 
 内容为 16 张 Room 训练图派生图、16 张真值 mask 和 manifest。前 8 张 clean，后
-8 张为不透明单矩形纹理 patch，后 8 张面积均为 `0.0799899085`。原始 Room 数据
-没有修改。
+8 张为约 8% 的不透明单矩形纹理 patch。原始 Room 数据不修改。
 
-## 3. 本地上传小型派生集
+## 3. 在服务器生成 parser-exact 派生集
 
-本步骤目的：把约 8.35 MB 的 Room 合成派生集上传服务器；不上传完整数据集。
+本步骤目的：使用服务器固定 gsplat loader 生成与训练目标逐像素同尺寸的派生集。
 
-执行位置：Windows 本地。
+执行位置：Linux 服务器。
 
-需要打开的目录：`E:\6-Project\1-UncertainNerf\uncertain-nerf`
-
-需要检查的文件：
-
-```text
-E:\7-DataSet\PURI-GS-derived\room_cvtr_synthetic_v1\manifest.json
-```
+需要打开的目录：`/home/chenglong/Uncertain-Nerf/uncertain-nerf`
 
 需要执行的命令：
 
-```powershell
-cd 'E:\6-Project\1-UncertainNerf\uncertain-nerf'
+```bash
+cd /home/chenglong/Uncertain-Nerf/uncertain-nerf
+set +e
 
-$remote = 'chenglong@172.16.55.2'
-$remotePath = '/home/chenglong/Uncertain-Nerf/uncertain-nerf/tmp/room_cvtr_synthetic_v1'
-$localPath = 'E:\7-DataSet\PURI-GS-derived\room_cvtr_synthetic_v1'
+ROOT="$PWD"
+PY="$ROOT/.venv-gsplat153/bin/python"
+GS="$ROOT/external/gsplat-v1.5.3"
+ROOM_DATA="$ROOT/data/mipnerf360/360_v2/room"
+DERIVED="$ROOT/tmp/room_cvtr_synthetic_v2"
+FRAME_LIST="$ROOT/analysis/cvtr_synthetic_frame_list_v2.json"
+LOG="$ROOT/tmp/phase3_synthetic_prepare_v2.log"
 
-ssh $remote "if test -e '$remotePath'; then echo STOP_DERIVED_EXISTS; else echo DERIVED_TARGET_AVAILABLE; fi"
-scp -r $localPath "${remote}:$remotePath"
-ssh $remote "find '$remotePath' -maxdepth 2 -type f | wc -l"
+if test -e "$DERIVED"; then
+  echo "STOP_DERIVED_EXISTS $DERIVED"
+else
+  PYTHONPATH="$ROOT" "$PY" tools/validate_cvtr_synthetic.py \
+    --data-dir "$ROOM_DATA" --gsplat-dir "$GS" \
+    --derived-dir "$DERIVED" --frame-list "$FRAME_LIST" --prepare-only \
+    2>&1 | tee "$LOG"
+  PREPARE_EXIT_CODE=${PIPESTATUS[0]}
+  echo "PREPARE_EXIT_CODE=$PREPARE_EXIT_CODE"
+  find "$DERIVED" -maxdepth 2 -type f | wc -l
+fi
 ```
 
-命令执行完成后应看到：`DERIVED_TARGET_AVAILABLE`，上传后文件数为 `33`。
+命令执行完成后应看到：`PREPARE_EXIT_CODE=0`，文件数为 `33`，manifest 的
+`target_contract` 为 pinned gsplat Parser/Dataset。
 
-日志位置：本步骤无独立日志，PowerShell 输出即记录。
+日志位置：`tmp/phase3_synthetic_prepare_v2.log`。
 
-如何判断成功：远端共 33 个文件，且 `manifest.json` 存在。
+如何判断成功：远端共 33 个文件，且 `manifest.json` 存在并记录 parser-exact contract。
 
-出现什么情况应停止：显示 `STOP_DERIVED_EXISTS`、上传失败或文件数不是 33。
+出现什么情况应停止：目标目录已存在、生成中断、文件数不是 33。不得覆盖已有目录，
+也不得修改或删除旧 v1 作为重试手段。
 
 是否需要 Git 提交：否，派生数据禁止提交。
 
-是否需要服务器 pull：代码 push 完成后才进行一次服务器 pull。
+是否需要服务器 pull：否。
 
 ## 4. 服务器 pull 后环境与补丁检查
 
@@ -248,7 +261,7 @@ PY
 
 ## 7. 合成 mask 门
 
-本步骤目的：用 Room B1 与已上传的 16 帧派生集计算真实 CVTR mask 指标。
+本步骤目的：用 Room B1 与 parser-exact 的 16 帧派生集计算真实 CVTR mask 指标。
 
 执行位置：Linux 服务器。
 
@@ -258,7 +271,7 @@ PY
 
 ```bash
 cd /home/chenglong/Uncertain-Nerf/uncertain-nerf
-set -euo pipefail
+set +e
 
 ROOT="$PWD"
 PY="$ROOT/.venv-gsplat153/bin/python"
@@ -266,32 +279,39 @@ GS="$ROOT/external/gsplat-v1.5.3"
 GPU=6
 ROOM_DATA="$ROOT/data/mipnerf360/360_v2/room"
 ROOM_CKPT="$ROOT/logs-puri/room_b1_short10k_seed42_128535b/ckpts/ckpt_9999_rank0.pt"
-DERIVED="$ROOT/tmp/room_cvtr_synthetic_v1"
+DERIVED="$ROOT/tmp/room_cvtr_synthetic_v2"
 OUTPUT="$ROOT/analysis/cvtr_synthetic"
 LOG="$ROOT/tmp/phase3_synthetic.log"
 
-test ! -e "$OUTPUT" || { echo "STOP_OUTPUT_EXISTS $OUTPUT"; exit 3; }
+if test -d "$OUTPUT" && test -n "$(find "$OUTPUT" -mindepth 1 -print -quit)"; then
+  echo "STOP_OUTPUT_NOT_EMPTY $OUTPUT"
+else
+  CUDA_VISIBLE_DEVICES="$GPU" PYTHONPATH="$ROOT" "$PY" \
+    tools/validate_cvtr_synthetic.py \
+    --data-dir "$ROOM_DATA" \
+    --gsplat-dir "$GS" \
+    --derived-dir "$DERIVED" \
+    --checkpoint "$ROOM_CKPT" \
+    --source-commit 128535bbc69940af53bc574a55e81fe6a8be060d \
+    --config configs/puri_gs_cvtr.yaml \
+    --output-dir "$OUTPUT" \
+    --device cuda \
+    2>&1 | tee "$LOG"
+  SYNTHETIC_EXIT_CODE=${PIPESTATUS[0]}
+  echo "SYNTHETIC_EXIT_CODE=$SYNTHETIC_EXIT_CODE"
+fi
 
-set -o pipefail
-CUDA_VISIBLE_DEVICES="$GPU" PYTHONPATH="$ROOT" "$PY" \
-  tools/validate_cvtr_synthetic.py \
-  --data-dir "$ROOM_DATA" \
-  --gsplat-dir "$GS" \
-  --derived-dir "$DERIVED" \
-  --checkpoint "$ROOM_CKPT" \
-  --source-commit 128535bbc69940af53bc574a55e81fe6a8be060d \
-  --config configs/puri_gs_cvtr.yaml \
-  --output-dir "$OUTPUT" \
-  --device cuda \
-  2>&1 | tee "$LOG"
-
-"$PY" - "$OUTPUT/metrics.json" <<'PY'
+if test -s "$OUTPUT/metrics.json"; then
+  "$PY" - "$OUTPUT/metrics.json" <<'PY'
 import json, sys
 d = json.load(open(sys.argv[1]))
 print(json.dumps(d, indent=2))
 if d["gate"] != "PASS":
     raise SystemExit("STOP_MASK_VALIDATION_FAIL")
 PY
+else
+  echo "STOP_NO_SYNTHETIC_METRICS"
+fi
 ```
 
 命令执行完成后应看到：Precision >= 0.80、Recall >= 0.50、F1 >= 0.60、

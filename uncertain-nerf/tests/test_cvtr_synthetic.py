@@ -5,6 +5,7 @@ import pytest
 import torch
 
 from puri_gs.cvtr import binary_mask_metrics
+from tools import validate_cvtr_synthetic
 from tools.build_cvtr_masks import require_empty_output
 from tools.validate_cvtr_synthetic import uniformly_select
 
@@ -16,6 +17,47 @@ def test_uniform_synthetic_frame_selection_is_deterministic():
     assert len(first) == len(set(first)) == 16
     assert first[0] == names[0]
     assert first[-1] == names[-1]
+
+
+def test_synthetic_targets_come_from_the_pinned_training_dataset(
+    monkeypatch, tmp_path
+):
+    class FakeParser:
+        def __init__(self, *, data_dir, factor, normalize, test_every):
+            assert data_dir == str(tmp_path / "room")
+            assert factor == 4
+            assert normalize is True
+            assert test_every == 8
+            self.image_names = ["test.jpg", "train_a.jpg", "train_b.jpg"]
+
+    class FakeDataset:
+        def __init__(self, parser, *, split, val_every):
+            assert isinstance(parser, FakeParser)
+            assert split == "train"
+            assert val_every == 0
+            self.indices = torch.tensor([1, 2])
+
+        def __len__(self):
+            return len(self.indices)
+
+        def __getitem__(self, index):
+            value = 17 + index
+            return {"image": torch.full((3, 5, 3), value, dtype=torch.float32)}
+
+    monkeypatch.setattr(
+        validate_cvtr_synthetic,
+        "_load_colmap_classes",
+        lambda gsplat_dir: (FakeParser, FakeDataset),
+    )
+    images = validate_cvtr_synthetic._load_room_training_images(
+        tmp_path / "room", tmp_path / "gsplat"
+    )
+
+    assert sorted(images) == ["train_a.jpg", "train_b.jpg"]
+    assert images["train_a.jpg"].shape == (3, 5, 3)
+    assert images["train_a.jpg"].dtype.name == "uint8"
+    assert images["train_a.jpg"][0, 0, 0] == 17
+    assert images["train_b.jpg"][0, 0, 0] == 18
 
 
 def test_synthetic_mask_precision_recall():

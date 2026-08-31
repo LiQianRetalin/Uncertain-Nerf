@@ -14,7 +14,7 @@ import torch
 from PIL import Image
 
 from puri_gs.cvtr import binary_mask_metrics, load_binary_mask, save_binary_mask
-from tools.build_cvtr_masks import run_pipeline
+from tools.build_cvtr_masks import _load_colmap_classes, run_pipeline
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -34,68 +34,25 @@ def _safe_name(image_name: str) -> str:
 
 
 def _load_room_training_images(data_dir: Path, gsplat_dir: Path) -> dict[str, np.ndarray]:
-    del gsplat_dir  # Preparation needs only the pinned loader's documented data contract.
-    import cv2
+    """Load the exact post-resize/post-undistortion targets used by the trainer."""
 
-    from v5.colmap import read_cameras_binary, read_images_binary
-
-    sparse_dir = data_dir / "sparse" / "0"
-    cameras = read_cameras_binary(sparse_dir / "cameras.bin")
-    colmap_images = read_images_binary(sparse_dir / "images.bin")
-    ordered = sorted(colmap_images.values(), key=lambda item: item.name)
-    full_files = sorted(
-        path.relative_to(data_dir / "images").as_posix()
-        for path in (data_dir / "images").rglob("*")
-        if path.is_file()
+    Parser, Dataset = _load_colmap_classes(gsplat_dir)
+    parser = Parser(
+        data_dir=str(data_dir),
+        factor=4,
+        normalize=True,
+        test_every=8,
     )
-    factor_files = sorted(
-        path.relative_to(data_dir / "images_4").as_posix()
-        for path in (data_dir / "images_4").rglob("*")
-        if path.is_file()
-    )
-    if len(full_files) != len(ordered) or len(factor_files) != len(ordered):
-        raise RuntimeError("Room COLMAP/images/images_4 counts differ")
-    colmap_to_factor = dict(zip(full_files, factor_files))
+    dataset = Dataset(parser, split="train", val_every=0)
     images: dict[str, np.ndarray] = {}
-    for global_index, image_record in enumerate(ordered):
-        if global_index % 8 == 0:
-            continue
-        camera = cameras[image_record.camera_id]
-        factor_path = data_dir / "images_4" / colmap_to_factor[image_record.name]
-        with Image.open(factor_path) as image:
-            array = np.asarray(image.convert("RGB"), dtype=np.uint8).copy()
-        K = camera.intrinsic_matrix().astype(np.float64)
-        K[:2, :] /= 4
-        expected_width, expected_height = camera.width // 4, camera.height // 4
-        actual_height, actual_width = array.shape[:2]
-        K[0, :] *= actual_width / expected_width
-        K[1, :] *= actual_height / expected_height
-        if camera.model == "SIMPLE_RADIAL":
-            distortion = np.array([camera.params[3], 0.0, 0.0, 0.0])
-        elif camera.model in {"SIMPLE_PINHOLE", "PINHOLE"}:
-            distortion = np.empty(0, dtype=np.float64)
-        elif camera.model == "RADIAL":
-            distortion = np.array([camera.params[3], camera.params[4], 0.0, 0.0])
-        elif camera.model == "OPENCV":
-            distortion = np.asarray(camera.params[4:8], dtype=np.float64)
-        else:
-            raise ValueError(f"unsupported Room camera model: {camera.model}")
-        if distortion.size:
-            K_undistorted, roi = cv2.getOptimalNewCameraMatrix(
-                K, distortion, (actual_width, actual_height), 0
-            )
-            map_x, map_y = cv2.initUndistortRectifyMap(
-                K,
-                distortion,
-                None,
-                K_undistorted,
-                (actual_width, actual_height),
-                cv2.CV_32FC1,
-            )
-            array = cv2.remap(array, map_x, map_y, cv2.INTER_LINEAR)
-            x, y, width, height = roi
-            array = array[y : y + height, x : x + width]
-        images[image_record.name] = array
+    for local_index in range(len(dataset)):
+        item = dataset[local_index]
+        global_index = int(dataset.indices[local_index])
+        image_name = parser.image_names[global_index]
+        image = item["image"]
+        if not isinstance(image, torch.Tensor) or image.ndim != 3 or image.shape[-1] != 3:
+            raise ValueError(f"unexpected pinned target shape for {image_name}")
+        images[image_name] = image.clamp(0, 255).to(torch.uint8).cpu().numpy().copy()
     return images
 
 
@@ -170,6 +127,9 @@ def prepare_synthetic_dataset(
     manifest = {
         "schema_version": 1,
         "scene": "room",
+        "target_contract": "pinned gsplat Parser/Dataset post-resize post-undistortion",
+        "data_factor": 4,
+        "test_every": 8,
         "selection": "round(linspace(0, train_count-1, 16)) over sorted train names",
         "clean_count": 8,
         "transient_count": 8,
