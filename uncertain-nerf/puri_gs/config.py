@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from puri_gs.cvtr import CVTRConfig
+
 
 REQUIRED_RESPONSIBILITY_FIELDS = {
     "enabled",
@@ -15,6 +17,8 @@ REQUIRED_RESPONSIBILITY_FIELDS = {
     "pool_size",
     "epsilon",
 }
+
+REQUIRED_CVTR_FIELDS = set(CVTRConfig.__dataclass_fields__) | {"enabled"}
 
 
 def load_experiment_config(path: str | Path) -> dict[str, Any]:
@@ -32,8 +36,8 @@ def load_experiment_config(path: str | Path) -> dict[str, Any]:
 def validate_experiment_config(config: dict[str, Any]) -> None:
     if config.get("schema_version") != 1:
         raise ValueError("schema_version must be 1")
-    if config.get("profile") not in {"b0", "b1", "a1"}:
-        raise ValueError("profile must be one of b0, b1, a1")
+    if config.get("profile") not in {"b0", "b1", "a1", "b1c", "cvtr"}:
+        raise ValueError("profile must be one of b0, b1, a1, b1c, cvtr")
     if config.get("gsplat_version") != "1.5.3":
         raise ValueError("gsplat_version must remain pinned to 1.5.3")
     if config.get("seed") != 42:
@@ -68,6 +72,42 @@ def validate_experiment_config(config: dict[str, Any]) -> None:
         raise ValueError("B0/B1 must disable responsibility")
     if config["profile"] == "a1" and not responsibility["enabled"]:
         raise ValueError("A1 must enable responsibility")
+    if config["profile"] != "a1" and responsibility["enabled"]:
+        raise ValueError("only A1 may enable pixel-wise responsibility")
+
+    cvtr = config.get("cvtr")
+    if config["profile"] in {"b1c", "cvtr"}:
+        if not isinstance(cvtr, dict):
+            raise ValueError("continuation profiles require a cvtr mapping")
+        missing = REQUIRED_CVTR_FIELDS.difference(cvtr)
+        if missing:
+            raise ValueError(f"missing cvtr fields: {sorted(missing)}")
+        expected = CVTRConfig()
+        actual = CVTRConfig(
+            **{
+                field: cvtr[field]
+                for field in CVTRConfig.__dataclass_fields__
+            }
+        )
+        if actual != expected:
+            raise ValueError("Phase 3 CVTR hyperparameters are frozen")
+        if config["profile"] == "cvtr" and not cvtr["enabled"]:
+            raise ValueError("CVTR profile must enable fixed CVTR masks")
+        if config["profile"] == "b1c" and cvtr["enabled"]:
+            raise ValueError("B1 continuation control must disable CVTR masks")
+        continuation = config.get("continuation")
+        if not isinstance(continuation, dict):
+            raise ValueError("continuation profiles require continuation metadata")
+        if continuation != {
+            "enabled": True,
+            "source_step": 9999,
+            "target_step": 14999,
+            "additional_steps": 5000,
+        }:
+            raise ValueError("Phase 3 continuation is frozen to step 9999 -> 14999")
+    elif cvtr is not None:
+        if not isinstance(cvtr, dict) or cvtr.get("enabled"):
+            raise ValueError("non-continuation profiles may not enable CVTR")
 
 
 def trainer_method_args(config: dict[str, Any]) -> list[str]:
@@ -92,6 +132,15 @@ def trainer_method_args(config: dict[str, Any]) -> list[str]:
                 str(responsibility["pool_size"]),
                 "--responsibility_epsilon",
                 str(responsibility["epsilon"]),
+            ]
+        )
+    cvtr = config.get("cvtr")
+    if isinstance(cvtr, dict) and cvtr.get("enabled"):
+        args.extend(
+            [
+                "--cvtr_enabled",
+                "--cvtr_transient_weight",
+                str(cvtr["transient_weight"]),
             ]
         )
     return args

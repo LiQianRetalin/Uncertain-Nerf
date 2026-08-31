@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import importlib.metadata
 import json
 import os
@@ -21,6 +22,7 @@ from puri_gs.config import load_experiment_config, trainer_method_args
 PROJECT_ROOT = Path(__file__).resolve().parent
 REPOSITORY_ROOT = PROJECT_ROOT.parent
 PATCH_PATH = PROJECT_ROOT / "patches" / "gsplat_v1.5.3_robot_screen.patch"
+CVTR_PATCH_PATH = PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_cvtr.patch"
 EXPECTED_GSPLAT_COMMIT = "937e29912570c372bed6747a5c9bf85fed877bae"
 
 
@@ -33,9 +35,7 @@ def _git(*args: str, cwd: Path) -> str:
     return result.stdout.strip()
 
 
-def _verify_gsplat(gsplat_dir: Path) -> None:
-    if _git("rev-parse", "HEAD", cwd=gsplat_dir) != EXPECTED_GSPLAT_COMMIT:
-        raise RuntimeError("GSPLAT_DIR is not the pinned v1.5.3 checkout")
+def _verify_applied_patch(gsplat_dir: Path, patch_path: Path) -> None:
     check = subprocess.run(
         [
             "git",
@@ -43,7 +43,7 @@ def _verify_gsplat(gsplat_dir: Path) -> None:
             "--reverse",
             "--check",
             "--ignore-whitespace",
-            str(PATCH_PATH),
+            str(patch_path),
         ],
         cwd=gsplat_dir,
         text=True,
@@ -51,9 +51,16 @@ def _verify_gsplat(gsplat_dir: Path) -> None:
         check=False,
     )
     if check.returncode != 0:
-        raise RuntimeError(
-            "required PURI-GS trainer patch is not applied to the pinned checkout"
-        )
+        raise RuntimeError(f"required trainer patch is not applied: {patch_path.name}")
+
+
+def _verify_gsplat(gsplat_dir: Path, require_cvtr: bool = False) -> None:
+    if _git("rev-parse", "HEAD", cwd=gsplat_dir) != EXPECTED_GSPLAT_COMMIT:
+        raise RuntimeError("GSPLAT_DIR is not the pinned v1.5.3 checkout")
+    if require_cvtr:
+        _verify_applied_patch(gsplat_dir, CVTR_PATCH_PATH)
+    else:
+        _verify_applied_patch(gsplat_dir, PATCH_PATH)
 
 
 def _verify_dataset(
@@ -91,6 +98,43 @@ def _package_version(name: str) -> str | None:
         return importlib.metadata.version(name)
     except importlib.metadata.PackageNotFoundError:
         return None
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _continuation_source_inventory(path: Path) -> dict[str, Any]:
+    import torch
+
+    checkpoint = torch.load(path, map_location="cpu", weights_only=True)
+    if not isinstance(checkpoint, dict):
+        raise ValueError("continuation checkpoint must be a mapping")
+    keys = sorted(checkpoint)
+    state_names = {
+        "optimizer": any(name in checkpoint for name in ("optimizer", "optimizers")),
+        "strategy": any(name in checkpoint for name in ("strategy", "strategy_state")),
+        "rng": any(name in checkpoint for name in ("rng", "rng_state", "random_state")),
+    }
+    if checkpoint.get("step") != 9999 or "splats" not in checkpoint:
+        raise ValueError("continuation checkpoint must contain step=9999 and splats")
+    if any(state_names.values()):
+        raise ValueError("Phase 3 source unexpectedly contains optimizer/strategy/RNG state")
+    return {
+        "path": str(path),
+        "sha256": _sha256(path),
+        "bytes": path.stat().st_size,
+        "step": checkpoint["step"],
+        "keys": keys,
+        "contains_optimizer_state": state_names["optimizer"],
+        "contains_strategy_state": state_names["strategy"],
+        "contains_rng_state": state_names["rng"],
+        "continuation_policy": "fresh optimizer, strategy, scheduler, and RNG initialization for both branches",
+    }
 
 
 def _runtime_environment(gsplat_dir: Path, config: dict[str, Any]) -> dict[str, Any]:
@@ -177,17 +221,33 @@ def _build_command(
         command.extend(["--train_keyword", args.train_keyword])
         command.extend(["--test_keyword", args.test_keyword])
     if args.checkpoint is None:
+        if args.resume_checkpoint is not None:
+            continuation = config.get("continuation")
+            if not isinstance(continuation, dict) or not continuation.get("enabled"):
+                raise ValueError("--resume-checkpoint requires a continuation profile")
+            max_steps = continuation["target_step"] + 1
+        else:
+            max_steps = args.max_steps
         command.extend(
             [
                 "--max_steps",
-                str(args.max_steps),
+                str(max_steps),
                 "--eval_steps",
                 "-1",
                 "--save_steps",
-                str(args.max_steps),
+                str(max_steps),
             ]
         )
         command.extend(trainer_method_args(config))
+        if args.resume_checkpoint is not None:
+            command.extend(["--resume_ckpt", str(args.resume_checkpoint.resolve())])
+        cvtr = config.get("cvtr")
+        if isinstance(cvtr, dict) and cvtr.get("enabled"):
+            if args.cvtr_mask_dir is None:
+                raise ValueError("CVTR continuation requires --cvtr-mask-dir")
+            command.extend(["--cvtr_mask_dir", str(args.cvtr_mask_dir.resolve())])
+        elif args.cvtr_mask_dir is not None:
+            raise ValueError("--cvtr-mask-dir is valid only for the CVTR profile")
     else:
         command.extend(["--ckpt", str(args.checkpoint.resolve())])
     return command
@@ -205,6 +265,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--train-keyword")
     parser.add_argument("--test-keyword")
     parser.add_argument("--checkpoint", type=Path)
+    parser.add_argument("--resume-checkpoint", type=Path)
+    parser.add_argument("--cvtr-mask-dir", type=Path)
     parser.add_argument(
         "--responsibility-start-step",
         type=int,
@@ -227,18 +289,41 @@ def main() -> int:
     config = _apply_runtime_overrides(
         load_experiment_config(config_path), args.responsibility_start_step
     )
-    _verify_gsplat(gsplat_dir)
+    is_continuation = config["profile"] in {"b1c", "cvtr"}
+    _verify_gsplat(gsplat_dir, require_cvtr=is_continuation)
     data_factor = args.data_factor or config["training"]["data_factor"]
     _verify_dataset(
         data_dir, data_factor, args.train_keyword, args.test_keyword
     )
+    if args.checkpoint is not None and args.resume_checkpoint is not None:
+        raise ValueError("--checkpoint and --resume-checkpoint are mutually exclusive")
     if args.checkpoint is not None and not args.checkpoint.expanduser().is_file():
         raise RuntimeError(f"checkpoint does not exist: {args.checkpoint}")
+    if args.resume_checkpoint is not None:
+        args.resume_checkpoint = args.resume_checkpoint.expanduser().resolve()
+        if not args.resume_checkpoint.is_file():
+            raise RuntimeError(f"resume checkpoint does not exist: {args.resume_checkpoint}")
+        if not is_continuation:
+            raise ValueError("--resume-checkpoint requires a continuation profile")
+    elif is_continuation and args.checkpoint is None:
+        raise ValueError("continuation training requires --resume-checkpoint")
+    if args.cvtr_mask_dir is not None:
+        args.cvtr_mask_dir = args.cvtr_mask_dir.expanduser().resolve()
+        if not (args.cvtr_mask_dir / "manifest.json").is_file():
+            raise RuntimeError(
+                f"CVTR mask manifest does not exist: {args.cvtr_mask_dir / 'manifest.json'}"
+            )
     command = _build_command(args, config, gsplat_dir, data_dir, result_dir)
     printable = f"CUDA_VISIBLE_DEVICES={args.gpu} {shlex.join(command)}"
     print(printable)
     if args.dry_run:
         return 0
+
+    continuation_inventory = (
+        _continuation_source_inventory(args.resume_checkpoint)
+        if args.resume_checkpoint is not None
+        else None
+    )
 
     if result_dir.exists() and any(result_dir.iterdir()):
         raise RuntimeError(f"result directory is not empty: {result_dir}")
@@ -254,6 +339,11 @@ def main() -> int:
         json.dumps(_runtime_environment(gsplat_dir, config), indent=2) + "\n",
         encoding="utf-8",
     )
+    if continuation_inventory is not None:
+        (result_dir / "continuation_source.json").write_text(
+            json.dumps(continuation_inventory, indent=2) + "\n",
+            encoding="utf-8",
+        )
 
     env = os.environ.copy()
     env["CUDA_VISIBLE_DEVICES"] = str(args.gpu)

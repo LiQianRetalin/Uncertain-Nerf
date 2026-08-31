@@ -1,0 +1,150 @@
+diff --git a/examples/simple_trainer.py b/examples/simple_trainer.py
+index f2ea999..b9c4e28 100644
+--- a/examples/simple_trainer.py
++++ b/examples/simple_trainer.py
+@@ -34,6 +34,7 @@ from puri_gs.responsibility import (
+     ResponsibilityConfig,
+     responsibility_weighted_l1,
+ )
++from puri_gs.cvtr import CVTRMaskStore, cvtr_weighted_l1
+ 
+ from gsplat import export_splats
+ from gsplat.compression import PngCompression
+@@ -51,6 +52,8 @@ class Config:
+     disable_viewer: bool = False
+     # Path to the .pt files. If provide, it will skip training and run evaluation only.
+     ckpt: Optional[List[str]] = None
++    # A single frozen B1 checkpoint used only to initialize continuation training.
++    resume_ckpt: Optional[str] = None
+     # Name of compression strategy to use
+     compression: Optional[Literal["png"]] = None
+     # Render trajectory path
+@@ -125,6 +128,11 @@ class Config:
+     responsibility_pool_size: int = 3
+     responsibility_epsilon: float = 1e-6
+ 
++    # PURI-GS Phase 3 fixed-mask continuation (opt-in).
++    cvtr_enabled: bool = False
++    cvtr_mask_dir: Optional[str] = None
++    cvtr_transient_weight: float = 0.2
++
+     # Near plane clipping distance
+     near_plane: float = 0.01
+     # Far plane clipping distance
+@@ -340,6 +348,13 @@ class Runner:
+             pool_size=cfg.responsibility_pool_size,
+             epsilon=cfg.responsibility_epsilon,
+         )
++        if cfg.cvtr_enabled and cfg.responsibility_enabled:
++            raise ValueError("CVTR and A1 responsibility are mutually exclusive")
++        if cfg.cvtr_enabled and cfg.cvtr_mask_dir is None:
++            raise ValueError("cvtr_mask_dir is required when CVTR is enabled")
++        self.cvtr_masks = (
++            CVTRMaskStore(cfg.cvtr_mask_dir) if cfg.cvtr_enabled else None
++        )
+ 
+         # Where to dump results.
+         os.makedirs(cfg.result_dir, exist_ok=True)
+@@ -598,7 +613,7 @@ class Runner:
+             render_colors[~masks] = 0
+         return render_colors, render_alphas, info
+ 
+-    def train(self):
++    def train(self, init_step: int = 0):
+         cfg = self.cfg
+         device = self.device
+         world_rank = self.world_rank
+@@ -610,8 +625,6 @@ class Runner:
+                 yaml.dump(vars(cfg), f)
+ 
+         max_steps = cfg.max_steps
+-        init_step = 0
+-
+         schedulers = [
+             # means has a learning rate schedule, that end at 0.01 of the initial value
+             torch.optim.lr_scheduler.ExponentialLR(
+@@ -736,13 +749,33 @@ class Runner:
+             )
+ 
+             # loss
+-            l1loss, responsibility = responsibility_weighted_l1(
+-                colors,
+-                pixels,
+-                config=self.responsibility_config,
+-                step=step,
+-                valid_mask=masks,
+-            )
++            cvtr_responsibility = None
++            if self.cvtr_masks is not None:
++                image_names = [
++                    self.parser.image_names[self.trainset.indices[int(image_id)]]
++                    for image_id in image_ids.detach().cpu().tolist()
++                ]
++                transient_mask = self.cvtr_masks.load_batch(
++                    image_names,
++                    expected_shape=(height, width),
++                    device=device,
++                )
++                l1loss, cvtr_responsibility = cvtr_weighted_l1(
++                    colors,
++                    pixels,
++                    enabled=True,
++                    transient_mask=transient_mask,
++                    transient_weight=cfg.cvtr_transient_weight,
++                )
++                responsibility = None
++            else:
++                l1loss, responsibility = responsibility_weighted_l1(
++                    colors,
++                    pixels,
++                    config=self.responsibility_config,
++                    step=step,
++                    valid_mask=masks,
++                )
+             ssimloss = 1.0 - fused_ssim(
+                 colors.permute(0, 3, 1, 2), pixels.permute(0, 3, 1, 2), padding="valid"
+             )
+@@ -820,6 +853,12 @@ class Runner:
+                     )
+                 self.writer.add_scalar("train/num_GS", len(self.splats["means"]), step)
+                 self.writer.add_scalar("train/mem", mem, step)
++                if cvtr_responsibility is not None:
++                    self.writer.add_scalar(
++                        "train/cvtr_responsibility_mean",
++                        cvtr_responsibility.mean().item(),
++                        step,
++                    )
+                 if cfg.depth_loss:
+                     self.writer.add_scalar("train/depthloss", depthloss.item(), step)
+                 if cfg.use_bilateral_grid:
+@@ -1245,6 +1284,8 @@ def main(local_rank: int, world_rank, world_size: int, cfg: Config):
+ 
+     runner = Runner(local_rank, world_rank, world_size, cfg)
+ 
++    if cfg.ckpt is not None and cfg.resume_ckpt is not None:
++        raise ValueError("ckpt and resume_ckpt are mutually exclusive")
+     if cfg.ckpt is not None:
+         # run eval only
+         ckpts = [
+@@ -1258,6 +1299,21 @@ def main(local_rank: int, world_rank, world_size: int, cfg: Config):
+         runner.render_traj(step=step)
+         if cfg.compression is not None:
+             runner.run_compression(step=step)
++    elif cfg.resume_ckpt is not None:
++        checkpoint = torch.load(
++            cfg.resume_ckpt, map_location=runner.device, weights_only=True
++        )
++        if set(checkpoint).intersection({"optimizer", "optimizers", "strategy", "rng"}):
++            raise ValueError("unexpected stateful source checkpoint")
++        if int(checkpoint.get("step", -1)) != 9999:
++            raise ValueError("Phase 3 continuation source must be step 9999")
++        for key in runner.splats.keys():
++            runner.splats[key].data = checkpoint["splats"][key].to(runner.device)
++        print(
++            "Continuation state: optimizer=fresh strategy=fresh rng=fresh "
++            "source_step=9999"
++        )
++        runner.train(init_step=10000)
+     else:
+         runner.train()
+ 

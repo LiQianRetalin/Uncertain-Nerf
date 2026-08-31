@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "profile": "cvtr",
+  "base_profile": "b1c",
+  "gsplat_version": "1.5.3",
+  "seed": 42,
+  "training": {
+    "data_factor": 4,
+    "test_every": 8,
+    "sh_degree": 3,
+    "ssim_lambda": 0.2
+  },
+  "strategy": {
+    "type": "default",
+    "absgrad": true,
+    "grow_grad2d": 0.0006
+  },
+  "responsibility": {
+    "enabled": false,
+    "start_step": 3000,
+    "threshold": 1.5,
+    "min_weight": 0.2,
+    "pool_size": 3,
+    "epsilon": 1e-6
+  },
+  "continuation": {
+    "enabled": true,
+    "source_step": 9999,
+    "target_step": 14999,
+    "additional_steps": 5000
+  },
+  "cvtr": {
+    "enabled": true,
+    "residual_sample_stride": 8,
+    "alpha_min": 0.5,
+    "residual_scale_multiplier": 3.0,
+    "epsilon": 0.000001,
+    "neighbor_count": 3,
+    "depth_relative_tolerance": 0.05,
+    "minimum_valid_neighbors": 2,
+    "static_support_threshold": 0.5,
+    "patch_size": 3,
+    "patch_min_support": 0.5555555555555556,
+    "max_transient_area": 0.15,
+    "transient_weight": 0.2,
+    "minimum_neff_ratio": 0.9
+  }
+}
