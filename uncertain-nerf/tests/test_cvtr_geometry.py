@@ -12,6 +12,7 @@ from puri_gs.cvtr import (
     select_camera_neighbors,
     unproject_camera_z,
 )
+from scripts.verify_gsplat_robot_install import _has_compatible_architecture
 
 
 def _view(name: str, residual_value: float, depth_value: float = 2.0) -> ViewEvidence:
@@ -79,8 +80,9 @@ def test_no_valid_neighbors_and_depth_inconsistency_are_conservative():
 def _cuda_architecture_is_supported() -> bool:
     if importlib.util.find_spec("gsplat") is None or not torch.cuda.is_available():
         return False
-    major, minor = torch.cuda.get_device_capability()
-    return f"sm_{major}{minor}" in torch.cuda.get_arch_list()
+    return _has_compatible_architecture(
+        torch.cuda.get_device_capability(), torch.cuda.get_arch_list()
+    )
 
 
 @pytest.mark.skipif(
