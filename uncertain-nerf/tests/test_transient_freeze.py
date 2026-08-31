@@ -1,3 +1,6 @@
+import sys
+import types
+
 import torch
 
 from puri_gs.transient_layer import (
@@ -55,3 +58,28 @@ def test_static_parameters_frozen_and_only_transient_logits_receive_gradients():
     assert layer.means.grad is None
     assert layer.quaternions.grad is None
     assert layer.log_scales.grad is None
+
+
+def test_frozen_static_render_can_be_saved_for_transient_backward(monkeypatch):
+    rendering_module = types.ModuleType("gsplat.rendering")
+    rendering_module.rasterization = _fake_rasterization
+    gsplat_module = types.ModuleType("gsplat")
+    gsplat_module.rendering = rendering_module
+    monkeypatch.setitem(sys.modules, "gsplat", gsplat_module)
+    monkeypatch.setitem(sys.modules, "gsplat.rendering", rendering_module)
+
+    static_module = FrozenStaticGaussians(_static_splats())
+    K = torch.tensor([[50.0, 0.0, 7.5], [0.0, 50.0, 7.5], [0.0, 0.0, 1.0]])
+    static_rgb = static_module.render(K, torch.eye(4), width=16, height=16)
+    assert not torch.is_inference(static_rgb)
+    assert not static_rgb.requires_grad
+
+    alpha_logits = torch.nn.Parameter(torch.zeros(16, 16, 1))
+    alpha = torch.sigmoid(alpha_logits)
+    transient_premultiplied = alpha * torch.rand(16, 16, 3)
+    composite = compose_premultiplied(static_rgb, transient_premultiplied, alpha)
+    composite.mean().backward()
+
+    assert alpha_logits.grad is not None
+    assert torch.isfinite(alpha_logits.grad).all()
+    assert float(alpha_logits.grad.abs().sum()) > 0.0

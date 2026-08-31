@@ -309,6 +309,21 @@ class TransientGaussianLayer(nn.Module):
         }
 
 
+def materialize_autograd_safe_constant(value: Tensor) -> Tensor:
+    """Copy an inference tensor into ordinary detached tensor storage.
+
+    Autograd may need to save a constant operand while differentiating another
+    operand.  PyTorch deliberately forbids saving tensors created in
+    ``inference_mode``, even when those tensors do not require gradients.
+    """
+
+    with torch.inference_mode(False):
+        materialized = value.detach().clone()
+    if torch.is_inference(materialized):
+        raise RuntimeError("failed to materialize an autograd-safe constant")
+    return materialized
+
+
 class FrozenStaticGaussians(nn.Module):
     """Read-only B1 splats with no optimizer, strategy, densification, or pruning."""
 
@@ -328,34 +343,35 @@ class FrozenStaticGaussians(nn.Module):
         for parameter in self.parameters():
             parameter.requires_grad_(False)
 
-    @torch.inference_mode()
     def render(self, K: Tensor, camtoworld: Tensor, width: int, height: int) -> Tensor:
         from gsplat.rendering import rasterization
 
-        rendered, _, _ = rasterization(
-            means=self.gaussians["means"],
-            quats=self.gaussians["quats"],
-            scales=torch.exp(self.gaussians["scales"]),
-            opacities=torch.sigmoid(self.gaussians["opacities"]),
-            colors=torch.cat((self.gaussians["sh0"], self.gaussians["shN"]), dim=1),
-            viewmats=torch.linalg.inv(camtoworld[None]),
-            Ks=K[None],
-            width=width,
-            height=height,
-            near_plane=0.01,
-            far_plane=1e10,
-            packed=False,
-            render_mode="RGB",
-            sparse_grad=False,
-            absgrad=True,
-            rasterize_mode="classic",
-            distributed=False,
-            camera_model="pinhole",
-            sh_degree=3,
-            with_ut=False,
-            with_eval3d=False,
-        )
-        return rendered[0].clamp(0.0, 1.0).detach()
+        with torch.inference_mode():
+            rendered, _, _ = rasterization(
+                means=self.gaussians["means"],
+                quats=self.gaussians["quats"],
+                scales=torch.exp(self.gaussians["scales"]),
+                opacities=torch.sigmoid(self.gaussians["opacities"]),
+                colors=torch.cat((self.gaussians["sh0"], self.gaussians["shN"]), dim=1),
+                viewmats=torch.linalg.inv(camtoworld[None]),
+                Ks=K[None],
+                width=width,
+                height=height,
+                near_plane=0.01,
+                far_plane=1e10,
+                packed=False,
+                render_mode="RGB",
+                sparse_grad=False,
+                absgrad=True,
+                rasterize_mode="classic",
+                distributed=False,
+                camera_model="pinhole",
+                sh_degree=3,
+                with_ut=False,
+                with_eval3d=False,
+            )
+            static_rgb = rendered[0].clamp(0.0, 1.0)
+        return materialize_autograd_safe_constant(static_rgb)
 
 
 def compose_premultiplied(
