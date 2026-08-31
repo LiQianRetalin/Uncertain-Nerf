@@ -1,0 +1,258 @@
+{
+  "expected_count": 19,
+  "ground_truth_source": "left half of each official evaluation canvas",
+  "ground_truth_files": [
+    "1extra000.JPG",
+    "1extra001.JPG",
+    "1extra002.JPG",
+    "1extra003.JPG",
+    "1extra004.JPG",
+    "1extra005.JPG",
+    "1extra006.JPG",
+    "1extra007.JPG",
+    "1extra008.JPG",
+    "1extra009.JPG",
+    "1extra010.JPG",
+    "1extra011.JPG",
+    "1extra012.JPG",
+    "1extra013.JPG",
+    "1extra014.JPG",
+    "1extra015.JPG",
+    "1extra016.JPG",
+    "1extra017.JPG",
+    "1extra018.JPG"
+  ],
+  "B0_render_files": [
+    "test_step9999_0000.png",
+    "test_step9999_0001.png",
+    "test_step9999_0002.png",
+    "test_step9999_0003.png",
+    "test_step9999_0004.png",
+    "test_step9999_0005.png",
+    "test_step9999_0006.png",
+    "test_step9999_0007.png",
+    "test_step9999_0008.png",
+    "test_step9999_0009.png",
+    "test_step9999_0010.png",
+    "test_step9999_0011.png",
+    "test_step9999_0012.png",
+    "test_step9999_0013.png",
+    "test_step9999_0014.png",
+    "test_step9999_0015.png",
+    "test_step9999_0016.png",
+    "test_step9999_0017.png",
+    "test_step9999_0018.png"
+  ],
+  "B1_render_files": [
+    "test_step9999_0000.png",
+    "test_step9999_0001.png",
+    "test_step9999_0002.png",
+    "test_step9999_0003.png",
+    "test_step9999_0004.png",
+    "test_step9999_0005.png",
+    "test_step9999_0006.png",
+    "test_step9999_0007.png",
+    "test_step9999_0008.png",
+    "test_step9999_0009.png",
+    "test_step9999_0010.png",
+    "test_step9999_0011.png",
+    "test_step9999_0012.png",
+    "test_step9999_0013.png",
+    "test_step9999_0014.png",
+    "test_step9999_0015.png",
+    "test_step9999_0016.png",
+    "test_step9999_0017.png",
+    "test_step9999_0018.png"
+  ],
+  "A1_render_files": [
+    "test_step9999_0000.png",
+    "test_step9999_0001.png",
+    "test_step9999_0002.png",
+    "test_step9999_0003.png",
+    "test_step9999_0004.png",
+    "test_step9999_0005.png",
+    "test_step9999_0006.png",
+    "test_step9999_0007.png",
+    "test_step9999_0008.png",
+    "test_step9999_0009.png",
+    "test_step9999_0010.png",
+    "test_step9999_0011.png",
+    "test_step9999_0012.png",
+    "test_step9999_0013.png",
+    "test_step9999_0014.png",
+    "test_step9999_0015.png",
+    "test_step9999_0016.png",
+    "test_step9999_0017.png",
+    "test_step9999_0018.png"
+  ],
+  "missing_files": {
+    "b0": [],
+    "b1": [],
+    "a1": []
+  },
+  "extra_files": {
+    "b0": [],
+    "b1": [],
+    "a1": []
+  },
+  "ordering": [
+    {
+      "eval_index": "0",
+      "image_name": "1extra000.JPG",
+      "evaluation_canvas": "test_step9999_0000.png"
+    },
+    {
+      "eval_index": "1",
+      "image_name": "1extra001.JPG",
+      "evaluation_canvas": "test_step9999_0001.png"
+    },
+    {
+      "eval_index": "2",
+      "image_name": "1extra002.JPG",
+      "evaluation_canvas": "test_step9999_0002.png"
+    },
+    {
+      "eval_index": "3",
+      "image_name": "1extra003.JPG",
+      "evaluation_canvas": "test_step9999_0003.png"
+    },
+    {
+      "eval_index": "4",
+      "image_name": "1extra004.JPG",
+      "evaluation_canvas": "test_step9999_0004.png"
+    },
+    {
+      "eval_index": "5",
+      "image_name": "1extra005.JPG",
+      "evaluation_canvas": "test_step9999_0005.png"
+    },
+    {
+      "eval_index": "6",
+      "image_name": "1extra006.JPG",
+      "evaluation_canvas": "test_step9999_0006.png"
+    },
+    {
+      "eval_index": "7",
+      "image_name": "1extra007.JPG",
+      "evaluation_canvas": "test_step9999_0007.png"
+    },
+    {
+      "eval_index": "8",
+      "image_name": "1extra008.JPG",
+      "evaluation_canvas": "test_step9999_0008.png"
+    },
+    {
+      "eval_index": "9",
+      "image_name": "1extra009.JPG",
+      "evaluation_canvas": "test_step9999_0009.png"
+    },
+    {
+      "eval_index": "10",
+      "image_name": "1extra010.JPG",
+      "evaluation_canvas": "test_step9999_0010.png"
+    },
+    {
+      "eval_index": "11",
+      "image_name": "1extra011.JPG",
+      "evaluation_canvas": "test_step9999_0011.png"
+    },
+    {
+      "eval_index": "12",
+      "image_name": "1extra012.JPG",
+      "evaluation_canvas": "test_step9999_0012.png"
+    },
+    {
+      "eval_index": "13",
+      "image_name": "1extra013.JPG",
+      "evaluation_canvas": "test_step9999_0013.png"
+    },
+    {
+      "eval_index": "14",
+      "image_name": "1extra014.JPG",
+      "evaluation_canvas": "test_step9999_0014.png"
+    },
+    {
+      "eval_index": "15",
+      "image_name": "1extra015.JPG",
+      "evaluation_canvas": "test_step9999_0015.png"
+    },
+    {
+      "eval_index": "16",
+      "image_name": "1extra016.JPG",
+      "evaluation_canvas": "test_step9999_0016.png"
+    },
+    {
+      "eval_index": "17",
+      "image_name": "1extra017.JPG",
+      "evaluation_canvas": "test_step9999_0017.png"
+    },
+    {
+      "eval_index": "18",
+      "image_name": "1extra018.JPG",
+      "evaluation_canvas": "test_step9999_0018.png"
+    }
+  ],
+  "embedded_ground_truth_identical": true,
+  "metric_consistency": {
+    "b0": {
+      "psnr": {
+        "recomputed_from_saved_canvas": 24.43763421711169,
+        "official_before_png_quantization": 24.446428298950195,
+        "absolute_difference": 0.008794081838505718,
+        "tolerance": 0.05
+      },
+      "ssim": {
+        "recomputed_from_saved_canvas": 0.8150478005409241,
+        "official_before_png_quantization": 0.8165097832679749,
+        "absolute_difference": 0.0014619827270507812,
+        "tolerance": 0.002
+      },
+      "lpips": {
+        "recomputed_from_saved_canvas": 0.1720158614610371,
+        "official_before_png_quantization": 0.17363446950912476,
+        "absolute_difference": 0.0016186080480876663,
+        "tolerance": 0.002
+      }
+    },
+    "b1": {
+      "psnr": {
+        "recomputed_from_saved_canvas": 24.30444165279991,
+        "official_before_png_quantization": 24.31206703186035,
+        "absolute_difference": 0.007625379060442583,
+        "tolerance": 0.05
+      },
+      "ssim": {
+        "recomputed_from_saved_canvas": 0.8127080923632571,
+        "official_before_png_quantization": 0.8140572905540466,
+        "absolute_difference": 0.0013491981907894912,
+        "tolerance": 0.002
+      },
+      "lpips": {
+        "recomputed_from_saved_canvas": 0.17527387408833756,
+        "official_before_png_quantization": 0.17687082290649414,
+        "absolute_difference": 0.001596948818156585,
+        "tolerance": 0.002
+      }
+    },
+    "a1": {
+      "psnr": {
+        "recomputed_from_saved_canvas": 24.56309107730263,
+        "official_before_png_quantization": 24.577035903930664,
+        "absolute_difference": 0.01394482662803398,
+        "tolerance": 0.05
+      },
+      "ssim": {
+        "recomputed_from_saved_canvas": 0.8169760578557065,
+        "official_before_png_quantization": 0.8185691833496094,
+        "absolute_difference": 0.0015931254939028916,
+        "tolerance": 0.002
+      },
+      "lpips": {
+        "recomputed_from_saved_canvas": 0.16865573274461845,
+        "official_before_png_quantization": 0.17019997537136078,
+        "absolute_difference": 0.001544242626742326,
+        "tolerance": 0.002
+      }
+    }
+  }
+}

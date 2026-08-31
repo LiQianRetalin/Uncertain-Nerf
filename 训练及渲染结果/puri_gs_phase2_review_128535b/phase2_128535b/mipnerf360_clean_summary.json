@@ -1,0 +1,264 @@
+{
+  "execution_decision": "PASS_EXECUTION",
+  "clean_decision": {
+    "numeric_decision": "CLEAN_FAIL",
+    "final_decision": "CLEAN_FAIL",
+    "primary_baseline": "b1",
+    "mean_deltas": {
+      "A1_minus_B0": {
+        "psnr": -0.0722856643872376,
+        "ssim": 0.009093130914828662,
+        "lpips": -0.011353850961686715
+      },
+      "A1_minus_B1": {
+        "psnr": -0.17280066624665835,
+        "ssim": 6.34671976932899e-05,
+        "lpips": 0.00023560771623100385
+      }
+    },
+    "per_scene_A1_minus_primary_psnr": {
+      "garden": 0.10408647855122766,
+      "room": -0.44968781104454436
+    },
+    "per_scene_A1_over_primary_fps_ratio": {
+      "garden": 1.016338665435075,
+      "room": 1.0520048476552446
+    }
+  },
+  "baseline_selection": {
+    "primary_baseline": "b1",
+    "b1_label": "efficiency-strong baseline",
+    "mean_B1_minus_B0_psnr": 0.10051500185942075,
+    "mean_B1_minus_B0_lpips": -0.011589458677917719,
+    "mean_B1_over_B0_gaussian_ratio": 0.7079226383853412,
+    "mean_B1_over_B0_train_time_ratio": 0.8732203828910214,
+    "efficiency_better": true
+  },
+  "scenes": {
+    "garden": {
+      "b0": {
+        "psnr": 26.746008157730103,
+        "ssim": 0.8386244376500448,
+        "lpips": 0.11165578135599692,
+        "num_GS": 4151470,
+        "peak_vram_gib": 6.130912780761719,
+        "train_seconds": 417.6022627353668,
+        "render_fps": 75.21388805656208,
+        "latency_mean_ms": 13.295416921513,
+        "latency_p50_ms": 13.312925497302786,
+        "latency_p95_ms": 13.862129472545348,
+        "warmup_frames": 10,
+        "measured_frames": 24,
+        "checkpoint_bytes": 979749400,
+        "metric_consistency": {
+          "psnr": {
+            "recomputed": 26.746008157730103,
+            "official": 26.746007919311523,
+            "absolute_difference": 2.384185791015625e-07,
+            "tolerance": 0.02
+          },
+          "ssim": {
+            "recomputed": 0.8386244376500448,
+            "official": 0.8386244773864746,
+            "absolute_difference": 3.973642981325298e-08,
+            "tolerance": 0.002
+          },
+          "lpips": {
+            "recomputed": 0.11165578135599692,
+            "official": 0.11165578663349152,
+            "absolute_difference": 5.277494594113641e-09,
+            "tolerance": 0.002
+          }
+        }
+      },
+      "b1": {
+        "psnr": 26.8216495513916,
+        "ssim": 0.8539922088384628,
+        "lpips": 0.09328804103036721,
+        "num_GS": 3023682,
+        "peak_vram_gib": 4.5146026611328125,
+        "train_seconds": 381.68873143196106,
+        "render_fps": 97.81434973328295,
+        "latency_mean_ms": 10.223448836768512,
+        "latency_p50_ms": 10.078016493935138,
+        "latency_p95_ms": 11.19120191433467,
+        "warmup_frames": 10,
+        "measured_frames": 24,
+        "checkpoint_bytes": 713591512,
+        "metric_consistency": {
+          "psnr": {
+            "recomputed": 26.8216495513916,
+            "official": 26.821651458740234,
+            "absolute_difference": 1.9073486328125e-06,
+            "tolerance": 0.02
+          },
+          "ssim": {
+            "recomputed": 0.8539922088384628,
+            "official": 0.853992223739624,
+            "absolute_difference": 1.4901161193847656e-08,
+            "tolerance": 0.002
+          },
+          "lpips": {
+            "recomputed": 0.09328804103036721,
+            "official": 0.09328804910182953,
+            "absolute_difference": 8.071462317960076e-09,
+            "tolerance": 0.002
+          }
+        }
+      },
+      "a1": {
+        "psnr": 26.92573602994283,
+        "ssim": 0.8553479388356209,
+        "lpips": 0.09196605005611976,
+        "num_GS": 2894457,
+        "peak_vram_gib": 4.327853679656982,
+        "train_seconds": 379.42651104927063,
+        "render_fps": 99.41250566832448,
+        "latency_mean_ms": 10.059096622474803,
+        "latency_p50_ms": 9.958776005078107,
+        "latency_p95_ms": 11.001385684357956,
+        "warmup_frames": 10,
+        "measured_frames": 24,
+        "checkpoint_bytes": 683094360,
+        "metric_consistency": {
+          "psnr": {
+            "recomputed": 26.92573602994283,
+            "official": 26.925735473632812,
+            "absolute_difference": 5.563100167194079e-07,
+            "tolerance": 0.02
+          },
+          "ssim": {
+            "recomputed": 0.8553479388356209,
+            "official": 0.8553479909896851,
+            "absolute_difference": 5.21540641784668e-08,
+            "tolerance": 0.002
+          },
+          "lpips": {
+            "recomputed": 0.09196605005611976,
+            "official": 0.09196605533361435,
+            "absolute_difference": 5.277494594113641e-09,
+            "tolerance": 0.002
+          }
+        }
+      }
+    },
+    "room": {
+      "b0": {
+        "psnr": 31.210984841371193,
+        "ssim": 0.9391300800519112,
+        "lpips": 0.08211736533886348,
+        "num_GS": 1395620,
+        "peak_vram_gib": 2.0713343620300293,
+        "train_seconds": 154.78628015518188,
+        "render_fps": 214.03624781834347,
+        "latency_mean_ms": 4.672105824097227,
+        "latency_p50_ms": 4.670276015531272,
+        "latency_p95_ms": 5.226286186370999,
+        "warmup_frames": 10,
+        "measured_frames": 39,
+        "checkpoint_bytes": 329368856,
+        "metric_consistency": {
+          "psnr": {
+            "recomputed": 31.210984841371193,
+            "official": 31.21098518371582,
+            "absolute_difference": 3.423446273131958e-07,
+            "tolerance": 0.02
+          },
+          "ssim": {
+            "recomputed": 0.9391300800519112,
+            "official": 0.9391300678253174,
+            "absolute_difference": 1.2226593848474465e-08,
+            "tolerance": 0.002
+          },
+          "lpips": {
+            "recomputed": 0.08211736533886348,
+            "official": 0.08211736381053925,
+            "absolute_difference": 1.5283242310593081e-09,
+            "tolerance": 0.002
+          }
+        }
+      },
+      "b1": {
+        "psnr": 31.336373451428535,
+        "ssim": 0.9418216362977639,
+        "lpips": 0.07730618830865775,
+        "num_GS": 959496,
+        "peak_vram_gib": 1.4438233375549316,
+        "train_seconds": 128.8503119945526,
+        "render_fps": 285.39286900460723,
+        "latency_mean_ms": 3.5039417890425866,
+        "latency_p50_ms": 3.5618949914351106,
+        "latency_p95_ms": 3.87458938639611,
+        "warmup_frames": 10,
+        "measured_frames": 39,
+        "checkpoint_bytes": 226443608,
+        "metric_consistency": {
+          "psnr": {
+            "recomputed": 31.336373451428535,
+            "official": 31.33637237548828,
+            "absolute_difference": 1.0759402542248608e-06,
+            "tolerance": 0.02
+          },
+          "ssim": {
+            "recomputed": 0.9418216362977639,
+            "official": 0.9418216943740845,
+            "absolute_difference": 5.807632053045353e-08,
+            "tolerance": 0.002
+          },
+          "lpips": {
+            "recomputed": 0.07730618830865775,
+            "official": 0.07730618864297867,
+            "absolute_difference": 3.343209181716489e-10,
+            "tolerance": 0.002
+          }
+        }
+      },
+      "a1": {
+        "psnr": 30.88668564038399,
+        "ssim": 0.9405928406959925,
+        "lpips": 0.07909939471536721,
+        "num_GS": 894139,
+        "peak_vram_gib": 1.349198818206787,
+        "train_seconds": 132.92829012870789,
+        "render_fps": 300.23468167908504,
+        "latency_mean_ms": 3.3307277973598013,
+        "latency_p50_ms": 3.3834169735200703,
+        "latency_p95_ms": 3.693272784585133,
+        "warmup_frames": 10,
+        "measured_frames": 39,
+        "checkpoint_bytes": 211019416,
+        "metric_consistency": {
+          "psnr": {
+            "recomputed": 30.88668564038399,
+            "official": 30.88668441772461,
+            "absolute_difference": 1.222659381738822e-06,
+            "tolerance": 0.02
+          },
+          "ssim": {
+            "recomputed": 0.9405928406959925,
+            "official": 0.9405928254127502,
+            "absolute_difference": 1.5283242227326355e-08,
+            "tolerance": 0.002
+          },
+          "lpips": {
+            "recomputed": 0.07909939471536721,
+            "official": 0.07909940183162689,
+            "absolute_difference": 7.116259678752179e-09,
+            "tolerance": 0.002
+          }
+        }
+      }
+    }
+  },
+  "protocol": {
+    "steps": 10000,
+    "seed": 42,
+    "data_factor": 4,
+    "sh_degree": 3,
+    "gpu": "NVIDIA L20",
+    "warmup_frames": 10,
+    "metric_implementation": "gsplat v1.5.3 TorchMetrics PSNR/SSIM and Alex LPIPS",
+    "gsplat_runtime_path": "/home/chenglong/Uncertain-Nerf/uncertain-nerf/.venv-gsplat153/lib/python3.10/site-packages/gsplat/__init__.py"
+  },
+  "phase2_final_decision": "PENDING_ANDROID_PAIRWISE_RESPONSIBILITY_AND_CLEAN_VISUAL_REVIEW"
+}

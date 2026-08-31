@@ -1,0 +1,85 @@
+{
+  "A1_minus_B0": {
+    "psnr": {
+      "mean": 0.12545686019094368,
+      "median": 0.08140182495117188,
+      "std": 0.31271866866189646,
+      "min": -0.23857688903808594,
+      "max": 1.175252914428711,
+      "improved_count": 12,
+      "improved_ratio": 0.631578947368421,
+      "declined_count": 7,
+      "declined_ratio": 0.3684210526315789,
+      "unchanged_count": 0,
+      "top3_positive_contribution_share": 0.5728096840366401
+    },
+    "ssim": {
+      "mean": 0.0019282573147823936,
+      "median": 0.0014365911483764648,
+      "std": 0.0038559527371388506,
+      "min": -0.005977034568786621,
+      "max": 0.010138452053070068,
+      "improved_count": 13,
+      "improved_ratio": 0.6842105263157895,
+      "declined_count": 6,
+      "declined_ratio": 0.3157894736842105,
+      "unchanged_count": 0,
+      "top3_positive_contribution_share": 0.5201927147181095
+    },
+    "lpips": {
+      "mean": -0.0033601287164186176,
+      "median": -0.0032178014516830444,
+      "std": 0.003447993510996191,
+      "min": -0.011288687586784363,
+      "max": 0.0019108206033706665,
+      "improved_count": 16,
+      "improved_ratio": 0.8421052631578947,
+      "declined_count": 3,
+      "declined_ratio": 0.15789473684210525,
+      "unchanged_count": 0,
+      "top3_positive_contribution_share": 1.0
+    }
+  },
+  "A1_minus_B1": {
+    "psnr": {
+      "mean": 0.2586494245027241,
+      "median": 0.21550750732421875,
+      "std": 0.35986069558999617,
+      "min": -0.2006549835205078,
+      "max": 1.3265228271484375,
+      "improved_count": 15,
+      "improved_ratio": 0.7894736842105263,
+      "declined_count": 4,
+      "declined_ratio": 0.21052631578947367,
+      "unchanged_count": 0,
+      "top3_positive_contribution_share": 0.47564459247247415
+    },
+    "ssim": {
+      "mean": 0.004267965492449309,
+      "median": 0.00422590970993042,
+      "std": 0.003126534215632582,
+      "min": -0.0012680292129516602,
+      "max": 0.010806500911712646,
+      "improved_count": 16,
+      "improved_ratio": 0.8421052631578947,
+      "declined_count": 3,
+      "declined_ratio": 0.15789473684210525,
+      "unchanged_count": 0,
+      "top3_positive_contribution_share": 0.3243943816242574
+    },
+    "lpips": {
+      "mean": -0.006618141343719081,
+      "median": -0.005368128418922424,
+      "std": 0.004563733223220558,
+      "min": -0.016792848706245422,
+      "max": 0.0002781301736831665,
+      "improved_count": 18,
+      "improved_ratio": 0.9473684210526315,
+      "declined_count": 1,
+      "declined_ratio": 0.05263157894736842,
+      "unchanged_count": 0,
+      "top3_positive_contribution_share": 1.0
+    }
+  },
+  "decision": "PAIRWISE_STABLE"
+}

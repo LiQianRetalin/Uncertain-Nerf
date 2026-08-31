@@ -114,6 +114,66 @@ class CrossViewResult:
         return float(supported.float().mean().item())
 
 
+CVTR_STAGE_NAMES = (
+    "S0_residual_threshold",
+    "S1_current_alpha",
+    "S2_reprojectable_2plus",
+    "S3_neighbor_alpha_2plus",
+    "S4_depth_consistent_2plus",
+    "S5_static_support",
+    "S6_spatial_support",
+    "S7_area_cap_final",
+)
+
+
+@dataclass(frozen=True)
+class CVTRStageTrace:
+    """Detached, read-only evidence from the frozen production CVTR pipeline."""
+
+    stage_masks: tuple[Tensor, ...]
+    production_candidate_mask: Tensor
+    rgb_residual: Tensor
+    current_alpha: Tensor
+    inbounds_positive_neighbor_count: Tensor
+    neighbor_alpha_valid_count: Tensor
+    depth_consistent_neighbor_count: Tensor
+    static_support_ratio: Tensor
+    spatial_support_score: Tensor
+    depth_consistency_error_per_neighbor: Tensor
+
+    def __post_init__(self) -> None:
+        if len(self.stage_masks) != len(CVTR_STAGE_NAMES):
+            raise ValueError("CVTR trace must contain exactly eight stage masks")
+        shape = self.rgb_residual.shape
+        if self.rgb_residual.ndim != 2 or self.current_alpha.shape != shape:
+            raise ValueError("trace residual and alpha must have matching [H, W] shapes")
+        for mask in self.stage_masks:
+            if mask.shape != shape or mask.dtype != torch.bool:
+                raise ValueError("each CVTR stage mask must be boolean [H, W]")
+        for counts in (
+            self.inbounds_positive_neighbor_count,
+            self.neighbor_alpha_valid_count,
+            self.depth_consistent_neighbor_count,
+        ):
+            if counts.shape != shape:
+                raise ValueError("CVTR neighbor-count maps must match the source image")
+        if self.static_support_ratio.shape != shape:
+            raise ValueError("static-support map must match the source image")
+        if self.spatial_support_score.shape != shape:
+            raise ValueError("spatial-support map must match the source image")
+        if self.depth_consistency_error_per_neighbor.ndim != 3:
+            raise ValueError("depth errors must have shape [neighbors, H, W]")
+        if self.depth_consistency_error_per_neighbor.shape[1:] != shape:
+            raise ValueError("depth-error maps must match the source image")
+
+    @property
+    def final_mask(self) -> Tensor:
+        return self.stage_masks[-1]
+
+    def named_stage_masks(self) -> dict[str, Tensor]:
+        return dict(zip(CVTR_STAGE_NAMES, self.stage_masks))
+
+
 def _validate_map_pair(residual: Tensor, alpha: Tensor) -> None:
     if residual.ndim != 2 or residual.shape != alpha.shape:
         raise ValueError("residual and alpha must have matching [H, W] shapes")
@@ -277,46 +337,96 @@ def bilinear_sample(image: Tensor, pixels_xy: Tensor) -> Tensor:
     return sampled[:, 0] if scalar else sampled
 
 
-def compute_cross_view_transient(
+@torch.inference_mode()
+def compute_cvtr_stage_trace(
     source: ViewEvidence,
     neighbors: Sequence[ViewEvidence],
     scene_threshold: float,
     config: CVTRConfig = CVTRConfig(),
-) -> CrossViewResult:
-    """Compute candidate and raw transient masks before spatial filtering."""
+) -> CVTRStageTrace:
+    """Trace the eight frozen CVTR stages without changing production semantics."""
 
     if len(neighbors) != config.neighbor_count:
         raise ValueError(f"exactly {config.neighbor_count} neighbors are required")
     device = source.residual.device
     dtype = source.depth.dtype
+    s0 = torch.isfinite(source.residual) & (source.residual > scene_threshold)
+    s1 = (
+        s0
+        & torch.isfinite(source.alpha)
+        & (source.alpha >= config.alpha_min)
+    )
+    valid_source_depth = torch.isfinite(source.depth) & (source.depth > 0)
+    production_candidate = (
+        s1
+        & valid_source_depth
+    )
     finite_source = (
         torch.isfinite(source.residual)
         & torch.isfinite(source.depth)
         & torch.isfinite(source.alpha)
         & (source.depth > 0)
     )
-    candidate = (
+    expected_production_candidate = (
         finite_source
         & (source.residual > scene_threshold)
         & (source.alpha >= config.alpha_min)
     )
-    valid_counts = torch.zeros_like(source.residual, dtype=torch.int16)
-    raw = torch.zeros_like(candidate)
-    candidate_yx = candidate.nonzero(as_tuple=False)
+    if not torch.equal(production_candidate, expected_production_candidate):
+        raise RuntimeError("trace candidate diverged from the production CVTR gate")
+
+    inbounds_counts = torch.zeros_like(source.residual, dtype=torch.int16)
+    alpha_counts = torch.zeros_like(source.residual, dtype=torch.int16)
+    depth_counts = torch.zeros_like(source.residual, dtype=torch.int16)
+    static_counts_map = torch.zeros_like(source.residual, dtype=torch.int16)
+    depth_errors = torch.full(
+        (config.neighbor_count, *source.residual.shape),
+        float("nan"),
+        device=device,
+        dtype=dtype,
+    )
+    candidate_yx = production_candidate.nonzero(as_tuple=False)
     if candidate_yx.numel() == 0:
-        return CrossViewResult(candidate, raw, valid_counts)
+        zero_ratio = torch.zeros_like(source.residual, dtype=dtype)
+        s2 = torch.zeros_like(s0)
+        s3 = torch.zeros_like(s0)
+        s4 = torch.zeros_like(s0)
+        s5 = torch.zeros_like(s0)
+        spatial_score = spatial_support_scores(s5, config)
+        s6 = spatial_score >= config.patch_min_support
+        s7 = apply_area_cap(s6, source.residual, config)
+        return CVTRStageTrace(
+            stage_masks=tuple(
+                mask.detach() for mask in (s0, s1, s2, s3, s4, s5, s6, s7)
+            ),
+            production_candidate_mask=production_candidate.detach(),
+            rgb_residual=source.residual.detach(),
+            current_alpha=source.alpha.detach(),
+            inbounds_positive_neighbor_count=inbounds_counts.detach(),
+            neighbor_alpha_valid_count=alpha_counts.detach(),
+            depth_consistent_neighbor_count=depth_counts.detach(),
+            static_support_ratio=zero_ratio.detach(),
+            spatial_support_score=spatial_score.detach(),
+            depth_consistency_error_per_neighbor=depth_errors.detach(),
+        )
 
     pixels_xy = candidate_yx[:, [1, 0]].to(device=device, dtype=dtype)
-    source_depth = source.depth[candidate]
+    source_depth = source.depth[production_candidate]
     world_points = unproject_camera_z(
         pixels_xy, source_depth, source.K, source.camtoworld
     )
-    candidate_valid_counts = torch.zeros(
+    candidate_inbounds_counts = torch.zeros(
         len(pixels_xy), device=device, dtype=torch.int16
     )
-    static_counts = torch.zeros_like(candidate_valid_counts)
+    candidate_alpha_counts = torch.zeros(
+        len(pixels_xy), device=device, dtype=torch.int16
+    )
+    candidate_depth_counts = torch.zeros(
+        len(pixels_xy), device=device, dtype=torch.int16
+    )
+    candidate_static_counts = torch.zeros_like(candidate_depth_counts)
 
-    for neighbor in neighbors:
+    for neighbor_index, neighbor in enumerate(neighbors):
         projected_xy, projected_z = project_camera_z(
             world_points,
             neighbor.K,
@@ -343,44 +453,105 @@ def compute_cross_view_transient(
         relative_depth_error = (sampled_depth - projected_z).abs() / (
             projected_z + config.epsilon
         )
-        valid = (
-            in_bounds
-            & positive_depth
+        inbounds_positive = in_bounds & positive_depth
+        alpha_valid = (
+            inbounds_positive
             & torch.isfinite(sampled_alpha)
+            & (sampled_alpha >= config.alpha_min)
+        )
+        depth_valid = (
+            alpha_valid
             & torch.isfinite(sampled_depth)
             & torch.isfinite(sampled_residual)
-            & (sampled_alpha >= config.alpha_min)
             & (relative_depth_error <= config.depth_relative_tolerance)
         )
-        candidate_valid_counts += valid.to(torch.int16)
-        static_counts += (valid & (sampled_residual <= scene_threshold)).to(torch.int16)
+        candidate_inbounds_counts += inbounds_positive.to(torch.int16)
+        candidate_alpha_counts += alpha_valid.to(torch.int16)
+        candidate_depth_counts += depth_valid.to(torch.int16)
+        candidate_static_counts += (
+            depth_valid & (sampled_residual <= scene_threshold)
+        ).to(torch.int16)
+        depth_errors[neighbor_index, candidate_yx[:, 0], candidate_yx[:, 1]] = (
+            relative_depth_error
+        )
 
-    enough_neighbors = candidate_valid_counts >= config.minimum_valid_neighbors
-    static_support = static_counts.to(dtype) / candidate_valid_counts.clamp_min(1).to(dtype)
-    transient_candidates = enough_neighbors & (
-        static_support >= config.static_support_threshold
+    inbounds_counts[candidate_yx[:, 0], candidate_yx[:, 1]] = (
+        candidate_inbounds_counts
     )
-    raw[candidate_yx[:, 0], candidate_yx[:, 1]] = transient_candidates
-    valid_counts[candidate_yx[:, 0], candidate_yx[:, 1]] = candidate_valid_counts
-    return CrossViewResult(candidate, raw, valid_counts)
+    alpha_counts[candidate_yx[:, 0], candidate_yx[:, 1]] = candidate_alpha_counts
+    depth_counts[candidate_yx[:, 0], candidate_yx[:, 1]] = candidate_depth_counts
+    static_counts_map[candidate_yx[:, 0], candidate_yx[:, 1]] = (
+        candidate_static_counts
+    )
+
+    s2 = production_candidate & (
+        inbounds_counts >= config.minimum_valid_neighbors
+    )
+    s3 = s2 & (alpha_counts >= config.minimum_valid_neighbors)
+    s4 = s3 & (depth_counts >= config.minimum_valid_neighbors)
+    static_support = static_counts_map.to(dtype) / depth_counts.clamp_min(1).to(dtype)
+    s5 = s4 & (static_support >= config.static_support_threshold)
+    spatial_score = spatial_support_scores(s5, config)
+    s6 = spatial_score >= config.patch_min_support
+    s7 = apply_area_cap(s6, source.residual, config)
+    return CVTRStageTrace(
+        stage_masks=tuple(
+            mask.detach() for mask in (s0, s1, s2, s3, s4, s5, s6, s7)
+        ),
+        production_candidate_mask=production_candidate.detach(),
+        rgb_residual=source.residual.detach(),
+        current_alpha=source.alpha.detach(),
+        inbounds_positive_neighbor_count=inbounds_counts.detach(),
+        neighbor_alpha_valid_count=alpha_counts.detach(),
+        depth_consistent_neighbor_count=depth_counts.detach(),
+        static_support_ratio=static_support.detach(),
+        spatial_support_score=spatial_score.detach(),
+        depth_consistency_error_per_neighbor=depth_errors.detach(),
+    )
 
 
-def spatial_filter_and_cap(
+def compute_cross_view_transient(
+    source: ViewEvidence,
+    neighbors: Sequence[ViewEvidence],
+    scene_threshold: float,
+    config: CVTRConfig = CVTRConfig(),
+) -> CrossViewResult:
+    """Compute the production candidate and raw masks before spatial filtering."""
+
+    trace = compute_cvtr_stage_trace(source, neighbors, scene_threshold, config)
+    return CrossViewResult(
+        candidate_mask=trace.production_candidate_mask,
+        raw_transient_mask=trace.stage_masks[5],
+        valid_neighbor_counts=trace.depth_consistent_neighbor_count,
+    )
+
+
+def spatial_support_scores(
     raw_transient_mask: Tensor,
-    residual: Tensor,
     config: CVTRConfig = CVTRConfig(),
 ) -> Tensor:
-    """Apply the fixed 3x3 support rule and top-residual 15% area cap."""
+    """Return the fixed 3x3 average-pooling support score."""
 
-    if raw_transient_mask.ndim != 2 or raw_transient_mask.shape != residual.shape:
-        raise ValueError("raw_transient_mask and residual must match [H, W]")
-    support = F.avg_pool2d(
+    if raw_transient_mask.ndim != 2:
+        raise ValueError("raw_transient_mask must have shape [H, W]")
+    return F.avg_pool2d(
         raw_transient_mask.to(dtype=torch.float32)[None, None],
         kernel_size=config.patch_size,
         stride=1,
         padding=config.patch_size // 2,
     )[0, 0]
-    mask = support >= config.patch_min_support
+
+
+def apply_area_cap(
+    spatial_mask: Tensor,
+    residual: Tensor,
+    config: CVTRConfig = CVTRConfig(),
+) -> Tensor:
+    """Apply only the production top-residual area cap to a spatial mask."""
+
+    if spatial_mask.ndim != 2 or spatial_mask.shape != residual.shape:
+        raise ValueError("spatial_mask and residual must match [H, W]")
+    mask = spatial_mask.to(torch.bool)
     maximum_count = math.floor(config.max_transient_area * mask.numel())
     selected_count = int(mask.sum().item())
     if selected_count > maximum_count:
@@ -392,6 +563,20 @@ def spatial_filter_and_cap(
         capped[keep] = True
         mask = capped.view_as(mask)
     return mask.detach()
+
+
+def spatial_filter_and_cap(
+    raw_transient_mask: Tensor,
+    residual: Tensor,
+    config: CVTRConfig = CVTRConfig(),
+) -> Tensor:
+    """Apply the fixed 3x3 support rule and top-residual 15% area cap."""
+
+    if raw_transient_mask.ndim != 2 or raw_transient_mask.shape != residual.shape:
+        raise ValueError("raw_transient_mask and residual must match [H, W]")
+    support = spatial_support_scores(raw_transient_mask, config)
+    mask = support >= config.patch_min_support
+    return apply_area_cap(mask, residual, config)
 
 
 def mask_to_responsibility(

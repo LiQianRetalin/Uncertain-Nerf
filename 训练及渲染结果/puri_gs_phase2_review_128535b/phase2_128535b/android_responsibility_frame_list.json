@@ -1,0 +1,24 @@
+{
+  "selection": "round(linspace(0, 121, 8)) over sorted clutter filenames",
+  "sorted_train_count": 122,
+  "selected_positions": [
+    0,
+    17,
+    35,
+    52,
+    69,
+    86,
+    104,
+    121
+  ],
+  "files": [
+    "2clutter019.JPG",
+    "2clutter036.JPG",
+    "2clutter054.JPG",
+    "2clutter071.JPG",
+    "2clutter088.JPG",
+    "2clutter105.JPG",
+    "2clutter123.JPG",
+    "2clutter140.JPG"
+  ]
+}

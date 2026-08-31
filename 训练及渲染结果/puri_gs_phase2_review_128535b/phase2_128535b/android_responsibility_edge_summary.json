@@ -1,0 +1,194 @@
+{
+  "frame_count": 8,
+  "statistics": {
+    "sorted_position": {
+      "mean": 60.5,
+      "median": 60.5,
+      "min": 0.0,
+      "max": 121.0
+    },
+    "spearman_degradation_vs_gradient": {
+      "mean": 0.3528834464665527,
+      "median": 0.3957095047619879,
+      "min": 0.12005956253294314,
+      "max": 0.5791014905324728
+    },
+    "spearman_degradation_vs_residual": {
+      "mean": 0.732958238844422,
+      "median": 0.7236598054809431,
+      "min": 0.6973409294520122,
+      "max": 0.792035082792905
+    },
+    "low_q_0_8_ratio": {
+      "mean": 0.19422765804928416,
+      "median": 0.17603069901418547,
+      "min": 0.15983611408879564,
+      "max": 0.23699007608988734
+    },
+    "low_q_0_5_ratio": {
+      "mean": 0.10896045561861671,
+      "median": 0.09880176512755086,
+      "min": 0.06063252596065949,
+      "max": 0.19535700428128924
+    },
+    "high_gradient_threshold": {
+      "mean": 0.36302678212523454,
+      "median": 0.3693551778793334,
+      "min": 0.3008869349956511,
+      "max": 0.4269191801548004
+    },
+    "edge_overlap_q_0_8": {
+      "mean": 0.223214063920463,
+      "median": 0.2256192115915946,
+      "min": 0.14231324231245246,
+      "max": 0.2734427145563429
+    },
+    "edge_overlap_q_0_5": {
+      "mean": 0.18088773221165566,
+      "median": 0.17869177768412092,
+      "min": 0.10560524979410488,
+      "max": 0.2438213498865903
+    },
+    "responsibility_mean": {
+      "mean": 0.8807081133127213,
+      "median": 0.8872731626033783,
+      "min": 0.8308194279670715,
+      "max": 0.9101096987724304
+    },
+    "residual_mean": {
+      "mean": 0.03570051118731499,
+      "median": 0.031428731977939606,
+      "min": 0.022229228168725967,
+      "max": 0.05837481841444969
+    }
+  },
+  "classification": "PENDING_EIGHT_FRAME_VISUAL_REVIEW",
+  "checkpoint": "/home/chenglong/Uncertain-Nerf/uncertain-nerf/logs-puri/android_short10k_seed42_32a7d78/a1/ckpts/ckpt_9999_rank0.pt",
+  "checkpoint_step": 9999,
+  "frozen_parameters": true,
+  "backward_calls": 0,
+  "rasterizations_per_frame": 1,
+  "responsibility_config": {
+    "enabled": true,
+    "start_step": 3000,
+    "threshold": 1.5,
+    "min_weight": 0.2,
+    "pool_size": 3,
+    "epsilon": 1e-06
+  },
+  "gsplat_runtime_path": "/home/chenglong/Uncertain-Nerf/uncertain-nerf/.venv-gsplat153/lib/python3.10/site-packages/gsplat/__init__.py",
+  "frames": [
+    {
+      "selected_index": 0,
+      "sorted_position": 0,
+      "image_name": "2clutter019.JPG",
+      "spearman_degradation_vs_gradient": 0.21383428642722868,
+      "spearman_degradation_vs_residual": 0.7715904643623924,
+      "low_q_0_8_ratio": 0.2367585839520706,
+      "low_q_0_5_ratio": 0.19535700428128924,
+      "high_gradient_threshold": 0.31018104553222653,
+      "edge_overlap_q_0_8": 0.17488500255452719,
+      "edge_overlap_q_0_5": 0.1345613928771566,
+      "responsibility_mean": 0.8308194279670715,
+      "residual_mean": 0.05837481841444969
+    },
+    {
+      "selected_index": 1,
+      "sorted_position": 17,
+      "image_name": "2clutter036.JPG",
+      "spearman_degradation_vs_gradient": 0.38952951143519154,
+      "spearman_degradation_vs_residual": 0.7336411243863051,
+      "low_q_0_8_ratio": 0.18083218792952643,
+      "low_q_0_5_ratio": 0.11565005228302544,
+      "high_gradient_threshold": 0.3008869349956511,
+      "edge_overlap_q_0_8": 0.2661255127850068,
+      "edge_overlap_q_0_5": 0.2090370420893578,
+      "responsibility_mean": 0.8799439668655396,
+      "residual_mean": 0.040404267609119415
+    },
+    {
+      "selected_index": 2,
+      "sorted_position": 35,
+      "image_name": "2clutter054.JPG",
+      "spearman_degradation_vs_gradient": 0.24726630192551802,
+      "spearman_degradation_vs_residual": 0.7136784865755812,
+      "low_q_0_8_ratio": 0.1712292100988445,
+      "low_q_0_5_ratio": 0.09909441854041577,
+      "high_gradient_threshold": 0.3310285031795501,
+      "edge_overlap_q_0_8": 0.22419209881302327,
+      "edge_overlap_q_0_5": 0.1826254313753302,
+      "responsibility_mean": 0.894602358341217,
+      "residual_mean": 0.03259739652276039
+    },
+    {
+      "selected_index": 3,
+      "sorted_position": 52,
+      "image_name": "2clutter071.JPG",
+      "spearman_degradation_vs_gradient": 0.40188949808878427,
+      "spearman_degradation_vs_residual": 0.7038025808741734,
+      "low_q_0_8_ratio": 0.16874066961731457,
+      "low_q_0_5_ratio": 0.06063252596065949,
+      "high_gradient_threshold": 0.3849448800086974,
+      "edge_overlap_q_0_8": 0.22704632437016592,
+      "edge_overlap_q_0_5": 0.17475812399291166,
+      "responsibility_mean": 0.9101096987724304,
+      "residual_mean": 0.03026006743311882
+    },
+    {
+      "selected_index": 4,
+      "sorted_position": 69,
+      "image_name": "2clutter088.JPG",
+      "spearman_degradation_vs_gradient": 0.12005956253294314,
+      "spearman_degradation_vs_residual": 0.792035082792905,
+      "low_q_0_8_ratio": 0.23699007608988734,
+      "low_q_0_5_ratio": 0.16836449489336236,
+      "high_gradient_threshold": 0.3881137073040008,
+      "edge_overlap_q_0_8": 0.14231324231245246,
+      "edge_overlap_q_0_5": 0.10560524979410488,
+      "responsibility_mean": 0.847786009311676,
+      "residual_mean": 0.049654535949230194
+    },
+    {
+      "selected_index": 5,
+      "sorted_position": 86,
+      "image_name": "2clutter105.JPG",
+      "spearman_degradation_vs_gradient": 0.5791014905324728,
+      "spearman_degradation_vs_residual": 0.7419005351503597,
+      "low_q_0_8_ratio": 0.22996376358865425,
+      "low_q_0_5_ratio": 0.09850911171468595,
+      "high_gradient_threshold": 0.40837453007698055,
+      "edge_overlap_q_0_8": 0.26859149612630784,
+      "edge_overlap_q_0_5": 0.2438213498865903,
+      "responsibility_mean": 0.8718543648719788,
+      "residual_mean": 0.0225114356726408
+    },
+    {
+      "selected_index": 6,
+      "sorted_position": 104,
+      "image_name": "2clutter123.JPG",
+      "spearman_degradation_vs_gradient": 0.4050970280976298,
+      "spearman_degradation_vs_residual": 0.6973409294520122,
+      "low_q_0_8_ratio": 0.15983611408879564,
+      "low_q_0_5_ratio": 0.06546097844887115,
+      "high_gradient_threshold": 0.4269191801548004,
+      "edge_overlap_q_0_8": 0.20911611984587755,
+      "edge_overlap_q_0_5": 0.17360204142792496,
+      "responsibility_mean": 0.9070645570755005,
+      "residual_mean": 0.022229228168725967
+    },
+    {
+      "selected_index": 7,
+      "sorted_position": 121,
+      "image_name": "2clutter140.JPG",
+      "spearman_degradation_vs_gradient": 0.46628989269265325,
+      "spearman_degradation_vs_residual": 0.709676707161647,
+      "low_q_0_8_ratio": 0.16947065902917985,
+      "low_q_0_5_ratio": 0.06861505882662422,
+      "high_gradient_threshold": 0.3537654757499694,
+      "edge_overlap_q_0_8": 0.2734427145563429,
+      "edge_overlap_q_0_5": 0.22309122624986885,
+      "responsibility_mean": 0.9034845232963562,
+      "residual_mean": 0.029572339728474617
+    }
+  ]
+}

@@ -1,0 +1,1703 @@
+[
+  {
+    "scene": "garden",
+    "profile": "b0",
+    "image_name": "DSC07956.JPG",
+    "psnr": 23.382089614868164,
+    "ssim": 0.802304744720459,
+    "lpips": 0.12196484953165054,
+    "latency_ms": 14.404369983822107
+  },
+  {
+    "scene": "garden",
+    "profile": "b0",
+    "image_name": "DSC07964.JPG",
+    "psnr": 22.869327545166016,
+    "ssim": 0.7422003149986267,
+    "lpips": 0.1591571569442749,
+    "latency_ms": 13.172758044674993
+  },
+  {
+    "scene": "garden",
+    "profile": "b0",
+    "image_name": "DSC07972.JPG",
+    "psnr": 27.32625389099121,
+    "ssim": 0.8348669409751892,
+    "lpips": 0.10395517945289612,
+    "latency_ms": 13.48127203527838
+  },
+  {
+    "scene": "garden",
+    "profile": "b0",
+    "image_name": "DSC07980.JPG",
+    "psnr": 24.156526565551758,
+    "ssim": 0.7795108556747437,
+    "lpips": 0.11399499326944351,
+    "latency_ms": 13.073234003968537
+  },
+  {
+    "scene": "garden",
+    "profile": "b0",
+    "image_name": "DSC07988.JPG",
+    "psnr": 20.032140731811523,
+    "ssim": 0.7529512047767639,
+    "lpips": 0.15467198193073273,
+    "latency_ms": 13.89346702490002
+  },
+  {
+    "scene": "garden",
+    "profile": "b0",
+    "image_name": "DSC07996.JPG",
+    "psnr": 25.99506187438965,
+    "ssim": 0.8304272294044495,
+    "lpips": 0.12396266311407089,
+    "latency_ms": 12.776861025486141
+  },
+  {
+    "scene": "garden",
+    "profile": "b0",
+    "image_name": "DSC08004.JPG",
+    "psnr": 27.98182487487793,
+    "ssim": 0.8735342621803284,
+    "lpips": 0.10243061184883118,
+    "latency_ms": 12.46084098238498
+  },
+  {
+    "scene": "garden",
+    "profile": "b0",
+    "image_name": "DSC08012.JPG",
+    "psnr": 28.240856170654297,
+    "ssim": 0.8896229863166809,
+    "lpips": 0.07980284094810486,
+    "latency_ms": 13.684550009202212
+  },
+  {
+    "scene": "garden",
+    "profile": "b0",
+    "image_name": "DSC08020.JPG",
+    "psnr": 26.809906005859375,
+    "ssim": 0.8455542922019958,
+    "lpips": 0.10165636241436005,
+    "latency_ms": 13.51067196810618
+  },
+  {
+    "scene": "garden",
+    "profile": "b0",
+    "image_name": "DSC08028.JPG",
+    "psnr": 26.825407028198242,
+    "ssim": 0.8397417068481445,
+    "lpips": 0.10882487148046494,
+    "latency_ms": 13.535343983676285
+  },
+  {
+    "scene": "garden",
+    "profile": "b0",
+    "image_name": "DSC08036.JPG",
+    "psnr": 25.687461853027344,
+    "ssim": 0.8607163429260254,
+    "lpips": 0.11271077394485474,
+    "latency_ms": 13.670546002686024
+  },
+  {
+    "scene": "garden",
+    "profile": "b0",
+    "image_name": "DSC08044.JPG",
+    "psnr": 28.023513793945312,
+    "ssim": 0.8704743385314941,
+    "lpips": 0.09160234779119492,
+    "latency_ms": 13.472469989210367
+  },
+  {
+    "scene": "garden",
+    "profile": "b0",
+    "image_name": "DSC08052.JPG",
+    "psnr": 27.2602481842041,
+    "ssim": 0.8417136073112488,
+    "lpips": 0.10992565006017685,
+    "latency_ms": 13.436211971566081
+  },
+  {
+    "scene": "garden",
+    "profile": "b0",
+    "image_name": "DSC08060.JPG",
+    "psnr": 28.990982055664062,
+    "ssim": 0.8630076050758362,
+    "lpips": 0.10709495842456818,
+    "latency_ms": 12.518119998276234
+  },
+  {
+    "scene": "garden",
+    "profile": "b0",
+    "image_name": "DSC08068.JPG",
+    "psnr": 29.42591094970703,
+    "ssim": 0.8664453625679016,
+    "lpips": 0.10003694146871567,
+    "latency_ms": 13.300076010636985
+  },
+  {
+    "scene": "garden",
+    "profile": "b0",
+    "image_name": "DSC08076.JPG",
+    "psnr": 25.600811004638672,
+    "ssim": 0.7978011965751648,
+    "lpips": 0.1196092739701271,
+    "latency_ms": 13.430840044748038
+  },
+  {
+    "scene": "garden",
+    "profile": "b0",
+    "image_name": "DSC08084.JPG",
+    "psnr": 27.810226440429688,
+    "ssim": 0.8310259580612183,
+    "lpips": 0.11446724832057953,
+    "latency_ms": 13.285169028677046
+  },
+  {
+    "scene": "garden",
+    "profile": "b0",
+    "image_name": "DSC08092.JPG",
+    "psnr": 29.55488395690918,
+    "ssim": 0.8749698996543884,
+    "lpips": 0.11072893440723419,
+    "latency_ms": 13.021100021433085
+  },
+  {
+    "scene": "garden",
+    "profile": "b0",
+    "image_name": "DSC08100.JPG",
+    "psnr": 27.337921142578125,
+    "ssim": 0.8613331913948059,
+    "lpips": 0.1104213148355484,
+    "latency_ms": 13.212963996920735
+  },
+  {
+    "scene": "garden",
+    "profile": "b0",
+    "image_name": "DSC08108.JPG",
+    "psnr": 28.594640731811523,
+    "ssim": 0.8745588064193726,
+    "lpips": 0.11222848296165466,
+    "latency_ms": 13.10017000650987
+  },
+  {
+    "scene": "garden",
+    "profile": "b0",
+    "image_name": "DSC08116.JPG",
+    "psnr": 28.826414108276367,
+    "ssim": 0.8641960620880127,
+    "lpips": 0.10267583280801773,
+    "latency_ms": 13.325774983968586
+  },
+  {
+    "scene": "garden",
+    "profile": "b0",
+    "image_name": "DSC08124.JPG",
+    "psnr": 25.66338539123535,
+    "ssim": 0.8162623047828674,
+    "lpips": 0.12380291521549225,
+    "latency_ms": 12.451649003196508
+  },
+  {
+    "scene": "garden",
+    "profile": "b0",
+    "image_name": "DSC08132.JPG",
+    "psnr": 27.20477294921875,
+    "ssim": 0.8370127081871033,
+    "lpips": 0.11027152836322784,
+    "latency_ms": 13.27116199536249
+  },
+  {
+    "scene": "garden",
+    "profile": "b0",
+    "image_name": "DSC08140.JPG",
+    "psnr": 28.30362892150879,
+    "ssim": 0.8767545819282532,
+    "lpips": 0.08374103903770447,
+    "latency_ms": 13.600384001620114
+  },
+  {
+    "scene": "garden",
+    "profile": "b1",
+    "image_name": "DSC07956.JPG",
+    "psnr": 23.724706649780273,
+    "ssim": 0.8194782137870789,
+    "lpips": 0.10570530593395233,
+    "latency_ms": 11.222788016311824
+  },
+  {
+    "scene": "garden",
+    "profile": "b1",
+    "image_name": "DSC07964.JPG",
+    "psnr": 22.96784019470215,
+    "ssim": 0.76064532995224,
+    "lpips": 0.13945290446281433,
+    "latency_ms": 10.99062099820003
+  },
+  {
+    "scene": "garden",
+    "profile": "b1",
+    "image_name": "DSC07972.JPG",
+    "psnr": 27.77861976623535,
+    "ssim": 0.8492692112922668,
+    "lpips": 0.09040132164955139,
+    "latency_ms": 10.925145994406193
+  },
+  {
+    "scene": "garden",
+    "profile": "b1",
+    "image_name": "DSC07980.JPG",
+    "psnr": 24.267072677612305,
+    "ssim": 0.7900639772415161,
+    "lpips": 0.102023184299469,
+    "latency_ms": 11.012214003130794
+  },
+  {
+    "scene": "garden",
+    "profile": "b1",
+    "image_name": "DSC07988.JPG",
+    "psnr": 19.91696548461914,
+    "ssim": 0.7682433128356934,
+    "lpips": 0.1398756057024002,
+    "latency_ms": 11.239614977966994
+  },
+  {
+    "scene": "garden",
+    "profile": "b1",
+    "image_name": "DSC07996.JPG",
+    "psnr": 26.731216430664062,
+    "ssim": 0.853117823600769,
+    "lpips": 0.09835006296634674,
+    "latency_ms": 10.177718009799719
+  },
+  {
+    "scene": "garden",
+    "profile": "b1",
+    "image_name": "DSC08004.JPG",
+    "psnr": 28.575233459472656,
+    "ssim": 0.890298068523407,
+    "lpips": 0.08407780528068542,
+    "latency_ms": 9.846625034697354
+  },
+  {
+    "scene": "garden",
+    "profile": "b1",
+    "image_name": "DSC08012.JPG",
+    "psnr": 28.485660552978516,
+    "ssim": 0.9036607146263123,
+    "lpips": 0.06595597416162491,
+    "latency_ms": 10.20988798700273
+  },
+  {
+    "scene": "garden",
+    "profile": "b1",
+    "image_name": "DSC08020.JPG",
+    "psnr": 26.973854064941406,
+    "ssim": 0.8565830588340759,
+    "lpips": 0.08737239986658096,
+    "latency_ms": 10.297518980223686
+  },
+  {
+    "scene": "garden",
+    "profile": "b1",
+    "image_name": "DSC08028.JPG",
+    "psnr": 24.249387741088867,
+    "ssim": 0.8524947166442871,
+    "lpips": 0.09582250565290451,
+    "latency_ms": 10.029403027147055
+  },
+  {
+    "scene": "garden",
+    "profile": "b1",
+    "image_name": "DSC08036.JPG",
+    "psnr": 26.142820358276367,
+    "ssim": 0.8796670436859131,
+    "lpips": 0.08884340524673462,
+    "latency_ms": 9.56604303792119
+  },
+  {
+    "scene": "garden",
+    "profile": "b1",
+    "image_name": "DSC08044.JPG",
+    "psnr": 28.35683822631836,
+    "ssim": 0.885326623916626,
+    "lpips": 0.07376442104578018,
+    "latency_ms": 9.964135999325663
+  },
+  {
+    "scene": "garden",
+    "profile": "b1",
+    "image_name": "DSC08052.JPG",
+    "psnr": 27.473623275756836,
+    "ssim": 0.8556108474731445,
+    "lpips": 0.09127814322710037,
+    "latency_ms": 10.289430967532098
+  },
+  {
+    "scene": "garden",
+    "profile": "b1",
+    "image_name": "DSC08060.JPG",
+    "psnr": 29.562849044799805,
+    "ssim": 0.8843310475349426,
+    "lpips": 0.08452051132917404,
+    "latency_ms": 10.145639011170715
+  },
+  {
+    "scene": "garden",
+    "profile": "b1",
+    "image_name": "DSC08068.JPG",
+    "psnr": 29.87579345703125,
+    "ssim": 0.8829615116119385,
+    "lpips": 0.07838835567235947,
+    "latency_ms": 9.82668501092121
+  },
+  {
+    "scene": "garden",
+    "profile": "b1",
+    "image_name": "DSC08076.JPG",
+    "psnr": 25.676223754882812,
+    "ssim": 0.8115485310554504,
+    "lpips": 0.09754160046577454,
+    "latency_ms": 10.110981995239854
+  },
+  {
+    "scene": "garden",
+    "profile": "b1",
+    "image_name": "DSC08084.JPG",
+    "psnr": 28.077674865722656,
+    "ssim": 0.8454582095146179,
+    "lpips": 0.09247928857803345,
+    "latency_ms": 9.762405999936163
+  },
+  {
+    "scene": "garden",
+    "profile": "b1",
+    "image_name": "DSC08092.JPG",
+    "psnr": 30.121803283691406,
+    "ssim": 0.8962382078170776,
+    "lpips": 0.0831124559044838,
+    "latency_ms": 9.56596399191767
+  },
+  {
+    "scene": "garden",
+    "profile": "b1",
+    "image_name": "DSC08100.JPG",
+    "psnr": 28.090002059936523,
+    "ssim": 0.8810848593711853,
+    "lpips": 0.0837562084197998,
+    "latency_ms": 9.874413022771478
+  },
+  {
+    "scene": "garden",
+    "profile": "b1",
+    "image_name": "DSC08108.JPG",
+    "psnr": 29.22828483581543,
+    "ssim": 0.8940838575363159,
+    "lpips": 0.08981240540742874,
+    "latency_ms": 9.741491987369955
+  },
+  {
+    "scene": "garden",
+    "profile": "b1",
+    "image_name": "DSC08116.JPG",
+    "psnr": 29.306325912475586,
+    "ssim": 0.8817348480224609,
+    "lpips": 0.08227654546499252,
+    "latency_ms": 10.012293001636863
+  },
+  {
+    "scene": "garden",
+    "profile": "b1",
+    "image_name": "DSC08124.JPG",
+    "psnr": 25.964513778686523,
+    "ssim": 0.8344131112098694,
+    "lpips": 0.09657742083072662,
+    "latency_ms": 10.045050992630422
+  },
+  {
+    "scene": "garden",
+    "profile": "b1",
+    "image_name": "DSC08132.JPG",
+    "psnr": 23.414623260498047,
+    "ssim": 0.8260874152183533,
+    "lpips": 0.12190218269824982,
+    "latency_ms": 9.844837011769414
+  },
+  {
+    "scene": "garden",
+    "profile": "b1",
+    "image_name": "DSC08140.JPG",
+    "psnr": 28.75765609741211,
+    "ssim": 0.8934124708175659,
+    "lpips": 0.0656229704618454,
+    "latency_ms": 10.661863023415208
+  },
+  {
+    "scene": "garden",
+    "profile": "a1",
+    "image_name": "DSC07956.JPG",
+    "psnr": 24.071924209594727,
+    "ssim": 0.8221224546432495,
+    "lpips": 0.10336988419294357,
+    "latency_ms": 11.11944200238213
+  },
+  {
+    "scene": "garden",
+    "profile": "a1",
+    "image_name": "DSC07964.JPG",
+    "psnr": 22.148147583007812,
+    "ssim": 0.754482090473175,
+    "lpips": 0.14298653602600098,
+    "latency_ms": 10.935883037745953
+  },
+  {
+    "scene": "garden",
+    "profile": "a1",
+    "image_name": "DSC07972.JPG",
+    "psnr": 27.839218139648438,
+    "ssim": 0.850371241569519,
+    "lpips": 0.09003737568855286,
+    "latency_ms": 10.576041007880121
+  },
+  {
+    "scene": "garden",
+    "profile": "a1",
+    "image_name": "DSC07980.JPG",
+    "psnr": 24.184295654296875,
+    "ssim": 0.7901341319084167,
+    "lpips": 0.10296781361103058,
+    "latency_ms": 10.580708971247077
+  },
+  {
+    "scene": "garden",
+    "profile": "a1",
+    "image_name": "DSC07988.JPG",
+    "psnr": 20.773618698120117,
+    "ssim": 0.7728630900382996,
+    "lpips": 0.13394795358181,
+    "latency_ms": 11.012944974936545
+  },
+  {
+    "scene": "garden",
+    "profile": "a1",
+    "image_name": "DSC07996.JPG",
+    "psnr": 26.76374626159668,
+    "ssim": 0.8539401292800903,
+    "lpips": 0.09870705753564835,
+    "latency_ms": 10.464583989232779
+  },
+  {
+    "scene": "garden",
+    "profile": "a1",
+    "image_name": "DSC08004.JPG",
+    "psnr": 27.57903289794922,
+    "ssim": 0.8897722959518433,
+    "lpips": 0.0845634788274765,
+    "latency_ms": 9.943694982212037
+  },
+  {
+    "scene": "garden",
+    "profile": "a1",
+    "image_name": "DSC08012.JPG",
+    "psnr": 28.649574279785156,
+    "ssim": 0.9037745594978333,
+    "lpips": 0.06551504135131836,
+    "latency_ms": 9.981351962778717
+  },
+  {
+    "scene": "garden",
+    "profile": "a1",
+    "image_name": "DSC08020.JPG",
+    "psnr": 26.85699462890625,
+    "ssim": 0.8560998439788818,
+    "lpips": 0.08806239068508148,
+    "latency_ms": 9.975804015994072
+  },
+  {
+    "scene": "garden",
+    "profile": "a1",
+    "image_name": "DSC08028.JPG",
+    "psnr": 27.11412239074707,
+    "ssim": 0.8574150800704956,
+    "lpips": 0.09078303724527359,
+    "latency_ms": 9.972630999982357
+  },
+  {
+    "scene": "garden",
+    "profile": "a1",
+    "image_name": "DSC08036.JPG",
+    "psnr": 25.543607711791992,
+    "ssim": 0.878737211227417,
+    "lpips": 0.08942270278930664,
+    "latency_ms": 9.715577005408704
+  },
+  {
+    "scene": "garden",
+    "profile": "a1",
+    "image_name": "DSC08044.JPG",
+    "psnr": 28.216358184814453,
+    "ssim": 0.885769784450531,
+    "lpips": 0.07374484091997147,
+    "latency_ms": 9.944921010173857
+  },
+  {
+    "scene": "garden",
+    "profile": "a1",
+    "image_name": "DSC08052.JPG",
+    "psnr": 27.426137924194336,
+    "ssim": 0.8552704453468323,
+    "lpips": 0.09113656729459763,
+    "latency_ms": 9.574977972079068
+  },
+  {
+    "scene": "garden",
+    "profile": "a1",
+    "image_name": "DSC08060.JPG",
+    "psnr": 29.658079147338867,
+    "ssim": 0.8849009275436401,
+    "lpips": 0.08458869159221649,
+    "latency_ms": 9.790131007321179
+  },
+  {
+    "scene": "garden",
+    "profile": "a1",
+    "image_name": "DSC08068.JPG",
+    "psnr": 29.705324172973633,
+    "ssim": 0.8831662535667419,
+    "lpips": 0.079594686627388,
+    "latency_ms": 9.406949975527823
+  },
+  {
+    "scene": "garden",
+    "profile": "a1",
+    "image_name": "DSC08076.JPG",
+    "psnr": 24.828447341918945,
+    "ssim": 0.8103161454200745,
+    "lpips": 0.09948410093784332,
+    "latency_ms": 9.681947005447
+  },
+  {
+    "scene": "garden",
+    "profile": "a1",
+    "image_name": "DSC08084.JPG",
+    "psnr": 28.05950355529785,
+    "ssim": 0.8450846076011658,
+    "lpips": 0.09262527525424957,
+    "latency_ms": 9.545058012008667
+  },
+  {
+    "scene": "garden",
+    "profile": "a1",
+    "image_name": "DSC08092.JPG",
+    "psnr": 29.118621826171875,
+    "ssim": 0.8941170573234558,
+    "lpips": 0.09012424945831299,
+    "latency_ms": 9.338901960290968
+  },
+  {
+    "scene": "garden",
+    "profile": "a1",
+    "image_name": "DSC08100.JPG",
+    "psnr": 27.58662223815918,
+    "ssim": 0.8814297318458557,
+    "lpips": 0.083097904920578,
+    "latency_ms": 9.941830998286605
+  },
+  {
+    "scene": "garden",
+    "profile": "a1",
+    "image_name": "DSC08108.JPG",
+    "psnr": 29.186384201049805,
+    "ssim": 0.8949706554412842,
+    "lpips": 0.08798535168170929,
+    "latency_ms": 10.046148032415658
+  },
+  {
+    "scene": "garden",
+    "profile": "a1",
+    "image_name": "DSC08116.JPG",
+    "psnr": 29.086341857910156,
+    "ssim": 0.8812315464019775,
+    "lpips": 0.08366383612155914,
+    "latency_ms": 10.233419016003609
+  },
+  {
+    "scene": "garden",
+    "profile": "a1",
+    "image_name": "DSC08124.JPG",
+    "psnr": 25.656291961669922,
+    "ssim": 0.8339394330978394,
+    "lpips": 0.09706118702888489,
+    "latency_ms": 9.625488019082695
+  },
+  {
+    "scene": "garden",
+    "profile": "a1",
+    "image_name": "DSC08132.JPG",
+    "psnr": 27.54074478149414,
+    "ssim": 0.85528564453125,
+    "lpips": 0.08757349848747253,
+    "latency_ms": 9.8104799981229
+  },
+  {
+    "scene": "garden",
+    "profile": "a1",
+    "image_name": "DSC08140.JPG",
+    "psnr": 28.62452507019043,
+    "ssim": 0.8931561708450317,
+    "lpips": 0.06614173948764801,
+    "latency_ms": 10.199402982834727
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4667.JPG",
+    "psnr": 29.853015899658203,
+    "ssim": 0.9193839430809021,
+    "lpips": 0.07631683349609375,
+    "latency_ms": 5.213395983446389
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4675.JPG",
+    "psnr": 34.87867736816406,
+    "ssim": 0.946494460105896,
+    "lpips": 0.06187392771244049,
+    "latency_ms": 5.011054978240281
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4683.JPG",
+    "psnr": 34.619625091552734,
+    "ssim": 0.9460026621818542,
+    "lpips": 0.06014236807823181,
+    "latency_ms": 4.637501027900726
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4691.JPG",
+    "psnr": 34.6405143737793,
+    "ssim": 0.9483787417411804,
+    "lpips": 0.062312398105859756,
+    "latency_ms": 4.704987048171461
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4699.JPG",
+    "psnr": 33.81387710571289,
+    "ssim": 0.9671642184257507,
+    "lpips": 0.036499980837106705,
+    "latency_ms": 4.759586008731276
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4707.JPG",
+    "psnr": 28.802082061767578,
+    "ssim": 0.9320263862609863,
+    "lpips": 0.07066041231155396,
+    "latency_ms": 5.400441004894674
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4715.JPG",
+    "psnr": 33.35560607910156,
+    "ssim": 0.9445473551750183,
+    "lpips": 0.05966242030262947,
+    "latency_ms": 4.752671986352652
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4723.JPG",
+    "psnr": 32.98276138305664,
+    "ssim": 0.9626973271369934,
+    "lpips": 0.037823278456926346,
+    "latency_ms": 4.957334022037685
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4731.JPG",
+    "psnr": 30.535938262939453,
+    "ssim": 0.9441784620285034,
+    "lpips": 0.06357633322477341,
+    "latency_ms": 5.075649998616427
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4739.JPG",
+    "psnr": 33.960784912109375,
+    "ssim": 0.9668435454368591,
+    "lpips": 0.0300314798951149,
+    "latency_ms": 4.919510043691844
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4747.JPG",
+    "psnr": 33.778987884521484,
+    "ssim": 0.9552294015884399,
+    "lpips": 0.059827450662851334,
+    "latency_ms": 4.862478002905846
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4755.JPG",
+    "psnr": 34.89363479614258,
+    "ssim": 0.9599957466125488,
+    "lpips": 0.05063627287745476,
+    "latency_ms": 4.458935000002384
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4763.JPG",
+    "psnr": 34.42938995361328,
+    "ssim": 0.9628251791000366,
+    "lpips": 0.03198994696140289,
+    "latency_ms": 4.657483019400388
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4771.JPG",
+    "psnr": 32.07545852661133,
+    "ssim": 0.9460278153419495,
+    "lpips": 0.06318143010139465,
+    "latency_ms": 4.995003982912749
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4779.JPG",
+    "psnr": 29.403348922729492,
+    "ssim": 0.9500983357429504,
+    "lpips": 0.05562068521976471,
+    "latency_ms": 4.922949010506272
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4787.JPG",
+    "psnr": 33.013763427734375,
+    "ssim": 0.9238300323486328,
+    "lpips": 0.1113658994436264,
+    "latency_ms": 4.537975008133799
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4795.JPG",
+    "psnr": 31.867216110229492,
+    "ssim": 0.9435006976127625,
+    "lpips": 0.06499139964580536,
+    "latency_ms": 5.11074997484684
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4803.JPG",
+    "psnr": 34.89973449707031,
+    "ssim": 0.966077446937561,
+    "lpips": 0.04894433543086052,
+    "latency_ms": 4.7891519498080015
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4811.JPG",
+    "psnr": 32.01276779174805,
+    "ssim": 0.9608312249183655,
+    "lpips": 0.050693511962890625,
+    "latency_ms": 4.619894956704229
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4819.JPG",
+    "psnr": 29.17721939086914,
+    "ssim": 0.9452961087226868,
+    "lpips": 0.05467431992292404,
+    "latency_ms": 5.342298012692481
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4827.JPG",
+    "psnr": 30.656740188598633,
+    "ssim": 0.9424545168876648,
+    "lpips": 0.06041567027568817,
+    "latency_ms": 4.69606596743688
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4835.JPG",
+    "psnr": 30.213165283203125,
+    "ssim": 0.9191114902496338,
+    "lpips": 0.1347297877073288,
+    "latency_ms": 4.670276015531272
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4843.JPG",
+    "psnr": 32.73990249633789,
+    "ssim": 0.9483715295791626,
+    "lpips": 0.042418718338012695,
+    "latency_ms": 5.2057019784115255
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4851.JPG",
+    "psnr": 27.395483016967773,
+    "ssim": 0.9121618866920471,
+    "lpips": 0.09325198084115982,
+    "latency_ms": 4.920698993373662
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4859.JPG",
+    "psnr": 29.827701568603516,
+    "ssim": 0.9338383078575134,
+    "lpips": 0.08588120341300964,
+    "latency_ms": 4.642785992473364
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4867.JPG",
+    "psnr": 31.90825843811035,
+    "ssim": 0.957358717918396,
+    "lpips": 0.058269258588552475,
+    "latency_ms": 4.639595979824662
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4875.JPG",
+    "psnr": 31.15148162841797,
+    "ssim": 0.934188723564148,
+    "lpips": 0.05915845185518265,
+    "latency_ms": 4.730608023237437
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4883.JPG",
+    "psnr": 32.33975601196289,
+    "ssim": 0.9414304494857788,
+    "lpips": 0.08163532614707947,
+    "latency_ms": 4.087253008037806
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4891.JPG",
+    "psnr": 30.212255477905273,
+    "ssim": 0.9193697571754456,
+    "lpips": 0.1171339675784111,
+    "latency_ms": 4.191562009509653
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4899.JPG",
+    "psnr": 29.420467376708984,
+    "ssim": 0.9256657958030701,
+    "lpips": 0.08247268944978714,
+    "latency_ms": 4.066969035193324
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4907.JPG",
+    "psnr": 31.34097671508789,
+    "ssim": 0.9210248589515686,
+    "lpips": 0.12089709937572479,
+    "latency_ms": 4.1458600317128
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4915.JPG",
+    "psnr": 32.531898498535156,
+    "ssim": 0.8783003687858582,
+    "lpips": 0.18620416522026062,
+    "latency_ms": 4.311595985200256
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4923.JPG",
+    "psnr": 28.36147689819336,
+    "ssim": 0.9369369149208069,
+    "lpips": 0.06232355535030365,
+    "latency_ms": 4.645904002245516
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4931.JPG",
+    "psnr": 29.813180923461914,
+    "ssim": 0.929913341999054,
+    "lpips": 0.0952434092760086,
+    "latency_ms": 4.2029330506920815
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4939.JPG",
+    "psnr": 22.10133171081543,
+    "ssim": 0.9291736483573914,
+    "lpips": 0.18804609775543213,
+    "latency_ms": 4.130501009058207
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4947.JPG",
+    "psnr": 26.887222290039062,
+    "ssim": 0.9424911737442017,
+    "lpips": 0.13736501336097717,
+    "latency_ms": 4.631114017684013
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4955.JPG",
+    "psnr": 23.537906646728516,
+    "ssim": 0.8767012357711792,
+    "lpips": 0.2399548888206482,
+    "latency_ms": 3.883764031343162
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4963.JPG",
+    "psnr": 32.51518249511719,
+    "ssim": 0.957661509513855,
+    "lpips": 0.09181136637926102,
+    "latency_ms": 4.364846972748637
+  },
+  {
+    "scene": "room",
+    "profile": "b0",
+    "image_name": "DSCF4971.JPG",
+    "psnr": 31.279617309570312,
+    "ssim": 0.9284898042678833,
+    "lpips": 0.11453991383314133,
+    "latency_ms": 4.315040016081184
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4667.JPG",
+    "psnr": 29.997615814208984,
+    "ssim": 0.92096346616745,
+    "lpips": 0.07499734312295914,
+    "latency_ms": 3.9783239481039345
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4675.JPG",
+    "psnr": 35.05029296875,
+    "ssim": 0.9511235356330872,
+    "lpips": 0.05348534137010574,
+    "latency_ms": 3.680973022710532
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4683.JPG",
+    "psnr": 34.633766174316406,
+    "ssim": 0.9506093263626099,
+    "lpips": 0.049782127141952515,
+    "latency_ms": 3.549161017872393
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4691.JPG",
+    "psnr": 34.59539031982422,
+    "ssim": 0.9526223540306091,
+    "lpips": 0.05201870948076248,
+    "latency_ms": 3.706497955136001
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4699.JPG",
+    "psnr": 33.83285140991211,
+    "ssim": 0.9678669571876526,
+    "lpips": 0.03451746329665184,
+    "latency_ms": 3.6418689996935427
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4707.JPG",
+    "psnr": 28.69841766357422,
+    "ssim": 0.931955873966217,
+    "lpips": 0.06883673369884491,
+    "latency_ms": 3.823456005193293
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4715.JPG",
+    "psnr": 33.44940948486328,
+    "ssim": 0.9497211575508118,
+    "lpips": 0.0495036281645298,
+    "latency_ms": 3.683965012896806
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4723.JPG",
+    "psnr": 33.74789810180664,
+    "ssim": 0.9656868577003479,
+    "lpips": 0.035026442259550095,
+    "latency_ms": 3.6866869777441025
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4731.JPG",
+    "psnr": 30.5978946685791,
+    "ssim": 0.9456305503845215,
+    "lpips": 0.06378060579299927,
+    "latency_ms": 3.8466789992526174
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4739.JPG",
+    "psnr": 34.09885787963867,
+    "ssim": 0.9682329893112183,
+    "lpips": 0.029661310836672783,
+    "latency_ms": 3.8743059849366546
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4747.JPG",
+    "psnr": 33.68315505981445,
+    "ssim": 0.9596723914146423,
+    "lpips": 0.050181105732917786,
+    "latency_ms": 3.6823879927396774
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4755.JPG",
+    "psnr": 34.62358093261719,
+    "ssim": 0.961446225643158,
+    "lpips": 0.04796239361166954,
+    "latency_ms": 3.3053719671443105
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4763.JPG",
+    "psnr": 34.39692687988281,
+    "ssim": 0.9638604521751404,
+    "lpips": 0.02999608963727951,
+    "latency_ms": 3.5618949914351106
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4771.JPG",
+    "psnr": 32.20696258544922,
+    "ssim": 0.949637770652771,
+    "lpips": 0.060517579317092896,
+    "latency_ms": 3.829635970760137
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4779.JPG",
+    "psnr": 29.013858795166016,
+    "ssim": 0.951306164264679,
+    "lpips": 0.05297147110104561,
+    "latency_ms": 3.5806119558401406
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4787.JPG",
+    "psnr": 33.14700698852539,
+    "ssim": 0.9309776425361633,
+    "lpips": 0.09788255393505096,
+    "latency_ms": 3.4826730261556804
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4795.JPG",
+    "psnr": 32.53658676147461,
+    "ssim": 0.9511900544166565,
+    "lpips": 0.05328968167304993,
+    "latency_ms": 3.866678976919502
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4803.JPG",
+    "psnr": 34.87997055053711,
+    "ssim": 0.9659689664840698,
+    "lpips": 0.05012933909893036,
+    "latency_ms": 3.545660001691431
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4811.JPG",
+    "psnr": 31.89518165588379,
+    "ssim": 0.9617882966995239,
+    "lpips": 0.053920187056064606,
+    "latency_ms": 3.677011001855135
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4819.JPG",
+    "psnr": 29.07437515258789,
+    "ssim": 0.9460048079490662,
+    "lpips": 0.0513816773891449,
+    "latency_ms": 3.8771399995312095
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4827.JPG",
+    "psnr": 30.540830612182617,
+    "ssim": 0.9443731904029846,
+    "lpips": 0.0568285807967186,
+    "latency_ms": 3.560665005352348
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4835.JPG",
+    "psnr": 30.198917388916016,
+    "ssim": 0.9187889099121094,
+    "lpips": 0.13641799986362457,
+    "latency_ms": 3.5844430094584823
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4843.JPG",
+    "psnr": 32.77107620239258,
+    "ssim": 0.9500293731689453,
+    "lpips": 0.03783685714006424,
+    "latency_ms": 3.759785962756723
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4851.JPG",
+    "psnr": 27.29840087890625,
+    "ssim": 0.9132434129714966,
+    "lpips": 0.09084318578243256,
+    "latency_ms": 3.644569020252675
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4859.JPG",
+    "psnr": 29.857620239257812,
+    "ssim": 0.934992790222168,
+    "lpips": 0.08377285301685333,
+    "latency_ms": 3.405757015570998
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4867.JPG",
+    "psnr": 32.2186164855957,
+    "ssim": 0.9585254788398743,
+    "lpips": 0.059053804725408554,
+    "latency_ms": 3.5941540263593197
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4875.JPG",
+    "psnr": 30.73434829711914,
+    "ssim": 0.9306240081787109,
+    "lpips": 0.05726710334420204,
+    "latency_ms": 3.4406809718348086
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4883.JPG",
+    "psnr": 32.31059646606445,
+    "ssim": 0.9448044300079346,
+    "lpips": 0.07626499980688095,
+    "latency_ms": 3.1006880453787744
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4891.JPG",
+    "psnr": 30.163375854492188,
+    "ssim": 0.9205082654953003,
+    "lpips": 0.11340267956256866,
+    "latency_ms": 3.1207319698296487
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4899.JPG",
+    "psnr": 29.442604064941406,
+    "ssim": 0.9269933104515076,
+    "lpips": 0.08268453180789948,
+    "latency_ms": 2.9929709853604436
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4907.JPG",
+    "psnr": 31.275131225585938,
+    "ssim": 0.9220463633537292,
+    "lpips": 0.11714540421962738,
+    "latency_ms": 3.110810008365661
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4915.JPG",
+    "psnr": 32.54011154174805,
+    "ssim": 0.8878244161605835,
+    "lpips": 0.15784233808517456,
+    "latency_ms": 3.237181983422488
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4923.JPG",
+    "psnr": 28.35653305053711,
+    "ssim": 0.9389505982398987,
+    "lpips": 0.059748098254203796,
+    "latency_ms": 3.408219025004655
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4931.JPG",
+    "psnr": 29.841949462890625,
+    "ssim": 0.933448314666748,
+    "lpips": 0.09255126863718033,
+    "latency_ms": 3.076891996897757
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4939.JPG",
+    "psnr": 24.355966567993164,
+    "ssim": 0.9405853152275085,
+    "lpips": 0.16961021721363068,
+    "latency_ms": 3.122878959402442
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4947.JPG",
+    "psnr": 26.896068572998047,
+    "ssim": 0.9445309638977051,
+    "lpips": 0.1246449425816536,
+    "latency_ms": 3.404996998142451
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4955.JPG",
+    "psnr": 23.661773681640625,
+    "ssim": 0.8813835978507996,
+    "lpips": 0.23324978351593018,
+    "latency_ms": 2.929376030806452
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4963.JPG",
+    "psnr": 34.37525939941406,
+    "ssim": 0.9619374871253967,
+    "lpips": 0.10019741952419281,
+    "latency_ms": 3.1701059779152274
+  },
+  {
+    "scene": "room",
+    "profile": "b1",
+    "image_name": "DSCF4971.JPG",
+    "psnr": 31.119384765625,
+    "ssim": 0.9311877489089966,
+    "lpips": 0.10573749244213104,
+    "latency_ms": 3.1078389729373157
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4667.JPG",
+    "psnr": 30.001365661621094,
+    "ssim": 0.9225307106971741,
+    "lpips": 0.07274089008569717,
+    "latency_ms": 3.6872089840471745
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4675.JPG",
+    "psnr": 34.792030334472656,
+    "ssim": 0.9503946900367737,
+    "lpips": 0.05422304570674896,
+    "latency_ms": 3.3429760369472206
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4683.JPG",
+    "psnr": 34.584381103515625,
+    "ssim": 0.9503026008605957,
+    "lpips": 0.04976780340075493,
+    "latency_ms": 3.3842750126495957
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4691.JPG",
+    "psnr": 34.70272445678711,
+    "ssim": 0.9532462358474731,
+    "lpips": 0.05184270069003105,
+    "latency_ms": 3.3834169735200703
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4699.JPG",
+    "psnr": 33.21082305908203,
+    "ssim": 0.9666893482208252,
+    "lpips": 0.03748215734958649,
+    "latency_ms": 3.486440982669592
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4707.JPG",
+    "psnr": 28.046491622924805,
+    "ssim": 0.9232143759727478,
+    "lpips": 0.06683710962533951,
+    "latency_ms": 3.6865199799649417
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4715.JPG",
+    "psnr": 33.41294479370117,
+    "ssim": 0.9496878385543823,
+    "lpips": 0.049958840012550354,
+    "latency_ms": 3.446837014053017
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4723.JPG",
+    "psnr": 32.22208023071289,
+    "ssim": 0.961848258972168,
+    "lpips": 0.03957574442028999,
+    "latency_ms": 3.4832420060411096
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4731.JPG",
+    "psnr": 30.508609771728516,
+    "ssim": 0.9454425573348999,
+    "lpips": 0.06424698233604431,
+    "latency_ms": 3.6073519731871784
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4739.JPG",
+    "psnr": 33.671287536621094,
+    "ssim": 0.9682039022445679,
+    "lpips": 0.029443128034472466,
+    "latency_ms": 3.558390017133206
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4747.JPG",
+    "psnr": 33.67778778076172,
+    "ssim": 0.9597986936569214,
+    "lpips": 0.050556980073451996,
+    "latency_ms": 3.4873210242949426
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4755.JPG",
+    "psnr": 34.67317199707031,
+    "ssim": 0.9622103571891785,
+    "lpips": 0.04852980375289917,
+    "latency_ms": 3.325993020553142
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4763.JPG",
+    "psnr": 34.13162612915039,
+    "ssim": 0.9645287394523621,
+    "lpips": 0.029768016189336777,
+    "latency_ms": 3.3984510228037834
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4771.JPG",
+    "psnr": 31.8055419921875,
+    "ssim": 0.945561408996582,
+    "lpips": 0.07418686151504517,
+    "latency_ms": 3.7716419901698828
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4779.JPG",
+    "psnr": 27.64814567565918,
+    "ssim": 0.9460746645927429,
+    "lpips": 0.06137268617749214,
+    "latency_ms": 3.4399289870634675
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4787.JPG",
+    "psnr": 32.7795295715332,
+    "ssim": 0.9311062097549438,
+    "lpips": 0.09885464608669281,
+    "latency_ms": 3.3247380051761866
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4795.JPG",
+    "psnr": 31.530475616455078,
+    "ssim": 0.9477329850196838,
+    "lpips": 0.06208300217986107,
+    "latency_ms": 3.747846989426762
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4803.JPG",
+    "psnr": 34.62985610961914,
+    "ssim": 0.965641438961029,
+    "lpips": 0.04971981421113014,
+    "latency_ms": 3.3778249635361135
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4811.JPG",
+    "psnr": 32.0318603515625,
+    "ssim": 0.9620585441589355,
+    "lpips": 0.0535297691822052,
+    "latency_ms": 3.3935870160348713
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4819.JPG",
+    "psnr": 29.146108627319336,
+    "ssim": 0.9475587606430054,
+    "lpips": 0.05309520289301872,
+    "latency_ms": 3.6400320241227746
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4827.JPG",
+    "psnr": 30.400310516357422,
+    "ssim": 0.9446061849594116,
+    "lpips": 0.05683141201734543,
+    "latency_ms": 3.4219580120407045
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4835.JPG",
+    "psnr": 29.779165267944336,
+    "ssim": 0.9175609350204468,
+    "lpips": 0.13538643717765808,
+    "latency_ms": 3.4271880285814404
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4843.JPG",
+    "psnr": 32.376426696777344,
+    "ssim": 0.9495934844017029,
+    "lpips": 0.0383230596780777,
+    "latency_ms": 3.6019409890286624
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4851.JPG",
+    "psnr": 27.178091049194336,
+    "ssim": 0.9133800864219666,
+    "lpips": 0.0933113619685173,
+    "latency_ms": 3.4360350109636784
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4859.JPG",
+    "psnr": 29.522174835205078,
+    "ssim": 0.9350429177284241,
+    "lpips": 0.0829736590385437,
+    "latency_ms": 3.300078969914466
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4867.JPG",
+    "psnr": 32.20222854614258,
+    "ssim": 0.959710955619812,
+    "lpips": 0.05609156936407089,
+    "latency_ms": 3.3622600021772087
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4875.JPG",
+    "psnr": 31.07024574279785,
+    "ssim": 0.9398306012153625,
+    "lpips": 0.0543399378657341,
+    "latency_ms": 3.2436370383948088
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4883.JPG",
+    "psnr": 32.29144287109375,
+    "ssim": 0.9450124502182007,
+    "lpips": 0.07421495020389557,
+    "latency_ms": 2.9540839605033398
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4891.JPG",
+    "psnr": 30.278501510620117,
+    "ssim": 0.9222514033317566,
+    "lpips": 0.11247212439775467,
+    "latency_ms": 3.084669995587319
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4899.JPG",
+    "psnr": 29.4484920501709,
+    "ssim": 0.9280955195426941,
+    "lpips": 0.07905960083007812,
+    "latency_ms": 2.8789350180886686
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4907.JPG",
+    "psnr": 31.265562057495117,
+    "ssim": 0.9228123426437378,
+    "lpips": 0.11496644467115402,
+    "latency_ms": 2.983361016958952
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4915.JPG",
+    "psnr": 32.495086669921875,
+    "ssim": 0.8879007697105408,
+    "lpips": 0.15754231810569763,
+    "latency_ms": 3.0633489950560033
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4923.JPG",
+    "psnr": 26.69887351989746,
+    "ssim": 0.9344030618667603,
+    "lpips": 0.06546585261821747,
+    "latency_ms": 3.279942029621452
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4931.JPG",
+    "psnr": 29.812440872192383,
+    "ssim": 0.9322254061698914,
+    "lpips": 0.09511192888021469,
+    "latency_ms": 3.0024389852769673
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4939.JPG",
+    "psnr": 19.830890655517578,
+    "ssim": 0.9247422218322754,
+    "lpips": 0.17967307567596436,
+    "latency_ms": 2.8374679968692362
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4947.JPG",
+    "psnr": 26.20401954650879,
+    "ssim": 0.939149022102356,
+    "lpips": 0.13916133344173431,
+    "latency_ms": 3.2802189816720784
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4955.JPG",
+    "psnr": 23.29201889038086,
+    "ssim": 0.8752796649932861,
+    "lpips": 0.24344727396965027,
+    "latency_ms": 2.7971240342594683
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4963.JPG",
+    "psnr": 31.986692428588867,
+    "ssim": 0.9567674398422241,
+    "lpips": 0.10085935890674591,
+    "latency_ms": 3.039101022295654
+  },
+  {
+    "scene": "room",
+    "profile": "a1",
+    "image_name": "DSCF4971.JPG",
+    "psnr": 31.241233825683594,
+    "ssim": 0.9309239983558655,
+    "lpips": 0.1078295111656189,
+    "latency_ms": 2.930569986347109
+  }
+]
