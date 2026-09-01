@@ -1,0 +1,108 @@
+diff --git a/examples/simple_trainer.py b/examples/simple_trainer.py
+--- a/examples/simple_trainer.py
++++ b/examples/simple_trainer.py
+@@ -71,6 +71,8 @@ class Config:
+     val_every: int = 8
+     # Evaluation split; keep val during training and set test for final ckpt eval
+     eval_split: Literal["val", "test"] = "val"
++    # Unmeasured renders before a checkpoint-only latency evaluation.
++    eval_warmup_renders: int = 0
+     # Optional explicit filename-keyword split for degraded datasets.
+     train_keyword: Optional[str] = None
+     test_keyword: Optional[str] = None
+@@ -1200,8 +1202,33 @@ class Runner:
+         valloader = torch.utils.data.DataLoader(
+             self.valset, batch_size=1, shuffle=False, num_workers=1
+         )
++        if cfg.eval_warmup_renders < 0:
++            raise ValueError("eval_warmup_renders must be non-negative")
++        if cfg.eval_warmup_renders:
++            warmup = next(iter(valloader))
++            warmup_camtoworlds = warmup["camtoworld"].to(device)
++            warmup_Ks = warmup["K"].to(device)
++            warmup_pixels = warmup["image"].to(device) / 255.0
++            warmup_masks = warmup["mask"].to(device) if "mask" in warmup else None
++            warmup_height, warmup_width = warmup_pixels.shape[1:3]
++            for _ in range(cfg.eval_warmup_renders):
++                self.rasterize_splats(
++                    camtoworlds=warmup_camtoworlds,
++                    Ks=warmup_Ks,
++                    width=warmup_width,
++                    height=warmup_height,
++                    sh_degree=cfg.sh_degree,
++                    near_plane=cfg.near_plane,
++                    far_plane=cfg.far_plane,
++                    masks=warmup_masks,
++                )
++            torch.cuda.synchronize()
++            print(
++                f"Evaluation warmup complete: {cfg.eval_warmup_renders} renders"
++            )
+         ellipse_time = 0
+         latencies = []
++        latency_rows = []
+         metrics = defaultdict(list)
+         per_image_rows = []
+         for i, data in enumerate(valloader):
+@@ -1232,6 +1259,15 @@ class Runner:
+             canvas_list = [pixels, colors]
+ 
+             if world_rank == 0:
++                parser_index = int(self.valset.indices[i])
++                image_name = self.parser.image_names[parser_index]
++                latency_rows.append(
++                    {
++                        "image_index": i,
++                        "image_name": image_name,
++                        "latency_ms": latency * 1000.0,
++                    }
++                )
+                 # write images
+                 canvas = torch.cat(canvas_list, dim=2).squeeze(0).cpu().numpy()
+                 canvas = (canvas * 255).astype(np.uint8)
+@@ -1248,10 +1284,9 @@ class Runner:
+                 metrics["psnr"].append(psnr_value)
+                 metrics["ssim"].append(ssim_value)
+                 metrics["lpips"].append(lpips_value)
+-                parser_index = int(self.valset.indices[i])
+                 per_image_rows.append(
+                     {
+-                        "image_name": self.parser.image_names[parser_index],
++                        "image_name": image_name,
+                         "psnr": psnr_value.item(),
+                         "ssim": ssim_value.item(),
+                         "lpips": lpips_value.item(),
+@@ -1301,6 +1336,15 @@ class Runner:
+                     )
+                     writer.writeheader()
+                     writer.writerows(per_image_rows)
++                with open(
++                    f"{cfg.result_dir}/per_image_latency.csv", "w", newline=""
++                ) as f:
++                    writer = csv.DictWriter(
++                        f,
++                        fieldnames=["image_index", "image_name", "latency_ms"],
++                    )
++                    writer.writeheader()
++                    writer.writerows(latency_rows)
+                 latency_array = np.asarray(latencies, dtype=np.float64)
+                 efficiency = {
+                     "render_fps": float(1.0 / latency_array.mean()),
+@@ -1310,6 +1354,8 @@ class Runner:
+                     "inference_vram_gib": float(
+                         torch.cuda.max_memory_allocated() / 1024**3
+                     ),
++                    "warmup_render_count": cfg.eval_warmup_renders,
++                    "raw_latency_sample_count": len(latencies),
+                 }
+                 with open(f"{cfg.result_dir}/efficiency_metrics.json", "w") as f:
+                     json.dump(efficiency, f, indent=2)
+@@ -1318,6 +1364,8 @@ class Runner:
+                     "evaluation_imported_dino": "puri_gs.dino_features" in sys.modules,
+                     "evaluation_loaded_mask_head": self.ru_training is not None,
+                     "evaluation_rasterization_count_ratio": 1.0,
++                    "evaluation_warmup_render_count": cfg.eval_warmup_renders,
++                    "raw_latency_sample_count": len(latencies),
+                 }
+                 with open(f"{cfg.result_dir}/ru_validation.json", "w") as f:
+                     json.dump(validation, f, indent=2)

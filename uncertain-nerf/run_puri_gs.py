@@ -24,6 +24,9 @@ REPOSITORY_ROOT = PROJECT_ROOT.parent
 PATCH_PATH = PROJECT_ROOT / "patches" / "gsplat_v1.5.3_robot_screen.patch"
 CVTR_PATCH_PATH = PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_cvtr.patch"
 RU_PATCH_PATH = PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_ru.patch"
+EFFICIENCY_AUDIT_PATCH_PATH = (
+    PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_efficiency_audit.patch"
+)
 EXPECTED_GSPLAT_COMMIT = "937e29912570c372bed6747a5c9bf85fed877bae"
 
 
@@ -279,6 +282,11 @@ def _build_command(
             raise ValueError("--cvtr-mask-dir is valid only for the CVTR profile")
     else:
         command.extend(["--ckpt", str(args.checkpoint.resolve())])
+        eval_warmup_renders = getattr(args, "eval_warmup_renders", 0)
+        if eval_warmup_renders:
+            command.extend(
+                ["--eval_warmup_renders", str(eval_warmup_renders)]
+            )
     return command
 
 
@@ -294,6 +302,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--train-keyword")
     parser.add_argument("--test-keyword")
     parser.add_argument("--checkpoint", type=Path)
+    parser.add_argument(
+        "--eval-warmup-renders",
+        type=int,
+        default=0,
+        help="Checkpoint-evaluation warmup renders excluded from latency metrics.",
+    )
     parser.add_argument("--resume-checkpoint", type=Path)
     parser.add_argument("--cvtr-mask-dir", type=Path)
     parser.add_argument("--dino-repo-dir", type=Path)
@@ -314,6 +328,10 @@ def main() -> int:
         raise ValueError("gpu must be non-negative")
     if args.max_steps is not None and args.max_steps <= 0:
         raise ValueError("max_steps must be positive")
+    if args.eval_warmup_renders < 0:
+        raise ValueError("eval_warmup_renders must be non-negative")
+    if args.eval_warmup_renders and args.checkpoint is None:
+        raise ValueError("--eval-warmup-renders requires --checkpoint")
     config_path = args.config.expanduser().resolve()
     gsplat_dir = args.gsplat_dir.expanduser().resolve()
     data_dir = args.data_dir.expanduser().resolve()
@@ -326,6 +344,8 @@ def main() -> int:
     _verify_gsplat(
         gsplat_dir, require_cvtr=is_continuation, require_ru=is_ru
     )
+    if args.eval_warmup_renders:
+        _verify_applied_patch(gsplat_dir, EFFICIENCY_AUDIT_PATCH_PATH)
     if is_ru and args.max_steps is not None:
         if args.max_steps != config["total_steps"] and not 1 <= args.max_steps <= 100:
             raise ValueError(
