@@ -1,0 +1,61 @@
+{
+  "protocol": "puri-gs-ru-phase-r-1",
+  "decision": "RU_RECONSTRUCTION_FAIL",
+  "android_robustness_gate": {
+    "delta_psnr": 1.2065086364746094,
+    "delta_ssim": 0.028468430042266846,
+    "relative_lpips_improvement": 0.0376699760889224,
+    "per_image_psnr_improved_ratio": 1.0,
+    "paired_bootstrap_psnr_ci95": [
+      0.8821364377674303,
+      1.5804769465797825
+    ],
+    "pass": true
+  },
+  "room_clean_gate": {
+    "delta_psnr": 0.7480201721191406,
+    "delta_ssim": 0.013096153736114502,
+    "delta_lpips": -0.006659947335720062,
+    "worst_per_image_psnr_delta": -3.8602256774902344,
+    "pass": false
+  },
+  "inference_efficiency_gate": {
+    "pass": false,
+    "scenes": {
+      "android": {
+        "fps_ratio": 1.0957307429555385,
+        "gaussian_count_ratio": 0.4672108017827391,
+        "inference_vram_ratio": 0.5155449840408779,
+        "standard_inference_path_pass": true,
+        "gradient_isolation_pass": true,
+        "pass": true
+      },
+      "room": {
+        "fps_ratio": 0.9071697848990827,
+        "gaussian_count_ratio": 0.5444231629464182,
+        "inference_vram_ratio": 0.5689339012272229,
+        "standard_inference_path_pass": true,
+        "gradient_isolation_pass": true,
+        "pass": false
+      }
+    }
+  },
+  "training_observations_not_a_core_gate": {
+    "android": {
+      "training_time_ratio": 1.009995972700827,
+      "within_suggested_3x": true,
+      "checkpoint_size_ratio": 0.46721534651483704,
+      "dino_render_feature_seconds": 216.8680341708823,
+      "dino_render_feature_fraction_of_training": 0.3470906914138136,
+      "mask_head_parameter_count": 6177
+    },
+    "room": {
+      "training_time_ratio": 1.0254870114182493,
+      "within_suggested_3x": true,
+      "checkpoint_size_ratio": 0.5444269774772609,
+      "dino_render_feature_seconds": 206.02742262469837,
+      "dino_render_feature_fraction_of_training": 0.35768959122750144,
+      "mask_head_parameter_count": 6177
+    }
+  }
+}
