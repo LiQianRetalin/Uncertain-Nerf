@@ -55,6 +55,12 @@ class RUIterationState:
         self.components: dict[str, Tensor] | None = None
 
 
+def prepare_render_for_dino(render: Tensor) -> Tensor:
+    """Detach and project raw Gaussian RGB into DINOv2's valid image range."""
+
+    return render.detach().clamp(0.0, 1.0)
+
+
 class PURIGSRUTraining:
     """Own DINO, the mask head, cache, histogram, diagnostics, and aux state."""
 
@@ -228,7 +234,7 @@ class PURIGSRUTraining:
         grid_size = self.grid_for_step(step)
         started = perf_counter()
         render_feature = extract_patch_grid(
-            self.dino, render_for_mask.detach(), grid_size
+            self.dino, prepare_render_for_dino(render_for_mask), grid_size
         )
         self.dino_render_seconds += perf_counter() - started
         self.dino_render_calls += 1

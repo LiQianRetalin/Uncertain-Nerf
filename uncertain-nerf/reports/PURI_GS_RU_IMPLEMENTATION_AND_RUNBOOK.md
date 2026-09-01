@@ -10,6 +10,8 @@
 
 步骤 1–9 已完成。服务器 GPU 6 为 NVIDIA L20，显存 46068 MiB，驱动 580.65.06；PyTorch 为 2.4.0+cu121，运行时 gsplat 为 1.5.3+pt24cu121。官方 DINOv2 源码 commit 为 `7764ea0f912e53c92e82eb78a2a1631e92725fc8`。缓存的 122 个 coarse/fine payload 已逐个加载并验证形状和有限性。RU 100-step 产生 112790 个 Gaussian，DINO trainable 为 0，完成 100 次 mask 更新与 100 次梯度隔离运行时检查，标准 checkpoint 只含 `step` 和 `splats`。独立评测完成 19 张图：PSNR 17.742794、SSIM 0.663716、LPIPS 0.560165、36.1501 FPS；评测未导入 DINO、未加载 mask head，rasterization ratio 为 1.0。
 
+2026-09-01 正式运行记录：Android B1 30k 训练与 19 张独立评测已通过。Android RU 30k 首次尝试在 step 145 停止，原因是早期 raw Gaussian render 出现超出 `[0,1]` 的值，DINO 输入契约正确拒绝了该张量。修正固定为仅对已经 `detach`、只送入 DINO 的 render 副本执行 `clamp(0,1)`；摄影损失、Gaussian 梯度、GT cache、mask 阈值、配置和协议均不改变。失败目录必须保留并改名归档；修正经过测试、Git 提交、push 和服务器 fast-forward 后，Android RU 从 step 0 按相同 seed 42 重启。修正部署前正式运行暂停，Room 尚未启动。
+
 ## 二、首次仓库审计的 25 项事实
 
 1. 当前分支为 `dev`，当前项目 commit 为 `0ae62b10ef4d69c35cfcc1aafdfab37f37bd98fe`。没有切换分支、没有创建 worktree、没有提交。
@@ -838,7 +840,7 @@ E:\7-DataSet\PURI-GS-derived\semantic_features\room
 - Python compileall：通过
 - Shell `bash -n`：通过
 - 定向 RU tests：24 passed
-- 全量 pytest：175 passed、1 skipped；里程碑 1 前最终复测为 43.56 秒
+- 全量 pytest：初始里程碑 1 为 175 passed、1 skipped；render-to-DINO clamp 修正后为 176 passed、1 skipped（35.61 秒）
 - `git diff --check`：通过，仅有 Windows LF/CRLF 提示，无空白错误
 - RU patch 对 base source apply/reverse：通过
 - 本地 CUDA smoke：未执行；本机 GPU 架构与固定环境不兼容，不静默升级
@@ -851,5 +853,5 @@ E:\7-DataSet\PURI-GS-derived\semantic_features\room
 - L20 RU 标准 checkpoint 独立评测：通过；19 张测试图，PSNR 17.742794、SSIM 0.663716、LPIPS 0.560165、36.1501 FPS、Gaussian 数 112790
 - L20 RU 独立推理隔离：通过；standard checkpoint load true、imported DINO false、loaded mask head false、rasterization ratio 1.0
 - Git 里程碑 1：已达到，等待用户图形化 commit/push
-- 正式 30k：未启动
+- 正式 30k：Android B1 训练与评测通过；Android RU 首次运行在 step 145 暴露 render-to-DINO 输入越界并停止，等待已测试的最小修正部署后从 step 0 重启；Room 未启动
 - 阶段 U：未实现、未启动

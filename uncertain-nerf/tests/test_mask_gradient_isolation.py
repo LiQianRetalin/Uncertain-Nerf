@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
+from puri_gs.ru_training import prepare_render_for_dino
 from puri_gs.semantic_mask import (
     StaticResponsibilityHead,
     cosine_static_target,
@@ -9,6 +10,21 @@ from puri_gs.semantic_mask import (
     masked_photo_loss,
     semantic_mask_loss,
 )
+
+
+def test_raw_gaussian_render_is_clamped_only_for_detached_dino_input():
+    render = torch.tensor(
+        [[[[-0.25, 0.5, 1.25], [0.1, 0.9, 1.0]]]],
+        requires_grad=True,
+    )
+    original = render.detach().clone()
+
+    prepared = prepare_render_for_dino(render)
+
+    assert prepared.requires_grad is False
+    assert prepared.min().item() == 0.0
+    assert prepared.max().item() == 1.0
+    assert torch.equal(render.detach(), original)
 
 
 class FrozenFeatureModel(nn.Module):
@@ -67,4 +83,3 @@ def test_photo_and_mask_backward_are_bidirectionally_isolated():
         for parameter in head.parameters()
     )
     assert all(parameter.grad is None for parameter in dino.parameters())
-
