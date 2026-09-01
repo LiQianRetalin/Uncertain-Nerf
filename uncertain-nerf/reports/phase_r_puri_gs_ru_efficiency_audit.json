@@ -1,0 +1,134 @@
+{
+  "protocol": "puri-gs-ru-room-efficiency-audit-1",
+  "original_phase_r_decision_preserved": true,
+  "warmup_render_count_per_run": 10,
+  "repeat_count_per_method": 3,
+  "decision": "EFFICIENCY_AUDIT_PASS",
+  "summary": {
+    "fps_ratio_gate": 0.95,
+    "paired_fps_ratios": [
+      1.611404177624242,
+      1.603702936990555,
+      1.6071355320104574
+    ],
+    "median_paired_fps_ratio": 1.6071355320104574,
+    "b1_median": {
+      "render_fps": 263.9412538261334,
+      "latency_mean_ms": 3.7887218670967298,
+      "latency_p50_ms": 3.8576126098632812,
+      "latency_p95_ms": 4.2090654373168945
+    },
+    "ru_median": {
+      "render_fps": 424.24063613587913,
+      "latency_mean_ms": 2.3571527921236477,
+      "latency_p50_ms": 2.3970603942871094,
+      "latency_p95_ms": 2.704644203186035
+    },
+    "throughput_gate_pass": true,
+    "median_latency_mean_ms_ratio": 0.6221498634128868,
+    "median_latency_p50_ms_ratio": 0.6213844252163164,
+    "median_latency_p95_ms_ratio": 0.6425759455310665
+  },
+  "runs": {
+    "b1": [
+      {
+        "method": "b1",
+        "run_index": 1,
+        "path": "/home/chenglong/Uncertain-Nerf/uncertain-nerf/logs-puri/phase_r_efficiency_audit/room/b1_run1",
+        "test_image_count": 39,
+        "warmup_render_count": 10,
+        "gaussian_count": 1301078,
+        "inference_vram_gib": 1.0469865798950195,
+        "psnr": 31.3070068359375,
+        "ssim": 0.9333276152610779,
+        "lpips": 0.07671981304883957,
+        "render_fps": 263.2738837510985,
+        "latency_mean_ms": 3.798325856526693,
+        "latency_p50_ms": 3.897428512573242,
+        "latency_p95_ms": 4.22053337097168
+      },
+      {
+        "method": "b1",
+        "run_index": 2,
+        "path": "/home/chenglong/Uncertain-Nerf/uncertain-nerf/logs-puri/phase_r_efficiency_audit/room/b1_run2",
+        "test_image_count": 39,
+        "warmup_render_count": 10,
+        "gaussian_count": 1301078,
+        "inference_vram_gib": 1.0469865798950195,
+        "psnr": 31.3070068359375,
+        "ssim": 0.9333276152610779,
+        "lpips": 0.07671981304883957,
+        "render_fps": 263.9412538261334,
+        "latency_mean_ms": 3.7887218670967298,
+        "latency_p50_ms": 3.8576126098632812,
+        "latency_p95_ms": 4.1947126388549805
+      },
+      {
+        "method": "b1",
+        "run_index": 3,
+        "path": "/home/chenglong/Uncertain-Nerf/uncertain-nerf/logs-puri/phase_r_efficiency_audit/room/b1_run3",
+        "test_image_count": 39,
+        "warmup_render_count": 10,
+        "gaussian_count": 1301078,
+        "inference_vram_gib": 1.0469865798950195,
+        "psnr": 31.3070068359375,
+        "ssim": 0.9333276152610779,
+        "lpips": 0.07671981304883957,
+        "render_fps": 264.2520879710253,
+        "latency_mean_ms": 3.7842652736566005,
+        "latency_p50_ms": 3.857135772705078,
+        "latency_p95_ms": 4.2090654373168945
+      }
+    ],
+    "ru": [
+      {
+        "method": "ru",
+        "run_index": 1,
+        "path": "/home/chenglong/Uncertain-Nerf/uncertain-nerf/logs-puri/phase_r_efficiency_audit/room/ru_run1",
+        "test_image_count": 39,
+        "warmup_render_count": 10,
+        "gaussian_count": 708337,
+        "inference_vram_gib": 0.5960135459899902,
+        "psnr": 32.05502700805664,
+        "ssim": 0.9464237689971924,
+        "lpips": 0.0700598657131195,
+        "render_fps": 424.24063613587913,
+        "latency_mean_ms": 2.3571527921236477,
+        "latency_p50_ms": 2.406597137451172,
+        "latency_p95_ms": 2.713298797607422
+      },
+      {
+        "method": "ru",
+        "run_index": 2,
+        "path": "/home/chenglong/Uncertain-Nerf/uncertain-nerf/logs-puri/phase_r_efficiency_audit/room/ru_run2",
+        "test_image_count": 39,
+        "warmup_render_count": 10,
+        "gaussian_count": 708337,
+        "inference_vram_gib": 0.5957961082458496,
+        "psnr": 32.05502700805664,
+        "ssim": 0.9464237689971924,
+        "lpips": 0.0700598657131195,
+        "render_fps": 423.2833639539397,
+        "latency_mean_ms": 2.3624835870204826,
+        "latency_p50_ms": 2.3970603942871094,
+        "latency_p95_ms": 2.704644203186035
+      },
+      {
+        "method": "ru",
+        "run_index": 3,
+        "path": "/home/chenglong/Uncertain-Nerf/uncertain-nerf/logs-puri/phase_r_efficiency_audit/room/ru_run3",
+        "test_image_count": 39,
+        "warmup_render_count": 10,
+        "gaussian_count": 708337,
+        "inference_vram_gib": 0.5957961082458496,
+        "psnr": 32.05502700805664,
+        "ssim": 0.9464237689971924,
+        "lpips": 0.0700598657131195,
+        "render_fps": 424.6889199861879,
+        "latency_mean_ms": 2.3546646802853317,
+        "latency_p50_ms": 2.38037109375,
+        "latency_p95_ms": 2.668881416320801
+      }
+    ]
+  }
+}
