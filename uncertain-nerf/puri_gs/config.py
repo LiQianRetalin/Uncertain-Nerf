@@ -20,6 +20,43 @@ REQUIRED_RESPONSIBILITY_FIELDS = {
 
 REQUIRED_CVTR_FIELDS = set(CVTRConfig.__dataclass_fields__) | {"enabled"}
 
+RU_FIXED_FIELDS = {
+    "method": "puri_gs_ru",
+    "total_steps": 30000,
+    "absgrad": True,
+    "grow_grad2d": 0.0006,
+    "mask_enabled": True,
+    "mask_begin_step": 500,
+    "mask_threshold": 0.25,
+    "mask_erode_kernel": 7,
+    "mask_learning_rate": 0.001,
+    "mask_hidden_dim": 16,
+    "dino_model": "dinov2_vits14_reg",
+    "dino_feature_dim": 384,
+    "dino_coarse_grid": 16,
+    "dino_fine_grid": 36,
+    "dino_coarse_input": 224,
+    "dino_fine_input": 504,
+    "residual_hist_bins": 10000,
+    "residual_hist_momentum": 0.95,
+    "residual_lower_quantile": 0.60,
+    "residual_upper_quantile": 0.80,
+    "mask_cos_weight": 0.5,
+    "mask_residual_weight": 0.5,
+    "mask_static_prior_weight": 2.0,
+    "mask_static_prior_decay": 2000,
+    "bootstrap_switch_step": 20000,
+    "densify_start_step": 10000,
+    "densify_stop_step": 20000,
+    "densify_every": 100,
+    "opacity_reset_start_step": 15000,
+    "opacity_reset_every": 3000,
+    "mask_pause_after_reset": 300,
+    "ssim_lambda": 0.2,
+    "seed": 42,
+    "sh_degree": 3,
+}
+
 
 def load_experiment_config(path: str | Path) -> dict[str, Any]:
     """Load a JSON-compatible YAML profile without adding a YAML dependency."""
@@ -36,8 +73,8 @@ def load_experiment_config(path: str | Path) -> dict[str, Any]:
 def validate_experiment_config(config: dict[str, Any]) -> None:
     if config.get("schema_version") != 1:
         raise ValueError("schema_version must be 1")
-    if config.get("profile") not in {"b0", "b1", "a1", "b1c", "cvtr"}:
-        raise ValueError("profile must be one of b0, b1, a1, b1c, cvtr")
+    if config.get("profile") not in {"b0", "b1", "a1", "b1c", "cvtr", "ru"}:
+        raise ValueError("profile must be one of b0, b1, a1, b1c, cvtr, ru")
     if config.get("gsplat_version") != "1.5.3":
         raise ValueError("gsplat_version must remain pinned to 1.5.3")
     if config.get("seed") != 42:
@@ -46,13 +83,34 @@ def validate_experiment_config(config: dict[str, Any]) -> None:
     training = config.get("training")
     if not isinstance(training, dict):
         raise ValueError("training must be a mapping")
-    for field in ("data_factor", "test_every", "sh_degree", "ssim_lambda"):
+    required_training = (
+        ("data_factor", "test_every")
+        if config["profile"] == "ru"
+        else ("data_factor", "test_every", "sh_degree", "ssim_lambda")
+    )
+    for field in required_training:
         if field not in training:
             raise ValueError(f"training.{field} is required")
     if training["data_factor"] <= 0 or training["test_every"] <= 0:
         raise ValueError("data_factor and test_every must be positive")
-    if not 0 <= training["ssim_lambda"] <= 1:
+    if "ssim_lambda" in training and not 0 <= training["ssim_lambda"] <= 1:
         raise ValueError("ssim_lambda must be in [0, 1]")
+
+    if config["profile"] == "ru":
+        mismatches = {
+            field: (config.get(field), expected)
+            for field, expected in RU_FIXED_FIELDS.items()
+            if config.get(field) != expected
+        }
+        if mismatches:
+            raise ValueError(f"PURI-GS-RU fixed fields differ: {mismatches}")
+        if config.get("delayed_densification") is not True:
+            raise ValueError("PURI-GS-RU must enable delayed_densification")
+        if "strategy" in config or "responsibility" in config or "cvtr" in config:
+            raise ValueError(
+                "PURI-GS-RU keeps its fixed fields flat and may not mix legacy methods"
+            )
+        return
 
     strategy = config.get("strategy")
     if not isinstance(strategy, dict) or strategy.get("type") != "default":
@@ -112,6 +170,45 @@ def validate_experiment_config(config: dict[str, Any]) -> None:
 
 def trainer_method_args(config: dict[str, Any]) -> list[str]:
     """Translate only the method-specific profile fields to gsplat CLI flags."""
+
+    if config["profile"] == "ru":
+        args = [
+            "--puri_gs_ru_enabled",
+            "--strategy.absgrad",
+            "--strategy.grow_grad2d",
+            str(config["grow_grad2d"]),
+        ]
+        fields = (
+            "mask_begin_step",
+            "mask_threshold",
+            "mask_erode_kernel",
+            "mask_learning_rate",
+            "mask_hidden_dim",
+            "dino_model",
+            "dino_feature_dim",
+            "dino_coarse_grid",
+            "dino_fine_grid",
+            "dino_coarse_input",
+            "dino_fine_input",
+            "residual_hist_bins",
+            "residual_hist_momentum",
+            "residual_lower_quantile",
+            "residual_upper_quantile",
+            "mask_cos_weight",
+            "mask_residual_weight",
+            "mask_static_prior_weight",
+            "mask_static_prior_decay",
+            "bootstrap_switch_step",
+            "densify_start_step",
+            "densify_stop_step",
+            "densify_every",
+            "opacity_reset_start_step",
+            "opacity_reset_every",
+            "mask_pause_after_reset",
+        )
+        for field in fields:
+            args.extend([f"--{field}", str(config[field])])
+        return args
 
     strategy = config["strategy"]
     responsibility = config["responsibility"]

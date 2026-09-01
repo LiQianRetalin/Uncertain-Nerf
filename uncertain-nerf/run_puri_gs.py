@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validated B0/B1/A1 launcher for the pinned gsplat v1.5.3 trainer."""
+"""Validated PURI-GS launcher for the pinned gsplat v1.5.3 trainer."""
 
 from __future__ import annotations
 
@@ -23,6 +23,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 REPOSITORY_ROOT = PROJECT_ROOT.parent
 PATCH_PATH = PROJECT_ROOT / "patches" / "gsplat_v1.5.3_robot_screen.patch"
 CVTR_PATCH_PATH = PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_cvtr.patch"
+RU_PATCH_PATH = PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_ru.patch"
 EXPECTED_GSPLAT_COMMIT = "937e29912570c372bed6747a5c9bf85fed877bae"
 
 
@@ -54,13 +55,30 @@ def _verify_applied_patch(gsplat_dir: Path, patch_path: Path) -> None:
         raise RuntimeError(f"required trainer patch is not applied: {patch_path.name}")
 
 
-def _verify_gsplat(gsplat_dir: Path, require_cvtr: bool = False) -> None:
+def _verify_gsplat(
+    gsplat_dir: Path, *, require_cvtr: bool = False, require_ru: bool = False
+) -> None:
     if _git("rev-parse", "HEAD", cwd=gsplat_dir) != EXPECTED_GSPLAT_COMMIT:
         raise RuntimeError("GSPLAT_DIR is not the pinned v1.5.3 checkout")
     if require_cvtr:
         _verify_applied_patch(gsplat_dir, CVTR_PATCH_PATH)
+    elif require_ru:
+        _verify_applied_patch(gsplat_dir, RU_PATCH_PATH)
+        trainer_source = (gsplat_dir / "examples" / "simple_trainer.py").read_text(
+            encoding="utf-8"
+        )
+        dataset_source = (
+            gsplat_dir / "examples" / "datasets" / "colmap.py"
+        ).read_text(encoding="utf-8")
+        if "train_keyword" not in trainer_source or "_is_png_file" not in dataset_source:
+            raise RuntimeError("PURI-GS base trainer/data patch is incomplete")
     else:
-        _verify_applied_patch(gsplat_dir, PATCH_PATH)
+        try:
+            _verify_applied_patch(gsplat_dir, PATCH_PATH)
+        except RuntimeError:
+            # The RU patch is a strict, default-disabled superset of the base
+            # trainer. It is therefore also the source used for matched B1 runs.
+            _verify_applied_patch(gsplat_dir, RU_PATCH_PATH)
 
 
 def _verify_dataset(
@@ -192,6 +210,8 @@ def _build_command(
 ) -> list[str]:
     training = config["training"]
     data_factor = args.data_factor or training["data_factor"]
+    sh_degree = config.get("sh_degree", training.get("sh_degree"))
+    ssim_lambda = config.get("ssim_lambda", training.get("ssim_lambda"))
     command = [
         sys.executable,
         "simple_trainer.py",
@@ -211,9 +231,9 @@ def _build_command(
         "--eval_split",
         "test",
         "--sh_degree",
-        str(training["sh_degree"]),
+        str(sh_degree),
         "--ssim_lambda",
-        str(training["ssim_lambda"]),
+        str(ssim_lambda),
         "--tb_every",
         "0",
     ]
@@ -227,7 +247,7 @@ def _build_command(
                 raise ValueError("--resume-checkpoint requires a continuation profile")
             max_steps = continuation["target_step"] + 1
         else:
-            max_steps = args.max_steps
+            max_steps = args.max_steps or config.get("total_steps", 10_000)
         command.extend(
             [
                 "--max_steps",
@@ -239,6 +259,15 @@ def _build_command(
             ]
         )
         command.extend(trainer_method_args(config))
+        if config["profile"] == "ru":
+            for value, flag in (
+                (args.dino_repo_dir, "--dino_repo_dir"),
+                (args.dino_weight_path, "--dino_weight_path"),
+                (args.feature_cache_dir, "--feature_cache_dir"),
+            ):
+                if value is None:
+                    raise ValueError(f"PURI-GS-RU training requires {flag}")
+                command.extend([flag, str(value.resolve())])
         if args.resume_checkpoint is not None:
             command.extend(["--resume_ckpt", str(args.resume_checkpoint.resolve())])
         cvtr = config.get("cvtr")
@@ -260,13 +289,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--data-dir", type=Path, required=True)
     parser.add_argument("--result-dir", type=Path, required=True)
     parser.add_argument("--gpu", type=int, required=True)
-    parser.add_argument("--max-steps", type=int, default=10000)
+    parser.add_argument("--max-steps", type=int)
     parser.add_argument("--data-factor", type=int)
     parser.add_argument("--train-keyword")
     parser.add_argument("--test-keyword")
     parser.add_argument("--checkpoint", type=Path)
     parser.add_argument("--resume-checkpoint", type=Path)
     parser.add_argument("--cvtr-mask-dir", type=Path)
+    parser.add_argument("--dino-repo-dir", type=Path)
+    parser.add_argument("--dino-weight-path", type=Path)
+    parser.add_argument("--feature-cache-dir", type=Path)
     parser.add_argument(
         "--responsibility-start-step",
         type=int,
@@ -280,7 +312,7 @@ def main() -> int:
     args = parse_args()
     if args.gpu < 0:
         raise ValueError("gpu must be non-negative")
-    if args.max_steps <= 0:
+    if args.max_steps is not None and args.max_steps <= 0:
         raise ValueError("max_steps must be positive")
     config_path = args.config.expanduser().resolve()
     gsplat_dir = args.gsplat_dir.expanduser().resolve()
@@ -290,7 +322,15 @@ def main() -> int:
         load_experiment_config(config_path), args.responsibility_start_step
     )
     is_continuation = config["profile"] in {"b1c", "cvtr"}
-    _verify_gsplat(gsplat_dir, require_cvtr=is_continuation)
+    is_ru = config["profile"] == "ru"
+    _verify_gsplat(
+        gsplat_dir, require_cvtr=is_continuation, require_ru=is_ru
+    )
+    if is_ru and args.max_steps is not None:
+        if args.max_steps != config["total_steps"] and not 1 <= args.max_steps <= 100:
+            raise ValueError(
+                "PURI-GS-RU allows only the fixed 30000-step run or a <=100-step smoke"
+            )
     data_factor = args.data_factor or config["training"]["data_factor"]
     _verify_dataset(
         data_dir, data_factor, args.train_keyword, args.test_keyword
@@ -313,6 +353,18 @@ def main() -> int:
             raise RuntimeError(
                 f"CVTR mask manifest does not exist: {args.cvtr_mask_dir / 'manifest.json'}"
             )
+    if is_ru and args.checkpoint is None:
+        for path, label, expected in (
+            (args.dino_repo_dir, "DINOv2 repository", "hubconf.py"),
+            (args.dino_weight_path, "DINOv2 weight", None),
+            (args.feature_cache_dir, "feature cache", "manifest.json"),
+        ):
+            if path is None:
+                raise ValueError(f"{label} path is required for PURI-GS-RU training")
+            resolved = path.expanduser().resolve()
+            required = resolved / expected if expected is not None else resolved
+            if not required.exists():
+                raise RuntimeError(f"{label} is missing: {required}")
     command = _build_command(args, config, gsplat_dir, data_dir, result_dir)
     printable = f"CUDA_VISIBLE_DEVICES={args.gpu} {shlex.join(command)}"
     print(printable)

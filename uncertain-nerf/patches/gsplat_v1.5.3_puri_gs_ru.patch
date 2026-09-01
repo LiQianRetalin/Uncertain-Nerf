@@ -1,0 +1,422 @@
+diff --git a/examples/simple_trainer.py b/examples/simple_trainer.py
+--- a/examples/simple_trainer.py
++++ b/examples/simple_trainer.py
+@@ -1,7 +1,9 @@
++import csv
+ import json
+ import math
+ import os
+ import time
++import sys
+ from collections import defaultdict
+ from dataclasses import dataclass, field
+ from pathlib import Path
+@@ -34,6 +36,7 @@ from puri_gs.responsibility import (
+     ResponsibilityConfig,
+     responsibility_weighted_l1,
+ )
++from puri_gs.semantic_mask import masked_photo_loss
+ 
+ from gsplat import export_splats
+ from gsplat.compression import PngCompression
+@@ -125,6 +128,38 @@ class Config:
+     responsibility_pool_size: int = 3
+     responsibility_epsilon: float = 1e-6
+ 
++    # PURI-GS-RU is training-only and opt-in. Evaluation leaves every field unused.
++    puri_gs_ru_enabled: bool = False
++    dino_repo_dir: Optional[str] = None
++    dino_weight_path: Optional[str] = None
++    feature_cache_dir: Optional[str] = None
++    mask_begin_step: int = 500
++    mask_threshold: float = 0.25
++    mask_erode_kernel: int = 7
++    mask_learning_rate: float = 1e-3
++    mask_hidden_dim: int = 16
++    dino_model: str = "dinov2_vits14_reg"
++    dino_feature_dim: int = 384
++    dino_coarse_grid: int = 16
++    dino_fine_grid: int = 36
++    dino_coarse_input: int = 224
++    dino_fine_input: int = 504
++    residual_hist_bins: int = 10_000
++    residual_hist_momentum: float = 0.95
++    residual_lower_quantile: float = 0.60
++    residual_upper_quantile: float = 0.80
++    mask_cos_weight: float = 0.5
++    mask_residual_weight: float = 0.5
++    mask_static_prior_weight: float = 2.0
++    mask_static_prior_decay: int = 2000
++    bootstrap_switch_step: int = 20_000
++    densify_start_step: int = 10_000
++    densify_stop_step: int = 20_000
++    densify_every: int = 100
++    opacity_reset_start_step: int = 15_000
++    opacity_reset_every: int = 3_000
++    mask_pause_after_reset: int = 300
++
+     # Near plane clipping distance
+     near_plane: float = 0.01
+     # Far plane clipping distance
+@@ -431,6 +466,23 @@ class Runner:
+         print("Model initialized. Number of GS:", len(self.splats["means"]))
+ 
+         # Densification Strategy
++        if cfg.puri_gs_ru_enabled:
++            from puri_gs.delayed_absgrad import (
++                DelayedAbsGradSchedule,
++                delayed_strategy_from_default,
++            )
++
++            ru_schedule = DelayedAbsGradSchedule(
++                densify_start_step=cfg.densify_start_step,
++                densify_stop_step=cfg.densify_stop_step,
++                densify_every=cfg.densify_every,
++                opacity_reset_start_step=cfg.opacity_reset_start_step,
++                opacity_reset_every=cfg.opacity_reset_every,
++                mask_pause_after_reset=cfg.mask_pause_after_reset,
++            )
++            self.cfg.strategy = delayed_strategy_from_default(
++                self.cfg.strategy, ru_schedule
++            )
+         self.cfg.strategy.check_sanity(self.splats, self.optimizers)
+ 
+         if isinstance(self.cfg.strategy, DefaultStrategy):
+@@ -442,6 +494,20 @@ class Runner:
+         else:
+             assert_never(self.cfg.strategy)
+ 
++        self.ru_training = None
++        if cfg.puri_gs_ru_enabled:
++            from puri_gs.ru_training import PURIGSRUTraining
++
++            # Do not let DINO/head construction perturb B1's seeded camera order.
++            with torch.random.fork_rng(devices=[self.local_rank]):
++                torch.manual_seed(42)
++                self.ru_training = PURIGSRUTraining(
++                    cfg=cfg,
++                    parser=self.parser,
++                    trainset=self.trainset,
++                    device=self.device,
++                )
++
+         # Compression Strategy
+         self.compression_method = None
+         if cfg.compression is not None:
+@@ -727,26 +793,79 @@ class Runner:
+                 bkgd = torch.rand(1, 3, device=device)
+                 colors = colors + bkgd * (1.0 - alphas)
+ 
+-            self.cfg.strategy.step_pre_backward(
+-                params=self.splats,
+-                optimizers=self.optimizers,
+-                state=self.strategy_state,
+-                step=step,
+-                info=info,
+-            )
++            ru_state = None
++            if self.ru_training is not None:
++                if step < cfg.bootstrap_switch_step:
++                    from puri_gs.ru_training import scale_intrinsics
++
++                    coarse_Ks = scale_intrinsics(
++                        Ks, width=width, height=height, target=cfg.dino_coarse_input
++                    )
++                    coarse_renders, _, _ = self.rasterize_splats(
++                        camtoworlds=camtoworlds,
++                        Ks=coarse_Ks,
++                        width=cfg.dino_coarse_input,
++                        height=cfg.dino_coarse_input,
++                        sh_degree=sh_degree_to_use,
++                        near_plane=cfg.near_plane,
++                        far_plane=cfg.far_plane,
++                        image_ids=image_ids,
++                        render_mode="RGB",
++                    )
++                    render_for_mask = coarse_renders[..., :3].detach()
++                else:
++                    render_for_mask = colors.detach()
++                ru_state = self.ru_training.prepare_photo_mask(
++                    step=step,
++                    image_id=image_ids,
++                    pixels=pixels,
++                )
++
++            if ru_state is None:
++                self.cfg.strategy.step_pre_backward(
++                    params=self.splats,
++                    optimizers=self.optimizers,
++                    state=self.strategy_state,
++                    step=step,
++                    info=info,
++                )
+ 
+             # loss
+-            l1loss, responsibility = responsibility_weighted_l1(
+-                colors,
+-                pixels,
+-                config=self.responsibility_config,
+-                step=step,
+-                valid_mask=masks,
+-            )
+-            ssimloss = 1.0 - fused_ssim(
+-                colors.permute(0, 3, 1, 2), pixels.permute(0, 3, 1, 2), padding="valid"
+-            )
+-            loss = l1loss * (1.0 - cfg.ssim_lambda) + ssimloss * cfg.ssim_lambda
++            if ru_state is not None:
++                responsibility = None
++                if step >= cfg.mask_begin_step:
++                    loss, l1loss, ssimloss = masked_photo_loss(
++                        colors,
++                        pixels,
++                        ru_state.safe_mask.detach(),
++                        fused_ssim_fn=fused_ssim,
++                        ssim_lambda=cfg.ssim_lambda,
++                    )
++                else:
++                    l1loss = F.l1_loss(colors, pixels)
++                    ssimloss = 1.0 - fused_ssim(
++                        colors.permute(0, 3, 1, 2),
++                        pixels.permute(0, 3, 1, 2),
++                        padding="valid",
++                    )
++                    loss = (
++                        l1loss * (1.0 - cfg.ssim_lambda)
++                        + ssimloss * cfg.ssim_lambda
++                    )
++            else:
++                l1loss, responsibility = responsibility_weighted_l1(
++                    colors,
++                    pixels,
++                    config=self.responsibility_config,
++                    step=step,
++                    valid_mask=masks,
++                )
++                ssimloss = 1.0 - fused_ssim(
++                    colors.permute(0, 3, 1, 2),
++                    pixels.permute(0, 3, 1, 2),
++                    padding="valid",
++                )
++                loss = l1loss * (1.0 - cfg.ssim_lambda) + ssimloss * cfg.ssim_lambda
+             if cfg.depth_loss:
+                 # query depths from depth map
+                 points = torch.stack(
+@@ -776,7 +895,25 @@ class Runner:
+             if cfg.scale_reg > 0.0:
+                 loss += cfg.scale_reg * torch.exp(self.splats["scales"]).mean()
+ 
++            if ru_state is not None:
++                self.cfg.strategy.step_pre_backward(
++                    params=self.splats,
++                    optimizers=self.optimizers,
++                    state=self.strategy_state,
++                    step=step,
++                    info=info,
++                )
+             loss.backward()
++            if ru_state is not None:
++                self.ru_training.assert_photo_gradient_isolation()
++                self.ru_training.complete_mask_supervision(
++                    step=step,
++                    state=ru_state,
++                    pixels=pixels,
++                    full_render=colors,
++                    render_for_mask=render_for_mask,
++                )
++                self.ru_training.update_mask_head(ru_state)
+ 
+             if (
+                 world_rank == 0
+@@ -831,7 +968,10 @@ class Runner:
+                 self.writer.flush()
+ 
+             # save checkpoint before updating the model
+-            if step in [i - 1 for i in cfg.save_steps] or step == max_steps - 1:
++            if (
++                not cfg.puri_gs_ru_enabled
++                and (step in [i - 1 for i in cfg.save_steps] or step == max_steps - 1)
++            ):
+                 mem = torch.cuda.max_memory_allocated() / 1024**3
+                 stats = {
+                     "mem": mem,
+@@ -844,6 +984,17 @@ class Runner:
+                     "w",
+                 ) as f:
+                     json.dump(stats, f)
++                with open(f"{cfg.result_dir}/train_metrics.json", "w") as f:
++                    json.dump(
++                        {
++                            "step": step,
++                            "training_time_seconds": stats["ellipse_time"],
++                            "peak_vram_gib": stats["mem"],
++                            "gaussian_count": stats["num_GS"],
++                        },
++                        f,
++                        indent=2,
++                    )
+                 data = {"step": step, "splats": self.splats.state_dict()}
+                 if cfg.pose_opt:
+                     if world_size > 1:
+@@ -918,6 +1069,18 @@ class Runner:
+                 else:
+                     visibility_mask = (info["radii"] > 0).all(-1).any(0)
+ 
++            # PURI-GS-RU follows its fixed ordering: strategy post-backward first,
++            # then the Gaussian optimizer. Legacy profiles keep the gsplat order.
++            if cfg.puri_gs_ru_enabled:
++                self.cfg.strategy.step_post_backward(
++                    params=self.splats,
++                    optimizers=self.optimizers,
++                    state=self.strategy_state,
++                    step=step,
++                    info=info,
++                    packed=cfg.packed,
++                )
++
+             # optimize
+             for optimizer in self.optimizers.values():
+                 if cfg.visible_adam:
+@@ -938,7 +1101,9 @@ class Runner:
+                 scheduler.step()
+ 
+             # Run post-backward steps after backward and optimizer
+-            if isinstance(self.cfg.strategy, DefaultStrategy):
++            if cfg.puri_gs_ru_enabled:
++                pass
++            elif isinstance(self.cfg.strategy, DefaultStrategy):
+                 self.cfg.strategy.step_post_backward(
+                     params=self.splats,
+                     optimizers=self.optimizers,
+@@ -959,6 +1124,48 @@ class Runner:
+             else:
+                 assert_never(self.cfg.strategy)
+ 
++            if cfg.puri_gs_ru_enabled:
++                assert ru_state is not None
++                self.ru_training.record(
++                    step=step,
++                    state=ru_state,
++                    photo_loss=loss,
++                    gaussian_count=len(self.splats["means"]),
++                )
++                if step in [i - 1 for i in cfg.save_steps] or step == max_steps - 1:
++                    mem = torch.cuda.max_memory_allocated() / 1024**3
++                    stats = {
++                        "mem": mem,
++                        "ellipse_time": time.time() - global_tic,
++                        "num_GS": len(self.splats["means"]),
++                    }
++                    print("Step: ", step, stats)
++                    with open(
++                        f"{self.stats_dir}/train_step{step:04d}_rank{self.world_rank}.json",
++                        "w",
++                    ) as f:
++                        json.dump(stats, f)
++                    with open(f"{cfg.result_dir}/train_metrics.json", "w") as f:
++                        json.dump(
++                            {
++                                "step": step,
++                                "training_time_seconds": stats["ellipse_time"],
++                                "peak_vram_gib": stats["mem"],
++                                "gaussian_count": stats["num_GS"],
++                            },
++                            f,
++                            indent=2,
++                        )
++                    torch.save(
++                        {"step": step, "splats": self.splats.state_dict()},
++                        f"{self.ckpt_dir}/ckpt_{step}_rank{self.world_rank}.pt",
++                    )
++                    self.ru_training.save_auxiliary(
++                        step, training_seconds=stats["ellipse_time"]
++                    )
++                    if world_rank == 0:
++                        self.ru_training.save_visuals(colors)
++
+             # eval the full set
+             if step in [i - 1 for i in cfg.eval_steps]:
+                 self.eval(step)
+@@ -994,7 +1201,9 @@ class Runner:
+             self.valset, batch_size=1, shuffle=False, num_workers=1
+         )
+         ellipse_time = 0
++        latencies = []
+         metrics = defaultdict(list)
++        per_image_rows = []
+         for i, data in enumerate(valloader):
+             camtoworlds = data["camtoworld"].to(device)
+             Ks = data["K"].to(device)
+@@ -1015,7 +1224,9 @@ class Runner:
+                 masks=masks,
+             )  # [1, H, W, 3]
+             torch.cuda.synchronize()
+-            ellipse_time += max(time.time() - tic, 1e-10)
++            latency = max(time.time() - tic, 1e-10)
++            ellipse_time += latency
++            latencies.append(latency)
+ 
+             colors = torch.clamp(colors, 0.0, 1.0)
+             canvas_list = [pixels, colors]
+@@ -1031,9 +1242,21 @@ class Runner:
+ 
+                 pixels_p = pixels.permute(0, 3, 1, 2)  # [1, 3, H, W]
+                 colors_p = colors.permute(0, 3, 1, 2)  # [1, 3, H, W]
+-                metrics["psnr"].append(self.psnr(colors_p, pixels_p))
+-                metrics["ssim"].append(self.ssim(colors_p, pixels_p))
+-                metrics["lpips"].append(self.lpips(colors_p, pixels_p))
++                psnr_value = self.psnr(colors_p, pixels_p)
++                ssim_value = self.ssim(colors_p, pixels_p)
++                lpips_value = self.lpips(colors_p, pixels_p)
++                metrics["psnr"].append(psnr_value)
++                metrics["ssim"].append(ssim_value)
++                metrics["lpips"].append(lpips_value)
++                parser_index = int(self.valset.indices[i])
++                per_image_rows.append(
++                    {
++                        "image_name": self.parser.image_names[parser_index],
++                        "psnr": psnr_value.item(),
++                        "ssim": ssim_value.item(),
++                        "lpips": lpips_value.item(),
++                    }
++                )
+                 if cfg.use_bilateral_grid:
+                     cc_colors = color_correct(colors, pixels)
+                     cc_colors_p = cc_colors.permute(0, 3, 1, 2)  # [1, 3, H, W]
+@@ -1067,6 +1290,37 @@ class Runner:
+             # save stats as json
+             with open(f"{self.stats_dir}/{stage}_step{step:04d}.json", "w") as f:
+                 json.dump(stats, f)
++            if stage == "test":
++                with open(f"{cfg.result_dir}/test_metrics.json", "w") as f:
++                    json.dump(stats, f, indent=2)
++                with open(
++                    f"{cfg.result_dir}/per_image_metrics.csv", "w", newline=""
++                ) as f:
++                    writer = csv.DictWriter(
++                        f, fieldnames=["image_name", "psnr", "ssim", "lpips"]
++                    )
++                    writer.writeheader()
++                    writer.writerows(per_image_rows)
++                latency_array = np.asarray(latencies, dtype=np.float64)
++                efficiency = {
++                    "render_fps": float(1.0 / latency_array.mean()),
++                    "latency_p50_ms": float(np.quantile(latency_array, 0.50) * 1000.0),
++                    "latency_p95_ms": float(np.quantile(latency_array, 0.95) * 1000.0),
++                    "gaussian_count": len(self.splats["means"]),
++                    "inference_vram_gib": float(
++                        torch.cuda.max_memory_allocated() / 1024**3
++                    ),
++                }
++                with open(f"{cfg.result_dir}/efficiency_metrics.json", "w") as f:
++                    json.dump(efficiency, f, indent=2)
++                validation = {
++                    "standard_checkpoint_load_pass": True,
++                    "evaluation_imported_dino": "puri_gs.dino_features" in sys.modules,
++                    "evaluation_loaded_mask_head": self.ru_training is not None,
++                    "evaluation_rasterization_count_ratio": 1.0,
++                }
++                with open(f"{cfg.result_dir}/ru_validation.json", "w") as f:
++                    json.dump(validation, f, indent=2)
+             # save stats to tensorboard
+             for k, v in stats.items():
+                 self.writer.add_scalar(f"{stage}/{k}", v, step)

@@ -39,6 +39,19 @@ def test_b0_b1_a1_profiles_have_only_intended_method_differences():
     }
 
 
+def test_full30k_b1_and_ru_profiles_are_fixed_and_distinct():
+    b1 = _load("puri_gs_b1_full30k.yaml")
+    ru = _load("puri_gs_ru_full30k.yaml")
+    assert b1["total_steps"] == ru["total_steps"] == 30000
+    assert b1["strategy"] == {"type": "default", "absgrad": True, "grow_grad2d": 0.0006}
+    assert ru["method"] == "puri_gs_ru"
+    assert ru["dino_model"] == "dinov2_vits14_reg"
+    assert ru["dino_coarse_grid"] == 16 and ru["dino_fine_grid"] == 36
+    assert ru["densify_start_step"] == 10000
+    assert ru["densify_stop_step"] == ru["bootstrap_switch_step"] == 20000
+    assert "responsibility" not in ru and "cvtr" not in ru
+
+
 def test_cli_translation_enables_only_the_selected_features():
     b0_args = trainer_method_args(_load("puri_gs_b0_default.yaml"))
     b1_args = trainer_method_args(_load("puri_gs_b1_absgrad.yaml"))

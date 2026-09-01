@@ -8,7 +8,6 @@ fi
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PYTHON_INPUT="${PURI_GSPLAT_PYTHON:-python}"
-MAX_STEPS="${6:-10000}"
 
 ARGS=(
   --config "$1"
@@ -16,8 +15,10 @@ ARGS=(
   --data-dir "$3"
   --result-dir "$4"
   --gpu "$5"
-  --max-steps "${MAX_STEPS}"
 )
+if [[ "$#" -ge 6 ]]; then
+  ARGS+=(--max-steps "$6")
+fi
 if [[ "$#" -ge 7 ]]; then
   ARGS+=(--data-factor "$7")
 fi
