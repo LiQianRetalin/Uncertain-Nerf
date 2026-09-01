@@ -59,10 +59,37 @@ def _verify_applied_patch(gsplat_dir: Path, patch_path: Path) -> None:
 
 
 def _verify_gsplat(
-    gsplat_dir: Path, *, require_cvtr: bool = False, require_ru: bool = False
+    gsplat_dir: Path,
+    *,
+    require_cvtr: bool = False,
+    require_ru: bool = False,
+    require_efficiency_audit: bool = False,
 ) -> None:
     if _git("rev-parse", "HEAD", cwd=gsplat_dir) != EXPECTED_GSPLAT_COMMIT:
         raise RuntimeError("GSPLAT_DIR is not the pinned v1.5.3 checkout")
+    if require_efficiency_audit:
+        # The audit patch is stacked on the RU superset and changes some of the
+        # same evaluation hunks.  Once stacked, reverse-applying the older RU
+        # patch is no longer a valid state check, so validate the top patch and
+        # the required lower-layer source markers together.
+        _verify_applied_patch(gsplat_dir, EFFICIENCY_AUDIT_PATCH_PATH)
+        trainer_source = (gsplat_dir / "examples" / "simple_trainer.py").read_text(
+            encoding="utf-8"
+        )
+        dataset_source = (
+            gsplat_dir / "examples" / "datasets" / "colmap.py"
+        ).read_text(encoding="utf-8")
+        required_trainer_markers = (
+            "puri_gs_ru_enabled",
+            "train_keyword",
+            "eval_warmup_renders",
+            "per_image_latency.csv",
+        )
+        if any(marker not in trainer_source for marker in required_trainer_markers):
+            raise RuntimeError("efficiency-audit trainer patch stack is incomplete")
+        if "_is_png_file" not in dataset_source:
+            raise RuntimeError("efficiency-audit dataset patch stack is incomplete")
+        return
     if require_cvtr:
         _verify_applied_patch(gsplat_dir, CVTR_PATCH_PATH)
     elif require_ru:
@@ -342,10 +369,11 @@ def main() -> int:
     is_continuation = config["profile"] in {"b1c", "cvtr"}
     is_ru = config["profile"] == "ru"
     _verify_gsplat(
-        gsplat_dir, require_cvtr=is_continuation, require_ru=is_ru
+        gsplat_dir,
+        require_cvtr=is_continuation,
+        require_ru=is_ru,
+        require_efficiency_audit=bool(args.eval_warmup_renders),
     )
-    if args.eval_warmup_renders:
-        _verify_applied_patch(gsplat_dir, EFFICIENCY_AUDIT_PATCH_PATH)
     if is_ru and args.max_steps is not None:
         if args.max_steps != config["total_steps"] and not 1 <= args.max_steps <= 100:
             raise ValueError(

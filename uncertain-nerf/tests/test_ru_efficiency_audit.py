@@ -5,8 +5,9 @@ from pathlib import Path
 
 import pytest
 
+import run_puri_gs
 from puri_gs.config import load_experiment_config
-from run_puri_gs import PROJECT_ROOT, _build_command
+from run_puri_gs import PROJECT_ROOT, _build_command, _verify_gsplat
 from tools.summarize_puri_gs_ru_efficiency_audit import (
     _load_run,
     decide,
@@ -96,6 +97,49 @@ def test_audit_patch_records_warmup_and_raw_per_image_latency():
     assert "per_image_latency.csv" in patch
     assert 'fieldnames=["image_index", "image_name", "latency_ms"]' in patch
     assert "raw_latency_sample_count" in patch
+
+
+def test_audit_verification_handles_patch_stacked_on_ru_superset(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    trainer = tmp_path / "examples" / "simple_trainer.py"
+    dataset = tmp_path / "examples" / "datasets" / "colmap.py"
+    trainer.parent.mkdir(parents=True)
+    dataset.parent.mkdir(parents=True)
+    trainer.write_text(
+        "\n".join(
+            (
+                "puri_gs_ru_enabled",
+                "train_keyword",
+                "eval_warmup_renders",
+                "per_image_latency.csv",
+            )
+        ),
+        encoding="utf-8",
+    )
+    dataset.write_text("_is_png_file\n", encoding="utf-8")
+
+    verified_patches = []
+    monkeypatch.setattr(
+        run_puri_gs,
+        "_git",
+        lambda *args, cwd: run_puri_gs.EXPECTED_GSPLAT_COMMIT,
+    )
+    monkeypatch.setattr(
+        run_puri_gs,
+        "_verify_applied_patch",
+        lambda gsplat_dir, patch_path: verified_patches.append(patch_path.name),
+    )
+
+    _verify_gsplat(
+        tmp_path,
+        require_ru=True,
+        require_efficiency_audit=True,
+    )
+
+    assert verified_patches == [
+        "gsplat_v1.5.3_puri_gs_efficiency_audit.patch"
+    ]
 
 
 def test_audit_loader_recomputes_metrics_from_raw_latency_csv(tmp_path: Path):
