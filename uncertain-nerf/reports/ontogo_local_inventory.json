@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "audit_date": "2026-09-02",
+  "status": "ONTOGO_LOCAL_INVENTORY_COMPLETE",
+  "root": "E:\\7-DataSet\\nerf数据集\\nerf_on-the-go\\on-the-go",
+  "loader_contract": {
+    "project_entry": "run_puri_gs.py:_verify_dataset",
+    "required_image_directory": "images_<data_factor>",
+    "required_colmap_files": [
+      "sparse/0/cameras.bin",
+      "sparse/0/images.bin",
+      "sparse/0/points3D.bin"
+    ],
+    "supports_transforms_json": false,
+    "supports_split_json": false
+  },
+  "scenes": [
+    {"scene":"arcdetriomphe","images":226,"transform_frames":226,"clutter":196,"extra":29,"split_unique":225,"colmap":false,"direct_loader_support":false},
+    {"scene":"corner","images":122,"transform_frames":122,"clutter":101,"extra":20,"split_unique":121,"colmap":false,"direct_loader_support":false},
+    {"scene":"drone","images":237,"transform_frames":237,"clutter":205,"extra":31,"split_unique":236,"colmap":false,"direct_loader_support":false},
+    {"scene":"fountain","images":185,"transform_frames":185,"clutter":168,"extra":16,"split_unique":184,"colmap":false,"direct_loader_support":false},
+    {"scene":"mountain","images":131,"transform_frames":131,"clutter":119,"extra":11,"split_unique":130,"colmap":false,"direct_loader_support":false},
+    {"scene":"patio","images":125,"transform_frames":125,"clutter":98,"extra":26,"split_unique":124,"colmap":false,"direct_loader_support":false},
+    {"scene":"patio_high","images":267,"transform_frames":267,"clutter":221,"extra":45,"split_unique":266,"colmap":false,"direct_loader_support":false},
+    {"scene":"spot","images":179,"transform_frames":179,"clutter":168,"extra":10,"split_unique":178,"colmap":false,"direct_loader_support":false},
+    {"scene":"statue","images":170,"transform_frames":170,"clutter":152,"extra":17,"split_unique":169,"colmap":false,"direct_loader_support":false},
+    {"scene":"train","images":180,"transform_frames":179,"clutter":159,"extra":19,"split_unique":178,"colmap":false,"direct_loader_support":false,"note":"IMG_7332.JPG is not referenced by transforms.json."},
+    {"scene":"train_station","images":207,"transform_frames":207,"clutter":180,"extra":26,"split_unique":206,"colmap":false,"direct_loader_support":false},
+    {"scene":"tree","images":212,"transform_frames":212,"clutter":175,"extra":36,"split_unique":211,"colmap":false,"direct_loader_support":false}
+  ],
+  "patio_high": {
+    "exists": true,
+    "path": "E:\\7-DataSet\\nerf数据集\\nerf_on-the-go\\on-the-go\\patio_high",
+    "images": 267,
+    "transform_frames": 267,
+    "all_transform_files_exist": true,
+    "split_overlap": 0,
+    "clutter_count": 221,
+    "extra_count": 45,
+    "split_unique_count": 266,
+    "unassigned_frame_indices": [266],
+    "colmap_present": false,
+    "direct_loader_support": false,
+    "decision": "PATIO_HIGH_LOADER_BLOCKED"
+  },
+  "stop_reason": "Patio-High is locally present with images, poses and the official split, but the frozen project loader requires COLMAP sparse binaries and an images_<factor> directory. The source scene only contains images, transforms.json and split.json. No alternate scene or automatic COLMAP conversion was selected."
+}

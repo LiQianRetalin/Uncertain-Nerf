@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Summarize the fixed three-repeat Room B1/RU latency audit."""
+"""Summarize a fixed three-repeat B1/RU latency audit."""
 
 from __future__ import annotations
 
@@ -29,14 +29,16 @@ def _read_json(path: Path) -> dict[str, Any]:
     return value
 
 
-def _read_latency_rows(path: Path) -> list[dict[str, Any]]:
+def _read_latency_rows(
+    path: Path, expected_test_images: int = EXPECTED_TEST_IMAGES
+) -> list[dict[str, Any]]:
     if not path.is_file():
         raise FileNotFoundError(f"raw latency CSV is missing: {path}")
     with path.open(newline="", encoding="utf-8") as stream:
         source = list(csv.DictReader(stream))
-    if len(source) != EXPECTED_TEST_IMAGES:
+    if len(source) != expected_test_images:
         raise ValueError(
-            f"expected {EXPECTED_TEST_IMAGES} latency rows, got {len(source)}: {path}"
+            f"expected {expected_test_images} latency rows, got {len(source)}: {path}"
         )
     rows = [
         {
@@ -46,10 +48,10 @@ def _read_latency_rows(path: Path) -> list[dict[str, Any]]:
         }
         for row in source
     ]
-    if [row["image_index"] for row in rows] != list(range(EXPECTED_TEST_IMAGES)):
-        raise ValueError(f"latency image indices are not ordered 0..38: {path}")
+    if [row["image_index"] for row in rows] != list(range(expected_test_images)):
+        raise ValueError(f"latency image indices are not contiguous and ordered: {path}")
     names = [row["image_name"] for row in rows]
-    if len(set(names)) != EXPECTED_TEST_IMAGES:
+    if len(set(names)) != expected_test_images:
         raise ValueError(f"latency image names are not unique: {path}")
     if not all(
         math.isfinite(row["latency_ms"]) and row["latency_ms"] > 0
@@ -59,7 +61,16 @@ def _read_latency_rows(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
-def _load_run(path: Path, method: str, run_index: int) -> dict[str, Any]:
+def _load_run(
+    path: Path,
+    method: str,
+    run_index: int,
+    *,
+    expected_test_images: int = EXPECTED_TEST_IMAGES,
+    expected_train_images: int = 272,
+    expected_split_protocol: str = "every-nth-test",
+    require_checkpoint_sha: bool = False,
+) -> dict[str, Any]:
     config = _read_json(path / "config.yaml")
     expected_profile = "b1" if method == "b1" else "ru"
     if config.get("profile") != expected_profile:
@@ -67,13 +78,15 @@ def _load_run(path: Path, method: str, run_index: int) -> dict[str, Any]:
 
     split = _read_json(path / "dataset_split.json")
     if (
-        split.get("protocol") != "every-nth-test"
-        or len(split.get("train", [])) != 272
-        or len(split.get("test", [])) != EXPECTED_TEST_IMAGES
+        split.get("protocol") != expected_split_protocol
+        or len(split.get("train", [])) != expected_train_images
+        or len(split.get("test", [])) != expected_test_images
     ):
         raise ValueError(f"unexpected Room split: {path}")
 
-    rows = _read_latency_rows(path / "per_image_latency.csv")
+    rows = _read_latency_rows(
+        path / "per_image_latency.csv", expected_test_images=expected_test_images
+    )
     if {row["image_name"] for row in rows} != set(split["test"]):
         raise ValueError(f"raw latency names differ from the test split: {path}")
 
@@ -82,12 +95,14 @@ def _load_run(path: Path, method: str, run_index: int) -> dict[str, Any]:
     test_metrics = _read_json(path / "test_metrics.json")
     if efficiency.get("warmup_render_count") != EXPECTED_WARMUP_RENDERS:
         raise ValueError(f"warmup count must be 10: {path}")
-    if efficiency.get("raw_latency_sample_count") != EXPECTED_TEST_IMAGES:
-        raise ValueError(f"raw latency count must be 39: {path}")
+    if efficiency.get("raw_latency_sample_count") != expected_test_images:
+        raise ValueError(f"raw latency count must be {expected_test_images}: {path}")
     if validation.get("evaluation_warmup_render_count") != EXPECTED_WARMUP_RENDERS:
         raise ValueError(f"validation warmup count must be 10: {path}")
-    if validation.get("raw_latency_sample_count") != EXPECTED_TEST_IMAGES:
-        raise ValueError(f"validation latency count must be 39: {path}")
+    if validation.get("raw_latency_sample_count") != expected_test_images:
+        raise ValueError(
+            f"validation latency count must be {expected_test_images}: {path}"
+        )
     if not (
         validation.get("standard_checkpoint_load_pass") is True
         and validation.get("evaluation_imported_dino") is False
@@ -119,24 +134,43 @@ def _load_run(path: Path, method: str, run_index: int) -> dict[str, Any]:
         if not math.isfinite(float(test_metrics[key])):
             raise ValueError(f"non-finite {key}: {path}")
 
+    checkpoint_sha_path = path / "checkpoint_sha256.txt"
+    checkpoint_sha = (
+        checkpoint_sha_path.read_text(encoding="utf-8").strip()
+        if checkpoint_sha_path.is_file()
+        else None
+    )
+    if require_checkpoint_sha and (
+        checkpoint_sha is None
+        or len(checkpoint_sha) != 64
+        or any(character not in "0123456789abcdef" for character in checkpoint_sha.lower())
+    ):
+        raise ValueError(f"valid checkpoint_sha256.txt is required: {path}")
+
     return {
         "method": method,
         "run_index": run_index,
         "path": str(path),
-        "test_image_count": EXPECTED_TEST_IMAGES,
+        "test_image_count": expected_test_images,
         "warmup_render_count": EXPECTED_WARMUP_RENDERS,
         "gaussian_count": int(efficiency["gaussian_count"]),
         "inference_vram_gib": float(efficiency["inference_vram_gib"]),
         "psnr": float(test_metrics["psnr"]),
         "ssim": float(test_metrics["ssim"]),
         "lpips": float(test_metrics["lpips"]),
+        "checkpoint_sha256": checkpoint_sha,
         **calculated,
         "image_names": [row["image_name"] for row in rows],
+        "latency_rows": rows,
     }
 
 
 def decide(
-    b1_runs: list[dict[str, Any]], ru_runs: list[dict[str, Any]]
+    b1_runs: list[dict[str, Any]],
+    ru_runs: list[dict[str, Any]],
+    *,
+    scene: str = "room",
+    p95_ratio_gate: float | None = None,
 ) -> dict[str, Any]:
     if len(b1_runs) != EXPECTED_REPEATS or len(ru_runs) != EXPECTED_REPEATS:
         raise ValueError("the audit requires exactly three B1 and three RU runs")
@@ -149,21 +183,38 @@ def decide(
         raise ValueError("B1 runs loaded different checkpoints")
     if len({run["gaussian_count"] for run in ru_runs}) != 1:
         raise ValueError("RU runs loaded different checkpoints")
+    for method, runs in (("B1", b1_runs), ("RU", ru_runs)):
+        for key in ("psnr", "ssim", "lpips"):
+            if len({run[key] for run in runs}) != 1:
+                raise ValueError(f"{method} repeats produced different {key} values")
+        hashes = {run.get("checkpoint_sha256") for run in runs}
+        if hashes != {None} and len(hashes) != 1:
+            raise ValueError(f"{method} repeats used different checkpoint SHA-256 values")
 
     paired_fps_ratios = [
         ru["render_fps"] / b1["render_fps"]
         for b1, ru in zip(b1_runs, ru_runs, strict=True)
     ]
     median_paired_fps_ratio = float(median(paired_fps_ratios))
-    throughput_pass = median_paired_fps_ratio >= FPS_RATIO_GATE
 
     def med(runs: list[dict[str, Any]], key: str) -> float:
         return float(median(run[key] for run in runs))
 
+    b1_p95 = med(b1_runs, "latency_p95_ms")
+    ru_p95 = med(ru_runs, "latency_p95_ms")
+    median_fps_ratio = med(ru_runs, "render_fps") / med(b1_runs, "render_fps")
+    gate_fps_ratio = (
+        median_paired_fps_ratio if scene == "room" else median_fps_ratio
+    )
+    throughput_pass = gate_fps_ratio >= FPS_RATIO_GATE
+    p95_ratio = ru_p95 / b1_p95
+    p95_pass = p95_ratio_gate is None or p95_ratio <= p95_ratio_gate
     summary = {
         "fps_ratio_gate": FPS_RATIO_GATE,
         "paired_fps_ratios": paired_fps_ratios,
         "median_paired_fps_ratio": median_paired_fps_ratio,
+        "median_fps_ratio": median_fps_ratio,
+        "gate_fps_ratio": gate_fps_ratio,
         "b1_median": {
             key: med(b1_runs, key)
             for key in (
@@ -183,27 +234,42 @@ def decide(
             )
         },
         "throughput_gate_pass": throughput_pass,
+        "p95_ratio_gate": p95_ratio_gate,
+        "p95_ratio_gate_pass": p95_pass,
     }
     for key in ("latency_mean_ms", "latency_p50_ms", "latency_p95_ms"):
         summary[f"median_{key}_ratio"] = (
             summary["ru_median"][key] / summary["b1_median"][key]
         )
+    passed = throughput_pass and p95_pass
+    decision = (
+        "EFFICIENCY_AUDIT_PASS" if passed else "EFFICIENCY_AUDIT_FAIL"
+    )
+    if scene == "android":
+        decision = "ANDROID_EFFICIENCY_PASS" if passed else "ANDROID_EFFICIENCY_FAIL"
     return {
-        "protocol": "puri-gs-ru-room-efficiency-audit-1",
+        "protocol": f"puri-gs-ru-{scene}-efficiency-audit-1",
+        "scene": scene,
         "original_phase_r_decision_preserved": True,
         "warmup_render_count_per_run": EXPECTED_WARMUP_RENDERS,
         "repeat_count_per_method": EXPECTED_REPEATS,
-        "decision": (
-            "EFFICIENCY_AUDIT_PASS" if throughput_pass else "EFFICIENCY_AUDIT_FAIL"
-        ),
+        "decision": decision,
         "summary": summary,
         "runs": {
             "b1": [
-                {key: value for key, value in run.items() if key != "image_names"}
+                {
+                    key: value
+                    for key, value in run.items()
+                    if key not in {"image_names", "latency_rows"}
+                }
                 for run in b1_runs
             ],
             "ru": [
-                {key: value for key, value in run.items() if key != "image_names"}
+                {
+                    key: value
+                    for key, value in run.items()
+                    if key not in {"image_names", "latency_rows"}
+                }
                 for run in ru_runs
             ],
         },
@@ -220,13 +286,31 @@ def render_markdown(report: dict[str, Any]) -> str:
                 f"{run['render_fps']:.4f} | {run['latency_mean_ms']:.4f} | "
                 f"{run['latency_p50_ms']:.4f} | {run['latency_p95_ms']:.4f} |"
             )
+    scene = report.get("scene", "room")
+    title_scene = {
+        "room": "Room",
+        "android": "Android",
+        "garden": "Garden",
+        "ontogo": "On-the-go",
+    }.get(scene, scene)
+    scope_note = (
+        "本复核不覆盖或改写原始 Phase R 结论；它只检查 Room 平均 FPS 门。"
+        if scene == "room"
+        else "本复核只读取固定 checkpoint，执行交错 3+3 标准推理，不修改训练结果。"
+    )
+    p95_note = ""
+    if summary["p95_ratio_gate"] is not None:
+        p95_note = (
+            f"p95 latency 中位比：{summary['median_latency_p95_ms_ratio']:.4f}；"
+            f"固定上限：{summary['p95_ratio_gate']:.2f}。"
+        )
     return "\n".join(
         [
-            "# Phase R：PURI-GS-RU Room 推理效率复核",
+            f"# PURI-GS-RU {title_scene} 推理效率复核",
             "",
             f"复核结论：`{report['decision']}`",
             "",
-            "本复核不覆盖或改写原始 Phase R 结论；它只检查 Room 平均 FPS 门。",
+            scope_note,
             "",
             "| 方法 | 重复 | FPS | mean ms | p50 ms | p95 ms |",
             "| --- | ---: | ---: | ---: | ---: | ---: |",
@@ -234,9 +318,11 @@ def render_markdown(report: dict[str, Any]) -> str:
             "",
             f"三组配对 FPS 比例：{', '.join(f'{value:.4f}' for value in summary['paired_fps_ratios'])}",
             "",
-            f"配对 FPS 比例中位数：{summary['median_paired_fps_ratio']:.4f}；固定门槛：{FPS_RATIO_GATE:.2f}。",
+            f"门禁 FPS 比例：{summary['gate_fps_ratio']:.4f}；固定门槛：{FPS_RATIO_GATE:.2f}。",
             "",
-            "所有重复均使用 10 次不计时预热、39 张逐图原始延迟、标准 checkpoint 推理路径。",
+            p95_note,
+            "" if p95_note else "",
+            "所有重复均使用 10 次不计时预热、固定测试集逐图原始延迟、标准 checkpoint 推理路径。",
             "",
         ]
     )
@@ -250,14 +336,46 @@ def parse_args() -> argparse.Namespace:
                 f"--{method}-run{run_index}", type=Path, required=True
             )
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument(
+        "--scene", choices=("room", "android", "garden", "ontogo"), default="room"
+    )
+    parser.add_argument("--expected-test-images", type=int, default=EXPECTED_TEST_IMAGES)
+    parser.add_argument("--expected-train-images", type=int, default=272)
+    parser.add_argument("--expected-split-protocol", default="every-nth-test")
+    parser.add_argument("--p95-ratio-gate", type=float)
+    parser.add_argument("--require-checkpoint-sha", action="store_true")
+    parser.add_argument("--analysis-dir", type=Path)
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
     output_dir = args.output_dir.expanduser().resolve()
-    json_path = output_dir / "phase_r_puri_gs_ru_efficiency_audit.json"
-    md_path = output_dir / "PHASE_R_PURI_GS_RU_EFFICIENCY_AUDIT.md"
+    names = {
+        "room": (
+            "phase_r_puri_gs_ru_efficiency_audit.json",
+            "PHASE_R_PURI_GS_RU_EFFICIENCY_AUDIT.md",
+            "room_ru_latency_raw.csv",
+        ),
+        "android": (
+            "android_ru_efficiency_audit.json",
+            "ANDROID_RU_EFFICIENCY_AUDIT.md",
+            "android_ru_latency_raw.csv",
+        ),
+        "garden": (
+            "garden_ru_efficiency_audit.json",
+            "GARDEN_RU_EFFICIENCY_AUDIT.md",
+            "garden_ru_latency_raw.csv",
+        ),
+        "ontogo": (
+            "ontogo_ru_efficiency_audit.json",
+            "ONTOGO_RU_EFFICIENCY_AUDIT.md",
+            "ontogo_ru_latency_raw.csv",
+        ),
+    }
+    json_name, md_name, raw_name = names[args.scene]
+    json_path = output_dir / json_name
+    md_path = output_dir / md_name
     for target in (json_path, md_path):
         if target.exists():
             raise RuntimeError(f"refusing to overwrite an existing audit report: {target}")
@@ -268,15 +386,56 @@ def main() -> int:
                 getattr(args, f"{method}_run{run_index}").expanduser().resolve(),
                 method,
                 run_index,
+                expected_test_images=args.expected_test_images,
+                expected_train_images=args.expected_train_images,
+                expected_split_protocol=args.expected_split_protocol,
+                require_checkpoint_sha=args.require_checkpoint_sha,
             )
             for run_index in range(1, EXPECTED_REPEATS + 1)
         ]
         for method in ("b1", "ru")
     }
-    report = decide(runs["b1"], runs["ru"])
+    report = decide(
+        runs["b1"],
+        runs["ru"],
+        scene=args.scene,
+        p95_ratio_gate=args.p95_ratio_gate,
+    )
     output_dir.mkdir(parents=True, exist_ok=True)
     json_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     md_path.write_text(render_markdown(report), encoding="utf-8")
+    if args.analysis_dir is not None:
+        analysis_dir = args.analysis_dir.expanduser().resolve()
+        raw_path = analysis_dir / raw_name
+        if raw_path.exists():
+            raise RuntimeError(f"refusing to overwrite raw latency output: {raw_path}")
+        analysis_dir.mkdir(parents=True, exist_ok=True)
+        with raw_path.open("w", newline="", encoding="utf-8") as stream:
+            writer = csv.DictWriter(
+                stream,
+                fieldnames=(
+                    "scene",
+                    "method",
+                    "run_index",
+                    "image_index",
+                    "image_name",
+                    "latency_ms",
+                    "checkpoint_sha256",
+                ),
+            )
+            writer.writeheader()
+            for method in ("b1", "ru"):
+                for run in runs[method]:
+                    for row in run["latency_rows"]:
+                        writer.writerow(
+                            {
+                                "scene": args.scene,
+                                "method": method,
+                                "run_index": run["run_index"],
+                                **row,
+                                "checkpoint_sha256": run["checkpoint_sha256"],
+                            }
+                        )
     print(report["decision"])
     print(
         "MEDIAN_PAIRED_FPS_RATIO="

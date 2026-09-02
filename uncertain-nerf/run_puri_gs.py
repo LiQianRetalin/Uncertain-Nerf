@@ -67,7 +67,7 @@ def _verify_gsplat(
 ) -> None:
     if _git("rev-parse", "HEAD", cwd=gsplat_dir) != EXPECTED_GSPLAT_COMMIT:
         raise RuntimeError("GSPLAT_DIR is not the pinned v1.5.3 checkout")
-    if require_efficiency_audit:
+    def verify_efficiency_stack() -> None:
         # The audit patch is stacked on the RU superset and changes some of the
         # same evaluation hunks.  Once stacked, reverse-applying the older RU
         # patch is no longer a valid state check, so validate the top patch and
@@ -83,13 +83,23 @@ def _verify_gsplat(
             "puri_gs_ru_enabled",
             "train_keyword",
             "eval_warmup_renders",
+            "eval_disable_image_save",
             "per_image_latency.csv",
         )
         if any(marker not in trainer_source for marker in required_trainer_markers):
             raise RuntimeError("efficiency-audit trainer patch stack is incomplete")
         if "_is_png_file" not in dataset_source:
             raise RuntimeError("efficiency-audit dataset patch stack is incomplete")
+
+    if require_efficiency_audit:
+        verify_efficiency_stack()
         return
+    if not require_cvtr:
+        try:
+            verify_efficiency_stack()
+            return
+        except RuntimeError:
+            pass
     if require_cvtr:
         _verify_applied_patch(gsplat_dir, CVTR_PATCH_PATH)
     elif require_ru:
@@ -314,6 +324,8 @@ def _build_command(
             command.extend(
                 ["--eval_warmup_renders", str(eval_warmup_renders)]
             )
+        if getattr(args, "eval_disable_image_save", False):
+            command.append("--eval_disable_image_save")
     return command
 
 
@@ -334,6 +346,11 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=0,
         help="Checkpoint-evaluation warmup renders excluded from latency metrics.",
+    )
+    parser.add_argument(
+        "--eval-disable-image-save",
+        action="store_true",
+        help="Do not save evaluation canvases; metrics and latency CSV are unchanged.",
     )
     parser.add_argument("--resume-checkpoint", type=Path)
     parser.add_argument("--cvtr-mask-dir", type=Path)
@@ -359,6 +376,8 @@ def main() -> int:
         raise ValueError("eval_warmup_renders must be non-negative")
     if args.eval_warmup_renders and args.checkpoint is None:
         raise ValueError("--eval-warmup-renders requires --checkpoint")
+    if args.eval_disable_image_save and args.checkpoint is None:
+        raise ValueError("--eval-disable-image-save requires --checkpoint")
     config_path = args.config.expanduser().resolve()
     gsplat_dir = args.gsplat_dir.expanduser().resolve()
     data_dir = args.data_dir.expanduser().resolve()

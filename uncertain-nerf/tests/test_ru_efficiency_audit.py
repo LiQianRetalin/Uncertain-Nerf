@@ -58,6 +58,57 @@ def test_audit_fails_when_median_paired_ratio_is_below_fixed_gate():
     assert report["decision"] == "EFFICIENCY_AUDIT_FAIL"
 
 
+def test_android_audit_requires_both_fps_and_p95_gates():
+    b1 = [_run("b1", index, 100.0) for index in range(1, 4)]
+    ru = [_run("ru", index, 100.0) for index in range(1, 4)]
+    for run in ru:
+        run["latency_p95_ms"] = 5.3
+    report = decide(b1, ru, scene="android", p95_ratio_gate=1.05)
+    assert report["summary"]["throughput_gate_pass"] is True
+    assert report["summary"]["p95_ratio_gate_pass"] is False
+    assert report["decision"] == "ANDROID_EFFICIENCY_FAIL"
+
+
+def test_android_uses_ratio_of_method_medians_for_fps_gate():
+    b1 = [_run("b1", 1, 1000.0), _run("b1", 2, 100.0), _run("b1", 3, 1.0)]
+    ru = [_run("ru", 1, 96.0), _run("ru", 2, 1.0), _run("ru", 3, 100.0)]
+    report = decide(b1, ru, scene="android", p95_ratio_gate=1.05)
+    assert report["summary"]["median_paired_fps_ratio"] < 0.95
+    assert report["summary"]["median_fps_ratio"] == pytest.approx(0.96)
+    assert report["decision"] == "ANDROID_EFFICIENCY_PASS"
+
+
+def test_generic_efficiency_script_is_counterbalanced_and_serial():
+    script = (
+        PROJECT_ROOT / "scripts" / "run_puri_gs_efficiency_audit.sh"
+    ).read_text(encoding="utf-8")
+    order = [
+        "run_evaluation b1 1",
+        "run_evaluation ru 1",
+        "run_evaluation ru 2",
+        "run_evaluation b1 2",
+        "run_evaluation b1 3",
+        "run_evaluation ru 3",
+    ]
+    assert [script.index(item) for item in order] == sorted(
+        script.index(item) for item in order
+    )
+    assert "--eval-warmup-renders 10" in script
+    assert "--eval-disable-image-save" in script
+    assert "--p95-ratio-gate 1.05" in script
+    assert "checkpoint_sha256.txt" in script
+    assert "ANDROID-PAIRING-PRECONDITION-PASS" in script
+    assert "AUDIT-OUTPUT-ALREADY-EXISTS" in script
+    assert "&" not in "\n".join(
+        line for line in script.splitlines() if line.strip().startswith("run_evaluation")
+    )
+    prepare = (
+        PROJECT_ROOT / "scripts" / "prepare_puri_gs_efficiency_audit.sh"
+    ).read_text(encoding="utf-8")
+    assert "EFFICIENCY-AUDIT-PATCH-READY" in prepare
+    assert "EFFICIENCY-PREPARE-UNRECOGNIZED-PATCH-STATE" in prepare
+
+
 def test_checkpoint_audit_command_enables_only_warmup_and_standard_eval(tmp_path: Path):
     config = load_experiment_config(PROJECT_ROOT / "configs" / "puri_gs_ru_full30k.yaml")
     checkpoint = tmp_path / "ckpt_29999_rank0.pt"
@@ -74,6 +125,7 @@ def test_checkpoint_audit_command_enables_only_warmup_and_standard_eval(tmp_path
         feature_cache_dir=None,
         max_steps=None,
         eval_warmup_renders=10,
+        eval_disable_image_save=True,
     )
     command = _build_command(
         args,
@@ -84,6 +136,7 @@ def test_checkpoint_audit_command_enables_only_warmup_and_standard_eval(tmp_path
     )
     joined = " ".join(map(str, command))
     assert "--eval_warmup_renders 10" in joined
+    assert "--eval_disable_image_save" in joined
     assert "--ckpt" in command
     assert "--puri_gs_ru_enabled" not in command
     assert "--dino_repo_dir" not in command
@@ -97,6 +150,7 @@ def test_audit_patch_records_warmup_and_raw_per_image_latency():
     assert "per_image_latency.csv" in patch
     assert 'fieldnames=["image_index", "image_name", "latency_ms"]' in patch
     assert "raw_latency_sample_count" in patch
+    assert "eval_disable_image_save" in patch
 
 
 def test_audit_verification_handles_patch_stacked_on_ru_superset(
@@ -112,6 +166,7 @@ def test_audit_verification_handles_patch_stacked_on_ru_superset(
                 "puri_gs_ru_enabled",
                 "train_keyword",
                 "eval_warmup_renders",
+                "eval_disable_image_save",
                 "per_image_latency.csv",
             )
         ),
@@ -140,6 +195,28 @@ def test_audit_verification_handles_patch_stacked_on_ru_superset(
     assert verified_patches == [
         "gsplat_v1.5.3_puri_gs_efficiency_audit.patch"
     ]
+
+
+def test_training_verification_accepts_efficiency_superset(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    trainer = tmp_path / "examples" / "simple_trainer.py"
+    dataset = tmp_path / "examples" / "datasets" / "colmap.py"
+    trainer.parent.mkdir(parents=True)
+    dataset.parent.mkdir(parents=True)
+    trainer.write_text(
+        "puri_gs_ru_enabled\ntrain_keyword\neval_warmup_renders\n"
+        "eval_disable_image_save\nper_image_latency.csv\n",
+        encoding="utf-8",
+    )
+    dataset.write_text("_is_png_file\n", encoding="utf-8")
+    monkeypatch.setattr(
+        run_puri_gs,
+        "_git",
+        lambda *args, cwd: run_puri_gs.EXPECTED_GSPLAT_COMMIT,
+    )
+    monkeypatch.setattr(run_puri_gs, "_verify_applied_patch", lambda *args: None)
+    _verify_gsplat(tmp_path, require_ru=True)
 
 
 def test_audit_loader_recomputes_metrics_from_raw_latency_csv(tmp_path: Path):

@@ -24,7 +24,11 @@ from puri_gs.dino_features import (  # noqa: E402
 )
 
 
-EXPECTED_TRAIN_COUNTS = {"android": 122, "room": 272}
+EXPECTED_TRAIN_COUNTS = {
+    "android": 122,
+    "room": 272,
+    "garden": 161,
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -60,8 +64,10 @@ def main() -> int:
         args.train_keyword != "clutter" or args.test_keyword != "extra"
     ):
         raise ValueError("Android cache requires --train-keyword clutter --test-keyword extra")
-    if args.scene == "room" and args.train_keyword is not None:
-        raise ValueError("Room uses the fixed every-eighth test split, not keywords")
+    if args.scene in {"room", "garden"} and args.train_keyword is not None:
+        raise ValueError(
+            f"{args.scene} uses the fixed every-eighth test split, not keywords"
+        )
     if not torch.cuda.is_available() and str(args.device).startswith("cuda"):
         raise RuntimeError("CUDA is not available for DINOv2 feature extraction")
 
