@@ -297,7 +297,8 @@ def _mask_inventory(root: Path, quadrant: str, contract: dict[str, Any]) -> dict
                 schedule.get("delayed_topology_enabled") is False
             ),
             "topology_events": schedule.get("topology_events") == expected_topology,
-            "no_resets": schedule.get("reset_steps") == [],
+            "no_resets": schedule.get("topology_events", {}).get("reset_steps")
+            == [],
             "no_pause_segments": expected_topology["mask_pause_segments"] == [],
             "all_updates": observed_updates == 30_000,
             "zero_pauses": observed_pauses == 0,

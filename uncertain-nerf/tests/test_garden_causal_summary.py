@@ -150,9 +150,6 @@ def _make_run(
                 "semantic_mask_enabled": True,
                 "delayed_topology_enabled": bool(T),
                 "topology_events": topology,
-                "reset_steps": topology["reset_steps"],
-                "mask_updates_completed": 30_000 - topology["mask_pause_step_count"],
-                "mask_updates_paused": topology["mask_pause_step_count"],
             },
         )
 
