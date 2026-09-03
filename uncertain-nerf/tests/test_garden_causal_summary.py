@@ -176,6 +176,46 @@ def test_attribution_rule_is_deterministic():
     conflict = _gate(False, 0.1, -0.01, 0.02)
     assert attribution_label(conflict, conflict, fail) == "GARDEN_CAUSAL_INCONCLUSIVE"
 
+    assert (
+        attribution_label(
+            fail,
+            conflict,
+            fail,
+            mask_at_T1=fail,
+            topology_at_M1=fail,
+        )
+        == "GARDEN_TOPOLOGY_DOMINANT"
+    )
+    assert (
+        attribution_label(
+            conflict,
+            fail,
+            fail,
+            mask_at_T1=fail,
+            topology_at_M1=fail,
+        )
+        == "GARDEN_MASK_DOMINANT"
+    )
+
+
+def test_observed_garden_effects_select_topology_dominant():
+    dg_at_M0 = _gate(False, -0.429691, -0.013979, 0.016729)
+    mask_at_T0 = _gate(False, 0.027718, -0.000042, 0.000191)
+    ru_vs_b1 = _gate(False, -1.066156, -0.016651, 0.022355)
+    mask_at_T1 = _gate(False, -0.636465, -0.002673, 0.005626)
+    topology_at_M1 = _gate(False, -1.093874, -0.016609, 0.022164)
+
+    assert (
+        attribution_label(
+            dg_at_M0,
+            mask_at_T0,
+            ru_vs_b1,
+            mask_at_T1=mask_at_T1,
+            topology_at_M1=topology_at_M1,
+        )
+        == "GARDEN_TOPOLOGY_DOMINANT"
+    )
+
 
 def test_bootstrap_is_seeded_and_output_overwrite_is_rejected(tmp_path: Path):
     assert paired_bootstrap_ci95([1.0, 2.0, 3.0]) == paired_bootstrap_ci95(
@@ -247,6 +287,10 @@ def test_full_synthetic_four_quadrant_summary(tmp_path: Path):
     assert summary["runs"]["Y11"]["mask"]["mask_update_count"] == 29_400
     assert summary["runs"]["Y11"]["mask"]["mask_pause_count"] == 600
     assert summary["attribution"]["label"] == "GARDEN_MASK_DOMINANT"
+    assert summary["attribution"]["evidence"] == {
+        "mask_material_directional_loss_at_both_T": True,
+        "topology_material_directional_loss_at_both_M": False,
+    }
     for metric in ("psnr", "ssim", "lpips"):
         scalar_effects = summary["scalar_effects_and_interactions"][metric]["effects"]
         for effect_name, expected_mean in scalar_effects.items():

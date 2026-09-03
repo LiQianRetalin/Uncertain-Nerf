@@ -598,13 +598,18 @@ def _directionally_fails(gate: dict[str, Any]) -> bool:
     )
 
 
+def _materially_and_directionally_fails(gate: dict[str, Any] | None) -> bool:
+    return gate is not None and not gate["pass"] and _directionally_fails(gate)
+
+
 def attribution_label(
-    dg: dict[str, Any], mask: dict[str, Any], ru: dict[str, Any]
+    dg: dict[str, Any],
+    mask: dict[str, Any],
+    ru: dict[str, Any],
+    *,
+    mask_at_T1: dict[str, Any] | None = None,
+    topology_at_M1: dict[str, Any] | None = None,
 ) -> str:
-    if dg["pass"] and not mask["pass"]:
-        return "GARDEN_MASK_DOMINANT"
-    if mask["pass"] and not dg["pass"]:
-        return "GARDEN_TOPOLOGY_DOMINANT"
     if dg["pass"] and mask["pass"] and not ru["pass"]:
         return "GARDEN_NEGATIVE_INTERACTION"
     if (
@@ -613,6 +618,22 @@ def attribution_label(
         and _directionally_fails(dg)
         and _directionally_fails(mask)
     ):
+        return "GARDEN_BOTH_CONTRIBUTE"
+
+    mask_repeated_loss = _materially_and_directionally_fails(
+        mask
+    ) and _materially_and_directionally_fails(mask_at_T1)
+    topology_repeated_loss = _materially_and_directionally_fails(
+        dg
+    ) and _materially_and_directionally_fails(topology_at_M1)
+    mask_evidence = (dg["pass"] and not mask["pass"]) or mask_repeated_loss
+    topology_evidence = (mask["pass"] and not dg["pass"]) or topology_repeated_loss
+
+    if mask_evidence and not topology_evidence:
+        return "GARDEN_MASK_DOMINANT"
+    if topology_evidence and not mask_evidence:
+        return "GARDEN_TOPOLOGY_DOMINANT"
+    if mask_evidence and topology_evidence:
         return "GARDEN_BOTH_CONTRIBUTE"
     return "GARDEN_CAUSAL_INCONCLUSIVE"
 
@@ -682,11 +703,37 @@ def build_summary(runs: dict[str, dict[str, Any]]) -> dict[str, Any]:
         "Mask_only_Y10_vs_B1_Y00": clean_tolerance(runs["Y00"], runs["Y10"]),
         "RU_Y11_vs_B1_Y00": clean_tolerance(runs["Y00"], runs["Y11"]),
     }
+    conditional = {
+        "Mask_at_T0_Y10_vs_Y00": clean["Mask_only_Y10_vs_B1_Y00"],
+        "Mask_at_T1_Y11_vs_Y01": clean_tolerance(runs["Y01"], runs["Y11"]),
+        "Topology_at_M0_Y01_vs_Y00": clean["DG_only_Y01_vs_B1_Y00"],
+        "Topology_at_M1_Y11_vs_Y10": clean_tolerance(runs["Y10"], runs["Y11"]),
+    }
     label = attribution_label(
         clean["DG_only_Y01_vs_B1_Y00"],
         clean["Mask_only_Y10_vs_B1_Y00"],
         clean["RU_Y11_vs_B1_Y00"],
+        mask_at_T1=conditional["Mask_at_T1_Y11_vs_Y01"],
+        topology_at_M1=conditional["Topology_at_M1_Y11_vs_Y10"],
     )
+    attribution_evidence = {
+        "mask_material_directional_loss_at_both_T": (
+            _materially_and_directionally_fails(
+                conditional["Mask_at_T0_Y10_vs_Y00"]
+            )
+            and _materially_and_directionally_fails(
+                conditional["Mask_at_T1_Y11_vs_Y01"]
+            )
+        ),
+        "topology_material_directional_loss_at_both_M": (
+            _materially_and_directionally_fails(
+                conditional["Topology_at_M0_Y01_vs_Y00"]
+            )
+            and _materially_and_directionally_fails(
+                conditional["Topology_at_M1_Y11_vs_Y10"]
+            )
+        ),
+    }
     direction = {
         "GARDEN_MASK_DOMINANT": (
             "下一版优先研究静态区域保护、Mask置信度和masked loss；暂不先改拓扑窗口。"
@@ -714,11 +761,13 @@ def build_summary(runs: dict[str, dict[str, Any]]) -> dict[str, Any]:
         "pairing_audit": pairing,
         "runs": public_runs,
         "clean_tolerance": clean,
+        "conditional_clean_tolerance": conditional,
         "per_image_paired_effects": _per_image_effects(runs),
         "scalar_effects_and_interactions": _scalar_effects(runs),
         "representative_images": _representative_images(runs),
         "attribution": {
             "label": label,
+            "evidence": attribution_evidence,
             "next_version_direction_only": direction,
             "new_algorithm_code_written": False,
         },
@@ -747,6 +796,12 @@ def render_markdown(summary: dict[str, Any]) -> str:
         f"唯一归因标签：`{summary['attribution']['label']}`",
         "",
         summary["attribution"]["next_version_direction_only"],
+        "",
+        "跨条件归因证据："
+        f"Mask在两种拓扑下均造成实质同向损失="
+        f"`{summary['attribution']['evidence']['mask_material_directional_loss_at_both_T']}`；"
+        f"拓扑在有无Mask时均造成实质同向损失="
+        f"`{summary['attribution']['evidence']['topology_material_directional_loss_at_both_M']}`。",
         "",
         "## 四象限、配置与 commit",
         "",

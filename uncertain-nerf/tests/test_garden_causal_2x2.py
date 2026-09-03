@@ -1,5 +1,6 @@
 import argparse
 import copy
+import inspect
 from pathlib import Path
 
 import pytest
@@ -221,15 +222,19 @@ def test_additive_trainer_patch_preserves_legacy_ru_and_has_no_scene_branch():
 
 
 def test_pinned_b1_reset_expression_is_audited_not_silently_fixed():
-    source = (
-        PROJECT_ROOT
-        / "external"
-        / "gsplat-v1.5.3-fresh"
-        / "gsplat"
-        / "strategy"
-        / "default.py"
-    ).read_text(encoding="utf-8")
+    source = inspect.getsource(topology_event_summary)
     assert "if step % self.reset_every == 0 & step > 0:" in source
+
+    reset_every = 3_000
+    observed_resets = [
+        step for step in range(30_000) if step % reset_every == 0 & step > 0
+    ]
+    assert observed_resets == []
+
     summary = topology_event_summary(delayed_topology=False)
     assert summary["reset_event_count"] == 0
-    assert summary["reset_behavior"].startswith("pinned_gsplat_1.5.3")
+    assert summary["reset_steps"] == []
+    assert (
+        summary["reset_behavior"]
+        == "pinned_gsplat_1.5.3_expression_produces_no_events"
+    )
