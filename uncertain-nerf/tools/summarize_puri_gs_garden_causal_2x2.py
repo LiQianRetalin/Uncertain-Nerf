@@ -56,6 +56,18 @@ def _read_json(path: Path) -> dict[str, Any]:
     return value
 
 
+def _split_identity(split: dict[str, Any]) -> dict[str, Any]:
+    """Return only fields that define Garden train/test pairing.
+
+    Current COLMAP runs record ``dataset_format=colmap`` while the pinned
+    historical B1/RU artifacts predate that provenance-only field.
+    """
+    return {
+        key: split.get(key)
+        for key in ("protocol", "train_keyword", "test_keyword", "train", "test")
+    }
+
+
 def _read_text(path: Path) -> str:
     if not path.is_file():
         raise FileNotFoundError(f"required text file is missing: {path}")
@@ -346,6 +358,8 @@ def _load_run(root: Path, quadrant: str) -> dict[str, Any]:
     split = _read_json(root / "dataset_split.json")
     if split != _read_json(evaluation / "dataset_split.json"):
         raise ValueError(f"training/evaluation split differs: {root}")
+    if split.get("dataset_format", "colmap") != "colmap":
+        raise ValueError(f"Garden split must use the COLMAP dataset format: {root}")
     if len(split.get("train", [])) != 161 or len(split.get("test", [])) != 24:
         raise ValueError(f"Garden split must contain 161 train and 24 test images: {root}")
     per_image = _read_per_image(evaluation / "per_image_metrics.csv")
@@ -441,7 +455,9 @@ def _pairing_audit(runs: dict[str, dict[str, Any]]) -> dict[str, Any]:
     test_names = reference["split"]["test"]
     checks: dict[str, bool] = {}
     for quadrant, run in runs.items():
-        checks[f"{quadrant}_same_split"] = run["split"] == reference["split"]
+        checks[f"{quadrant}_same_split"] = _split_identity(
+            run["split"]
+        ) == _split_identity(reference["split"])
         checks[f"{quadrant}_same_test_names_and_order"] = (
             [row["image_name"] for row in run["per_image"]] == test_names
         )

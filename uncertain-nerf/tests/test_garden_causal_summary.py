@@ -208,6 +208,17 @@ def test_full_synthetic_four_quadrant_summary(tmp_path: Path):
     for quadrant, (config, metrics) in specifications.items():
         root = tmp_path / quadrant
         _make_run(root, config_name=config, quadrant=quadrant, metrics=metrics)
+        if quadrant != "Y00":
+            # Historical Garden artifacts predate this provenance-only field,
+            # whereas current runs record it. Pairing is still defined by the
+            # protocol and the exact ordered train/test filename lists.
+            for split_path in (
+                root / "dataset_split.json",
+                root / "independent_eval" / "dataset_split.json",
+            ):
+                split = json.loads(split_path.read_text(encoding="utf-8"))
+                split["dataset_format"] = "colmap"
+                _write_json(split_path, split)
         runs[quadrant] = _load_run(root, quadrant)
 
     summary = build_summary(runs)
