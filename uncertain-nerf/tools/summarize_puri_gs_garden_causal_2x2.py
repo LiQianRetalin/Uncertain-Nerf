@@ -520,7 +520,7 @@ def _metric_effect(values: dict[str, float]) -> dict[str, float]:
 
 def _per_image_effects(runs: dict[str, dict[str, Any]]) -> dict[str, Any]:
     comparisons = {
-        "mask_at_T0_Y10_minus_Y00": (1.0, 0.0, -1.0, 0.0),
+        "mask_at_T0_Y10_minus_Y00": (-1.0, 0.0, 1.0, 0.0),
         "mask_at_T1_Y11_minus_Y01": (0.0, -1.0, 0.0, 1.0),
         "topology_at_M0_Y01_minus_Y00": (-1.0, 1.0, 0.0, 0.0),
         "topology_at_M1_Y11_minus_Y10": (0.0, 0.0, -1.0, 1.0),

@@ -192,23 +192,8 @@ def test_bootstrap_is_seeded_and_output_overwrite_is_rejected(tmp_path: Path):
 
 
 def test_summary_direct_cli_bootstraps_project_imports(tmp_path: Path):
-    stub_root = tmp_path / "stub"
-    torch_package = stub_root / "torch"
-    torch_nn = torch_package / "nn"
-    torch_nn.mkdir(parents=True)
-    (torch_package / "__init__.py").write_text(
-        "class Tensor: pass\n"
-        "def inference_mode():\n"
-        "    return lambda function: function\n",
-        encoding="utf-8",
-    )
-    (torch_nn / "__init__.py").write_text(
-        "from . import functional\n", encoding="utf-8"
-    )
-    (torch_nn / "functional.py").write_text("", encoding="utf-8")
-
     environment = os.environ.copy()
-    environment["PYTHONPATH"] = str(stub_root)
+    environment.pop("PYTHONPATH", None)
     completed = subprocess.run(
         [
             sys.executable,
@@ -262,6 +247,13 @@ def test_full_synthetic_four_quadrant_summary(tmp_path: Path):
     assert summary["runs"]["Y11"]["mask"]["mask_update_count"] == 29_400
     assert summary["runs"]["Y11"]["mask"]["mask_pause_count"] == 600
     assert summary["attribution"]["label"] == "GARDEN_MASK_DOMINANT"
+    for metric in ("psnr", "ssim", "lpips"):
+        scalar_effects = summary["scalar_effects_and_interactions"][metric]["effects"]
+        for effect_name, expected_mean in scalar_effects.items():
+            paired_mean = summary["per_image_paired_effects"][effect_name][metric][
+                "mean_difference"
+            ]
+            assert paired_mean == pytest.approx(expected_mean)
     assert len(summary["representative_images"]["images"]) == 6
     markdown = render_markdown(summary)
     assert "阶段 U 未实现、未启动" in markdown
