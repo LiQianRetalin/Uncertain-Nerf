@@ -147,8 +147,8 @@ def _make_run(
         _write_json(
             root / "aux" / "training_schedule.json",
             {
-                "M": M,
-                "T": T,
+                "semantic_mask_enabled": True,
+                "delayed_topology_enabled": bool(T),
                 "topology_events": topology,
                 "reset_steps": topology["reset_steps"],
                 "mask_updates_completed": 30_000 - topology["mask_pause_step_count"],

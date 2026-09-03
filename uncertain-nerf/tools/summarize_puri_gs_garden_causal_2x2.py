@@ -280,8 +280,10 @@ def _mask_inventory(root: Path, quadrant: str, contract: dict[str, Any]) -> dict
         raise ValueError(f"mask pause count does not match actual reset events: {root}")
     if quadrant == "Y10":
         checks = {
-            "M": schedule.get("M") == 1,
-            "T": schedule.get("T") == 0,
+            "semantic_mask_enabled": schedule.get("semantic_mask_enabled") is True,
+            "delayed_topology_enabled": (
+                schedule.get("delayed_topology_enabled") is False
+            ),
             "topology_events": schedule.get("topology_events") == expected_topology,
             "no_resets": schedule.get("reset_steps") == [],
             "no_pause_segments": expected_topology["mask_pause_segments"] == [],
