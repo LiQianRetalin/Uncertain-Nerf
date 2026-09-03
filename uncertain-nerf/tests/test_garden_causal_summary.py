@@ -1,5 +1,8 @@
 import csv
 import json
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -186,6 +189,40 @@ def test_bootstrap_is_seeded_and_output_overwrite_is_rejected(tmp_path: Path):
     report_json.touch()
     with pytest.raises(RuntimeError, match="refusing to overwrite"):
         ensure_output_targets_absent(tmp_path)
+
+
+def test_summary_direct_cli_bootstraps_project_imports(tmp_path: Path):
+    stub_root = tmp_path / "stub"
+    torch_package = stub_root / "torch"
+    torch_nn = torch_package / "nn"
+    torch_nn.mkdir(parents=True)
+    (torch_package / "__init__.py").write_text(
+        "class Tensor: pass\n"
+        "def inference_mode():\n"
+        "    return lambda function: function\n",
+        encoding="utf-8",
+    )
+    (torch_nn / "__init__.py").write_text(
+        "from . import functional\n", encoding="utf-8"
+    )
+    (torch_nn / "functional.py").write_text("", encoding="utf-8")
+
+    environment = os.environ.copy()
+    environment["PYTHONPATH"] = str(stub_root)
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(PROJECT_ROOT / "tools" / "summarize_puri_gs_garden_causal_2x2.py"),
+            "--help",
+        ],
+        cwd=tmp_path,
+        env=environment,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert "--dg-only" in completed.stdout
 
 
 def test_full_synthetic_four_quadrant_summary(tmp_path: Path):

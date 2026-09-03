@@ -9,9 +9,15 @@ import hashlib
 import json
 import math
 import random
+import sys
 from pathlib import Path
 from statistics import mean, median
 from typing import Any
+
+# Keep the documented direct CLI invocation usable from any working directory.
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from puri_gs.config import causal_factors, validate_experiment_config
 from puri_gs.delayed_absgrad import topology_event_summary
