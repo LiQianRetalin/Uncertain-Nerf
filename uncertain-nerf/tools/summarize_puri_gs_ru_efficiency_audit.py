@@ -70,6 +70,7 @@ def _load_run(
     expected_train_images: int = 272,
     expected_split_protocol: str = "every-nth-test",
     require_checkpoint_sha: bool = False,
+    require_dataset_protocol: bool = False,
 ) -> dict[str, Any]:
     config = _read_json(path / "config.yaml")
     expected_profile = "b1" if method == "b1" else "ru"
@@ -82,7 +83,9 @@ def _load_run(
         or len(split.get("train", [])) != expected_train_images
         or len(split.get("test", [])) != expected_test_images
     ):
-        raise ValueError(f"unexpected Room split: {path}")
+        raise ValueError(f"unexpected dataset split: {path}")
+    if require_dataset_protocol and split.get("dataset_format") != "ontogo-patio-high":
+        raise ValueError(f"Patio-High dataset format is not recorded: {path}")
 
     rows = _read_latency_rows(
         path / "per_image_latency.csv", expected_test_images=expected_test_images
@@ -129,6 +132,8 @@ def _load_run(
         raise ValueError(f"run command did not request ten warmups: {path}")
     if "--puri_gs_ru_enabled" in command or "--dino_repo_dir" in command:
         raise ValueError(f"audit evaluation unexpectedly enabled training-only RU: {path}")
+    if require_dataset_protocol and "--dataset_format ontogo-patio-high" not in command:
+        raise ValueError(f"Patio-High audit command omitted its dataset format: {path}")
 
     for key in ("psnr", "ssim", "lpips"):
         if not math.isfinite(float(test_metrics[key])):
@@ -147,6 +152,27 @@ def _load_run(
     ):
         raise ValueError(f"valid checkpoint_sha256.txt is required: {path}")
 
+    dataset_protocol = None
+    if require_dataset_protocol:
+        record = _read_json(path / "dataset_protocol.json")
+        embedded = record.get("protocol", {})
+        if not (
+            embedded.get("schema") == "puri-gs-ontogo-patio-high-v1"
+            and embedded.get("dataset_format") == "ontogo-patio-high"
+            and embedded.get("train_count") == expected_train_images
+            and embedded.get("test_count") == expected_test_images
+            and embedded.get("unassigned_frame_indices") == [266]
+        ):
+            raise ValueError(f"invalid Patio-High dataset protocol: {path}")
+        dataset_protocol = {
+            "protocol_sha256": record.get("protocol_sha256"),
+            "initial_point_count": embedded.get("initial_point_count"),
+            "initial_points_sha256": embedded.get("initial_points_sha256"),
+            "initial_colors_sha256": embedded.get("initial_colors_sha256"),
+        }
+        if any(value is None for value in dataset_protocol.values()):
+            raise ValueError(f"incomplete Patio-High dataset protocol: {path}")
+
     return {
         "method": method,
         "run_index": run_index,
@@ -159,6 +185,7 @@ def _load_run(
         "ssim": float(test_metrics["ssim"]),
         "lpips": float(test_metrics["lpips"]),
         "checkpoint_sha256": checkpoint_sha,
+        "dataset_protocol": dataset_protocol,
         **calculated,
         "image_names": [row["image_name"] for row in rows],
         "latency_rows": rows,
@@ -179,6 +206,12 @@ def decide(
     reference_names = b1_runs[0]["image_names"]
     if any(run["image_names"] != reference_names for run in b1_runs + ru_runs):
         raise ValueError("B1/RU audit runs use different test-image orders")
+    if scene == "ontogo":
+        protocols = [run.get("dataset_protocol") for run in b1_runs + ru_runs]
+        if any(protocol is None for protocol in protocols) or any(
+            protocol != protocols[0] for protocol in protocols[1:]
+        ):
+            raise ValueError("On-the-go audit runs use different dataset initializations")
     if len({run["gaussian_count"] for run in b1_runs}) != 1:
         raise ValueError("B1 runs loaded different checkpoints")
     if len({run["gaussian_count"] for run in ru_runs}) != 1:
@@ -390,6 +423,7 @@ def main() -> int:
                 expected_train_images=args.expected_train_images,
                 expected_split_protocol=args.expected_split_protocol,
                 require_checkpoint_sha=args.require_checkpoint_sha,
+                require_dataset_protocol=args.scene == "ontogo",
             )
             for run_index in range(1, EXPECTED_REPEATS + 1)
         ]

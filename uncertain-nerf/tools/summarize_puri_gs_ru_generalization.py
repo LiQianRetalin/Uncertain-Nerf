@@ -101,7 +101,13 @@ def _shared_config(config: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _load_run(path: Path, profile: str, expected_count: int) -> dict[str, Any]:
+def _load_run(
+    path: Path,
+    profile: str,
+    expected_count: int,
+    *,
+    require_dataset_protocol: bool = False,
+) -> dict[str, Any]:
     config = _read_json(path / "config.yaml")
     if config.get("profile") != profile:
         raise ValueError(f"expected profile {profile}: {path}")
@@ -132,6 +138,31 @@ def _load_run(path: Path, profile: str, expected_count: int) -> dict[str, Any]:
     for key in ("psnr", "ssim", "lpips"):
         if not math.isfinite(float(metrics[key])):
             raise ValueError(f"non-finite {key}: {path}")
+    dataset_protocol = None
+    if require_dataset_protocol:
+        training_protocol = _read_json(path / "dataset_protocol.json")
+        evaluation_protocol = _read_json(evaluation / "dataset_protocol.json")
+        if training_protocol != evaluation_protocol:
+            raise ValueError(f"training/evaluation dataset protocols differ: {path}")
+        embedded = training_protocol.get("protocol", {})
+        if not (
+            embedded.get("schema") == "puri-gs-ontogo-patio-high-v1"
+            and embedded.get("dataset_format") == "ontogo-patio-high"
+            and embedded.get("train_count") == 221
+            and embedded.get("test_count") == 45
+            and embedded.get("unassigned_frame_indices") == [266]
+        ):
+            raise ValueError(f"invalid Patio-High dataset protocol: {path}")
+        dataset_protocol = {
+            "protocol_sha256": training_protocol.get("protocol_sha256"),
+            "transforms_sha256": embedded.get("transforms_sha256"),
+            "split_sha256": embedded.get("split_sha256"),
+            "initial_point_count": embedded.get("initial_point_count"),
+            "initial_points_sha256": embedded.get("initial_points_sha256"),
+            "initial_colors_sha256": embedded.get("initial_colors_sha256"),
+        }
+        if any(value is None for value in dataset_protocol.values()):
+            raise ValueError(f"incomplete Patio-High dataset protocol: {path}")
     return {
         "path": str(path),
         "profile": profile,
@@ -156,6 +187,7 @@ def _load_run(path: Path, profile: str, expected_count: int) -> dict[str, Any]:
         },
         "per_image": rows,
         "render_dir": evaluation / "renders",
+        "dataset_protocol": dataset_protocol,
     }
 
 
@@ -168,6 +200,7 @@ def _paired_rows(b1: dict[str, Any], ru: dict[str, Any]) -> list[dict[str, Any]]
         "shared_config": b1["config"] == ru["config"],
         "training_environment": b1["environment"] == ru["environment"],
         "evaluation_environment": b1["evaluation_environment"] == ru["evaluation_environment"],
+        "dataset_protocol": b1.get("dataset_protocol") == ru.get("dataset_protocol"),
     }
     failed = [name for name, passed in checks.items() if not passed]
     if failed:
@@ -285,6 +318,7 @@ def decide(
             "split_protocol": b1["split"].get("protocol"),
             "train_count": len(b1["split"].get("train", [])),
             "test_count": len(b1["split"].get("test", [])),
+            "dataset_protocol": b1.get("dataset_protocol"),
         },
         "b1": {key: b1[key] for key in ("path", "metrics", "gaussian_count", "inference_vram_gib", "training_time_seconds", "checkpoint")},
         "ru": {key: ru[key] for key in ("path", "metrics", "gaussian_count", "inference_vram_gib", "training_time_seconds", "checkpoint")},
@@ -411,8 +445,19 @@ def main() -> int:
     if any(target.exists() for target in targets):
         raise RuntimeError("refusing to overwrite an existing generalization output")
     expected_count = EXPECTED_TEST_COUNTS[args.scene]
-    b1 = _load_run(args.b1_run.expanduser().resolve(), "b1", expected_count)
-    ru = _load_run(args.ru_run.expanduser().resolve(), "ru", expected_count)
+    require_dataset_protocol = args.scene == "ontogo"
+    b1 = _load_run(
+        args.b1_run.expanduser().resolve(),
+        "b1",
+        expected_count,
+        require_dataset_protocol=require_dataset_protocol,
+    )
+    ru = _load_run(
+        args.ru_run.expanduser().resolve(),
+        "ru",
+        expected_count,
+        require_dataset_protocol=require_dataset_protocol,
+    )
     efficiency = _load_efficiency(
         args.efficiency_audit.expanduser().resolve() if args.efficiency_audit else None,
         args.scene,

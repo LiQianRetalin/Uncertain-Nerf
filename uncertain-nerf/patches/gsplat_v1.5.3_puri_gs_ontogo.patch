@@ -1,0 +1,42 @@
+diff --git a/examples/simple_trainer.py b/examples/simple_trainer.py
+--- a/examples/simple_trainer.py
++++ b/examples/simple_trainer.py
+@@ -36,6 +36,7 @@ from puri_gs.responsibility import (
+     responsibility_weighted_l1,
+ )
+ from puri_gs.semantic_mask import masked_photo_loss
++from puri_gs.ontogo import OnTheGoPatioHighParser
+ 
+ from gsplat import export_splats
+ from gsplat.compression import PngCompression
+@@ -63,6 +64,8 @@ class Config:
+     data_dir: str = "data/360_v2/garden"
+     # Downsample factor for the dataset
+     data_factor: int = 4
++    # Dataset parser contract; Patio-High is the only non-COLMAP option.
++    dataset_format: Literal["colmap", "ontogo-patio-high"] = "colmap"
+     # Directory to save results
+     result_dir: str = "results/garden"
+     # Every N images there is a test image
+@@ -399,7 +402,12 @@ class Runner:
+         self.writer = SummaryWriter(log_dir=f"{cfg.result_dir}/tb")
+ 
+         # Load data: Training data should contain initial points and colors.
+-        self.parser = Parser(
++        parser_class = (
++            Parser
++            if cfg.dataset_format == "colmap"
++            else OnTheGoPatioHighParser
++        )
++        self.parser = parser_class(
+             data_dir=cfg.data_dir,
+             factor=cfg.data_factor,
+             normalize=cfg.normalize_world_space,
+@@ -423,6 +431,7 @@ class Runner:
+         )
+         if world_rank == 0:
+             split = {
++                "dataset_format": cfg.dataset_format,
+                 "protocol": (
+                     "filename-keyword"
+                     if cfg.train_keyword is not None

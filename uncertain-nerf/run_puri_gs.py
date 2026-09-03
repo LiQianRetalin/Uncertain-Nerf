@@ -27,6 +27,7 @@ RU_PATCH_PATH = PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_ru.patch"
 EFFICIENCY_AUDIT_PATCH_PATH = (
     PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_efficiency_audit.patch"
 )
+ONTOGO_PATCH_PATH = PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_ontogo.patch"
 EXPECTED_GSPLAT_COMMIT = "937e29912570c372bed6747a5c9bf85fed877bae"
 
 
@@ -64,6 +65,7 @@ def _verify_gsplat(
     require_cvtr: bool = False,
     require_ru: bool = False,
     require_efficiency_audit: bool = False,
+    require_ontogo: bool = False,
 ) -> None:
     if _git("rev-parse", "HEAD", cwd=gsplat_dir) != EXPECTED_GSPLAT_COMMIT:
         raise RuntimeError("GSPLAT_DIR is not the pinned v1.5.3 checkout")
@@ -91,6 +93,26 @@ def _verify_gsplat(
         if "_is_png_file" not in dataset_source:
             raise RuntimeError("efficiency-audit dataset patch stack is incomplete")
 
+    if require_ontogo:
+        _verify_applied_patch(gsplat_dir, ONTOGO_PATCH_PATH)
+        trainer_source = (gsplat_dir / "examples" / "simple_trainer.py").read_text(
+            encoding="utf-8"
+        )
+        dataset_source = (
+            gsplat_dir / "examples" / "datasets" / "colmap.py"
+        ).read_text(encoding="utf-8")
+        required_markers = (
+            "puri_gs_ru_enabled",
+            "eval_warmup_renders",
+            "eval_disable_image_save",
+            "ontogo-patio-high",
+            "OnTheGoPatioHighParser",
+        )
+        if any(marker not in trainer_source for marker in required_markers):
+            raise RuntimeError("On-the-go trainer patch stack is incomplete")
+        if "_is_png_file" not in dataset_source:
+            raise RuntimeError("On-the-go dataset patch stack is incomplete")
+        return
     if require_efficiency_audit:
         verify_efficiency_stack()
         return
@@ -126,9 +148,21 @@ def _verify_dataset(
     data_factor: int,
     train_keyword: str | None,
     test_keyword: str | None,
+    dataset_format: str = "colmap",
 ) -> None:
     if (train_keyword is None) != (test_keyword is None):
         raise ValueError("train_keyword and test_keyword must be supplied together")
+    if dataset_format == "ontogo-patio-high":
+        if train_keyword != "clutter" or test_keyword != "extra":
+            raise ValueError(
+                "Patio-High requires --train-keyword clutter --test-keyword extra"
+            )
+        from puri_gs.ontogo import validate_prepared_patio_high
+
+        validate_prepared_patio_high(data_dir, factor=data_factor, load_points=False)
+        return
+    if dataset_format != "colmap":
+        raise ValueError(f"unsupported dataset format: {dataset_format}")
     image_dir = data_dir / f"images_{data_factor}"
     sparse_dir = data_dir / "sparse" / "0"
     missing = [
@@ -250,6 +284,7 @@ def _build_command(
 ) -> list[str]:
     training = config["training"]
     data_factor = args.data_factor or training["data_factor"]
+    dataset_format = getattr(args, "dataset_format", "colmap")
     sh_degree = config.get("sh_degree", training.get("sh_degree"))
     ssim_lambda = config.get("ssim_lambda", training.get("ssim_lambda"))
     command = [
@@ -277,6 +312,8 @@ def _build_command(
         "--tb_every",
         "0",
     ]
+    if dataset_format != "colmap":
+        command.extend(["--dataset_format", dataset_format])
     if args.train_keyword is not None:
         command.extend(["--train_keyword", args.train_keyword])
         command.extend(["--test_keyword", args.test_keyword])
@@ -338,6 +375,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--gpu", type=int, required=True)
     parser.add_argument("--max-steps", type=int)
     parser.add_argument("--data-factor", type=int)
+    parser.add_argument(
+        "--dataset-format",
+        choices=("colmap", "ontogo-patio-high"),
+        default="colmap",
+    )
     parser.add_argument("--train-keyword")
     parser.add_argument("--test-keyword")
     parser.add_argument("--checkpoint", type=Path)
@@ -392,6 +434,7 @@ def main() -> int:
         require_cvtr=is_continuation,
         require_ru=is_ru,
         require_efficiency_audit=bool(args.eval_warmup_renders),
+        require_ontogo=args.dataset_format == "ontogo-patio-high",
     )
     if is_ru and args.max_steps is not None:
         if args.max_steps != config["total_steps"] and not 1 <= args.max_steps <= 100:
@@ -400,7 +443,11 @@ def main() -> int:
             )
     data_factor = args.data_factor or config["training"]["data_factor"]
     _verify_dataset(
-        data_dir, data_factor, args.train_keyword, args.test_keyword
+        data_dir,
+        data_factor,
+        args.train_keyword,
+        args.test_keyword,
+        args.dataset_format,
     )
     if args.checkpoint is not None and args.resume_checkpoint is not None:
         raise ValueError("--checkpoint and --resume-checkpoint are mutually exclusive")
@@ -458,6 +505,21 @@ def main() -> int:
         json.dumps(_runtime_environment(gsplat_dir, config), indent=2) + "\n",
         encoding="utf-8",
     )
+    if args.dataset_format == "ontogo-patio-high":
+        from puri_gs.ontogo import PROTOCOL_FILE, sha256_file
+
+        protocol_path = data_dir / PROTOCOL_FILE
+        protocol = json.loads(protocol_path.read_text(encoding="utf-8"))
+        protocol_record = {
+            "prepared_data_dir": str(data_dir),
+            "protocol_file": str(protocol_path),
+            "protocol_sha256": sha256_file(protocol_path),
+            "protocol": protocol,
+        }
+        (result_dir / "dataset_protocol.json").write_text(
+            json.dumps(protocol_record, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
     if continuation_inventory is not None:
         (result_dir / "continuation_source.json").write_text(
             json.dumps(continuation_inventory, indent=2) + "\n",

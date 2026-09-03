@@ -78,6 +78,23 @@ def test_android_uses_ratio_of_method_medians_for_fps_gate():
     assert report["decision"] == "ANDROID_EFFICIENCY_PASS"
 
 
+def test_ontogo_efficiency_requires_one_shared_dataset_initialization():
+    b1 = [_run("b1", index, 100.0) for index in range(1, 4)]
+    ru = [_run("ru", index, 100.0) for index in range(1, 4)]
+    protocol = {
+        "protocol_sha256": "a" * 64,
+        "initial_point_count": 36922,
+        "initial_points_sha256": "b" * 64,
+        "initial_colors_sha256": "c" * 64,
+    }
+    for run in b1 + ru:
+        run["dataset_protocol"] = protocol
+    assert decide(b1, ru, scene="ontogo")["decision"] == "EFFICIENCY_AUDIT_PASS"
+    ru[2]["dataset_protocol"] = {**protocol, "initial_points_sha256": "d" * 64}
+    with pytest.raises(ValueError, match="different dataset initializations"):
+        decide(b1, ru, scene="ontogo")
+
+
 def test_generic_efficiency_script_is_counterbalanced_and_serial():
     script = (
         PROJECT_ROOT / "scripts" / "run_puri_gs_efficiency_audit.sh"

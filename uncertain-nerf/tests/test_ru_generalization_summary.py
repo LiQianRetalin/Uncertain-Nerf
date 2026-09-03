@@ -23,6 +23,14 @@ def _run(profile, psnr, ssim, lpips, count=24, gaussian=100, vram=2.0):
             {"image_name": f"{i}.png", "psnr": psnr, "ssim": ssim, "lpips": lpips}
             for i in range(count)
         ],
+        "dataset_protocol": (
+            {
+                "initial_point_count": 36922,
+                "initial_points_sha256": "b" * 64,
+            }
+            if count == 45
+            else None
+        ),
     }
 
 
@@ -44,6 +52,23 @@ def test_ontogo_accepts_lpips_route_and_view_gate():
         "ontogo", b1, ru, {"decision": "EFFICIENCY_AUDIT_PASS", "fps_ratio": 1.0, "pass": True}
     )
     assert report["decision"] == "ONTOGO_DYNAMIC_PASS"
+    assert report["pairing"]["dataset_protocol"]["initial_point_count"] == 36922
+
+
+def test_ontogo_rejects_different_b1_ru_initialization():
+    b1 = _run("b1", 20.0, 0.70, 0.20, count=45)
+    ru = _run("ru", 20.6, 0.71, 0.17, count=45)
+    ru["dataset_protocol"] = {
+        "initial_point_count": 36922,
+        "initial_points_sha256": "c" * 64,
+    }
+    with pytest.raises(ValueError, match="dataset_protocol"):
+        decide(
+            "ontogo",
+            b1,
+            ru,
+            {"decision": "EFFICIENCY_AUDIT_PASS", "fps_ratio": 1.0, "pass": True},
+        )
 
 
 def test_quality_pass_waits_for_required_efficiency_audit():

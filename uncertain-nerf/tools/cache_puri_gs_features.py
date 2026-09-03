@@ -28,6 +28,7 @@ EXPECTED_TRAIN_COUNTS = {
     "android": 122,
     "room": 272,
     "garden": 161,
+    "patio_high": 221,
 }
 
 
@@ -37,6 +38,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--gsplat-dir", type=Path, required=True)
     parser.add_argument("--data-dir", type=Path, required=True)
     parser.add_argument("--data-factor", type=int, default=4)
+    parser.add_argument(
+        "--dataset-format",
+        choices=("colmap", "ontogo-patio-high"),
+        default="colmap",
+    )
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--dino-repo-dir", type=Path, required=True)
     parser.add_argument("--dino-weight-path", type=Path, required=True)
@@ -46,12 +52,17 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _load_dataset_classes(gsplat_dir: Path):
+def _load_dataset_classes(gsplat_dir: Path, dataset_format: str):
     examples_dir = gsplat_dir.resolve() / "examples"
     if not (examples_dir / "datasets" / "colmap.py").is_file():
         raise FileNotFoundError(f"gsplat COLMAP loader is missing: {examples_dir}")
     sys.path.insert(0, str(examples_dir))
     from datasets.colmap import Dataset, Parser
+
+    if dataset_format == "ontogo-patio-high":
+        from puri_gs.ontogo import OnTheGoPatioHighParser
+
+        Parser = OnTheGoPatioHighParser
 
     return Parser, Dataset
 
@@ -60,10 +71,12 @@ def main() -> int:
     args = parse_args()
     if (args.train_keyword is None) != (args.test_keyword is None):
         raise ValueError("train-keyword and test-keyword must be provided together")
-    if args.scene == "android" and (
+    if args.scene in {"android", "patio_high"} and (
         args.train_keyword != "clutter" or args.test_keyword != "extra"
     ):
-        raise ValueError("Android cache requires --train-keyword clutter --test-keyword extra")
+        raise ValueError(
+            f"{args.scene} cache requires --train-keyword clutter --test-keyword extra"
+        )
     if args.scene in {"room", "garden"} and args.train_keyword is not None:
         raise ValueError(
             f"{args.scene} uses the fixed every-eighth test split, not keywords"
@@ -82,7 +95,14 @@ def main() -> int:
     building_dir.parent.mkdir(parents=True, exist_ok=True)
     building_dir.mkdir()
 
-    Parser, Dataset = _load_dataset_classes(args.gsplat_dir)
+    if (args.scene == "patio_high") != (
+        args.dataset_format == "ontogo-patio-high"
+    ):
+        raise ValueError(
+            "patio_high must use --dataset-format ontogo-patio-high and no other scene may use it"
+        )
+
+    Parser, Dataset = _load_dataset_classes(args.gsplat_dir, args.dataset_format)
     parser = Parser(
         data_dir=str(args.data_dir.expanduser().resolve()),
         factor=args.data_factor,
@@ -139,6 +159,7 @@ def main() -> int:
         "scene": args.scene,
         "data_dir": str(args.data_dir.expanduser().resolve()),
         "data_factor": args.data_factor,
+        "dataset_format": args.dataset_format,
         "train_keyword": args.train_keyword,
         "test_keyword": args.test_keyword,
         "model_name": model_metadata["model_name"],
