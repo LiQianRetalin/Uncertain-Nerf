@@ -1,0 +1,169 @@
+diff --git a/examples/simple_trainer.py b/examples/simple_trainer.py
+--- a/examples/simple_trainer.py
++++ b/examples/simple_trainer.py
+@@ -137,6 +137,9 @@ class Config:
+ 
+     # PURI-GS-RU is training-only and opt-in. Evaluation leaves every field unused.
+     puri_gs_ru_enabled: bool = False
++    # Orthogonal Garden causal capabilities. The legacy RU flag resolves to both.
++    puri_gs_mask_enabled: bool = False
++    puri_gs_delayed_topology_enabled: bool = False
+     dino_repo_dir: Optional[str] = None
+     dino_weight_path: Optional[str] = None
+     feature_cache_dir: Optional[str] = None
+@@ -479,7 +482,18 @@ class Runner:
+         print("Model initialized. Number of GS:", len(self.splats["means"]))
+ 
+         # Densification Strategy
+-        if cfg.puri_gs_ru_enabled:
++        self.puri_gs_mask_enabled = (
++            cfg.puri_gs_ru_enabled or cfg.puri_gs_mask_enabled
++        )
++        self.puri_gs_delayed_topology_enabled = (
++            cfg.puri_gs_ru_enabled or cfg.puri_gs_delayed_topology_enabled
++        )
++        print(
++            "PURI-GS-FACTORS "
++            f"M={int(self.puri_gs_mask_enabled)} "
++            f"T={int(self.puri_gs_delayed_topology_enabled)}"
++        )
++        if self.puri_gs_delayed_topology_enabled:
+             from puri_gs.delayed_absgrad import (
+                 DelayedAbsGradSchedule,
+                 delayed_strategy_from_default,
+@@ -508,7 +522,7 @@ class Runner:
+             assert_never(self.cfg.strategy)
+ 
+         self.ru_training = None
+-        if cfg.puri_gs_ru_enabled:
++        if self.puri_gs_mask_enabled:
+             from puri_gs.ru_training import PURIGSRUTraining
+ 
+             # Do not let DINO/head construction perturb B1's seeded camera order.
+@@ -519,6 +533,7 @@ class Runner:
+                     parser=self.parser,
+                     trainset=self.trainset,
+                     device=self.device,
++                    delayed_topology_enabled=self.puri_gs_delayed_topology_enabled,
+                 )
+ 
+         # Compression Strategy
+@@ -982,7 +997,7 @@ class Runner:
+ 
+             # save checkpoint before updating the model
+             if (
+-                not cfg.puri_gs_ru_enabled
++                not self.puri_gs_delayed_topology_enabled
+                 and (step in [i - 1 for i in cfg.save_steps] or step == max_steps - 1)
+             ):
+                 mem = torch.cuda.max_memory_allocated() / 1024**3
+@@ -1082,9 +1097,9 @@ class Runner:
+                 else:
+                     visibility_mask = (info["radii"] > 0).all(-1).any(0)
+ 
+-            # PURI-GS-RU follows its fixed ordering: strategy post-backward first,
+-            # then the Gaussian optimizer. Legacy profiles keep the gsplat order.
+-            if cfg.puri_gs_ru_enabled:
++            # T=1 follows RU ordering: strategy post-backward first, then the
++            # Gaussian optimizer. T=0 preserves the pinned B1 order.
++            if self.puri_gs_delayed_topology_enabled:
+                 self.cfg.strategy.step_post_backward(
+                     params=self.splats,
+                     optimizers=self.optimizers,
+@@ -1114,7 +1129,7 @@ class Runner:
+                 scheduler.step()
+ 
+             # Run post-backward steps after backward and optimizer
+-            if cfg.puri_gs_ru_enabled:
++            if self.puri_gs_delayed_topology_enabled:
+                 pass
+             elif isinstance(self.cfg.strategy, DefaultStrategy):
+                 self.cfg.strategy.step_post_backward(
+@@ -1137,7 +1152,7 @@ class Runner:
+             else:
+                 assert_never(self.cfg.strategy)
+ 
+-            if cfg.puri_gs_ru_enabled:
++            if self.puri_gs_mask_enabled:
+                 assert ru_state is not None
+                 self.ru_training.record(
+                     step=step,
+@@ -1145,39 +1160,46 @@ class Runner:
+                     photo_loss=loss,
+                     gaussian_count=len(self.splats["means"]),
+                 )
+-                if step in [i - 1 for i in cfg.save_steps] or step == max_steps - 1:
+-                    mem = torch.cuda.max_memory_allocated() / 1024**3
+-                    stats = {
+-                        "mem": mem,
+-                        "ellipse_time": time.time() - global_tic,
+-                        "num_GS": len(self.splats["means"]),
+-                    }
+-                    print("Step: ", step, stats)
+-                    with open(
+-                        f"{self.stats_dir}/train_step{step:04d}_rank{self.world_rank}.json",
+-                        "w",
+-                    ) as f:
+-                        json.dump(stats, f)
+-                    with open(f"{cfg.result_dir}/train_metrics.json", "w") as f:
+-                        json.dump(
+-                            {
+-                                "step": step,
+-                                "training_time_seconds": stats["ellipse_time"],
+-                                "peak_vram_gib": stats["mem"],
+-                                "gaussian_count": stats["num_GS"],
+-                            },
+-                            f,
+-                            indent=2,
+-                        )
+-                    torch.save(
+-                        {"step": step, "splats": self.splats.state_dict()},
+-                        f"{self.ckpt_dir}/ckpt_{step}_rank{self.world_rank}.pt",
+-                    )
+-                    self.ru_training.save_auxiliary(
+-                        step, training_seconds=stats["ellipse_time"]
++
++            save_now = step in [i - 1 for i in cfg.save_steps] or step == max_steps - 1
++            if self.puri_gs_delayed_topology_enabled and save_now:
++                mem = torch.cuda.max_memory_allocated() / 1024**3
++                stats = {
++                    "mem": mem,
++                    "ellipse_time": time.time() - global_tic,
++                    "num_GS": len(self.splats["means"]),
++                }
++                print("Step: ", step, stats)
++                with open(
++                    f"{self.stats_dir}/train_step{step:04d}_rank{self.world_rank}.json",
++                    "w",
++                ) as f:
++                    json.dump(stats, f)
++                with open(f"{cfg.result_dir}/train_metrics.json", "w") as f:
++                    json.dump(
++                        {
++                            "step": step,
++                            "training_time_seconds": stats["ellipse_time"],
++                            "peak_vram_gib": stats["mem"],
++                            "gaussian_count": stats["num_GS"],
++                        },
++                        f,
++                        indent=2,
+                     )
+-                    if world_rank == 0:
+-                        self.ru_training.save_visuals(colors)
++                torch.save(
++                    {"step": step, "splats": self.splats.state_dict()},
++                    f"{self.ckpt_dir}/ckpt_{step}_rank{self.world_rank}.pt",
++                )
++
++            if self.puri_gs_mask_enabled and save_now:
++                training_seconds = time.time() - global_tic
++                if self.puri_gs_delayed_topology_enabled:
++                    training_seconds = stats["ellipse_time"]
++                self.ru_training.save_auxiliary(
++                    step, training_seconds=training_seconds
++                )
++                if world_rank == 0:
++                    self.ru_training.save_visuals(colors)
+ 
+             # eval the full set
+             if step in [i - 1 for i in cfg.eval_steps]:

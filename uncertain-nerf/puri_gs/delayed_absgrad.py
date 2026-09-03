@@ -47,16 +47,109 @@ class DelayedAbsGradSchedule:
         )
 
     def mask_update_paused(self, step: int) -> bool:
-        if step <= self.opacity_reset_start_step or self.mask_pause_after_reset == 0:
-            return False
-        reset_index = (
-            step - self.opacity_reset_start_step - 1
-        ) // self.opacity_reset_every
-        most_recent = self.opacity_reset_start_step + reset_index * self.opacity_reset_every
-        steps_after_reset = step - most_recent
-        return self.should_reset(most_recent) and (
-            1 <= steps_after_reset <= self.mask_pause_after_reset
+        return mask_update_paused_after_resets(
+            step,
+            self.reset_steps(self.densify_stop_step),
+            self.mask_pause_after_reset,
         )
+
+    def refine_steps(self, total_steps: int) -> tuple[int, ...]:
+        stop = min(total_steps, self.densify_stop_step)
+        return tuple(
+            step
+            for step in range(self.densify_start_step, stop)
+            if self.should_refine(step)
+        )
+
+    def reset_steps(self, total_steps: int) -> tuple[int, ...]:
+        stop = min(total_steps, self.densify_stop_step)
+        return tuple(
+            step
+            for step in range(self.opacity_reset_start_step, stop)
+            if self.should_reset(step)
+        )
+
+
+def mask_update_paused_after_resets(
+    step: int, reset_steps: tuple[int, ...], pause_after_reset: int
+) -> bool:
+    """Pause only after reset events that actually occur in the chosen topology."""
+
+    if pause_after_reset <= 0:
+        return False
+    return any(reset < step <= reset + pause_after_reset for reset in reset_steps)
+
+
+def topology_event_summary(
+    *,
+    delayed_topology: bool,
+    total_steps: int = 30_000,
+    mask_pause_after_reset: int = 0,
+    delayed_schedule: DelayedAbsGradSchedule | None = None,
+) -> dict[str, Any]:
+    """Resolve the pinned B1/RU topology into an auditable event contract."""
+
+    if total_steps <= 0:
+        raise ValueError("total_steps must be positive")
+    if mask_pause_after_reset < 0:
+        raise ValueError("mask_pause_after_reset must be non-negative")
+
+    if delayed_topology:
+        schedule = delayed_schedule or DelayedAbsGradSchedule()
+        refine_steps = schedule.refine_steps(total_steps)
+        reset_steps = schedule.reset_steps(total_steps)
+        statistics_window = [0, min(total_steps, schedule.densify_stop_step) - 1]
+        name = "ru_delayed_default_strategy"
+        post_backward_order = "before_gaussian_optimizer"
+        reset_behavior = "explicit_delayed_schedule"
+    else:
+        # Pinned gsplat 1.5.3 uses:
+        #   if step % self.reset_every == 0 & step > 0:
+        # Python parses this as a chained comparison through (0 & step), so the
+        # final 0 > 0 term is false. T=0 must preserve that actual B1 behavior.
+        refine_stop = min(total_steps, 15_000)
+        refine_steps = tuple(range(600, refine_stop, 100))
+        reset_steps = ()
+        statistics_window = [0, refine_stop - 1]
+        name = "b1_gsplat_default_strategy"
+        post_backward_order = "after_gaussian_optimizer"
+        reset_behavior = "pinned_gsplat_1.5.3_expression_produces_no_events"
+
+    pause_segments = [
+        {
+            "reset_step": step,
+            "pause_start_step": step + 1,
+            "pause_stop_step": step + mask_pause_after_reset,
+        }
+        for step in reset_steps
+        if step + 1 < total_steps and mask_pause_after_reset > 0
+    ]
+    pause_steps = sum(
+        min(total_steps - 1, item["pause_stop_step"])
+        - item["pause_start_step"]
+        + 1
+        for item in pause_segments
+    )
+    return {
+        "name": name,
+        "delayed_topology": delayed_topology,
+        "statistics_window_inclusive": statistics_window,
+        "refine_steps": list(refine_steps),
+        "split_steps": list(refine_steps),
+        "clone_steps": list(refine_steps),
+        "prune_steps": list(refine_steps),
+        "reset_steps": list(reset_steps),
+        "refine_event_count": len(refine_steps),
+        "split_event_count": len(refine_steps),
+        "clone_event_count": len(refine_steps),
+        "prune_event_count": len(refine_steps),
+        "reset_event_count": len(reset_steps),
+        "reset_behavior": reset_behavior,
+        "post_backward_order": post_backward_order,
+        "mask_pause_after_reset": mask_pause_after_reset,
+        "mask_pause_segments": pause_segments,
+        "mask_pause_step_count": pause_steps,
+    }
 
 
 class DelayedAbsGradStrategy(DefaultStrategy):  # type: ignore[misc]

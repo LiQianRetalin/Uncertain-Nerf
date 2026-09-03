@@ -20,6 +20,50 @@ REQUIRED_RESPONSIBILITY_FIELDS = {
 
 REQUIRED_CVTR_FIELDS = set(CVTRConfig.__dataclass_fields__) | {"enabled"}
 
+CAUSAL_PROFILE = "ru_causal"
+
+CAUSAL_COMMON_FIXED_FIELDS = {
+    "method": "puri_gs_ru_causal_2x2",
+    "total_steps": 30000,
+    "absgrad": True,
+    "grow_grad2d": 0.0006,
+    "ssim_lambda": 0.2,
+    "seed": 42,
+    "sh_degree": 3,
+}
+
+MASK_FIXED_FIELDS = {
+    "mask_begin_step": 500,
+    "mask_threshold": 0.25,
+    "mask_erode_kernel": 7,
+    "mask_learning_rate": 0.001,
+    "mask_hidden_dim": 16,
+    "dino_model": "dinov2_vits14_reg",
+    "dino_feature_dim": 384,
+    "dino_coarse_grid": 16,
+    "dino_fine_grid": 36,
+    "dino_coarse_input": 224,
+    "dino_fine_input": 504,
+    "residual_hist_bins": 10000,
+    "residual_hist_momentum": 0.95,
+    "residual_lower_quantile": 0.60,
+    "residual_upper_quantile": 0.80,
+    "mask_cos_weight": 0.5,
+    "mask_residual_weight": 0.5,
+    "mask_static_prior_weight": 2.0,
+    "mask_static_prior_decay": 2000,
+    "bootstrap_switch_step": 20000,
+    "mask_pause_after_reset": 300,
+}
+
+DELAYED_TOPOLOGY_FIXED_FIELDS = {
+    "densify_start_step": 10000,
+    "densify_stop_step": 20000,
+    "densify_every": 100,
+    "opacity_reset_start_step": 15000,
+    "opacity_reset_every": 3000,
+}
+
 RU_FIXED_FIELDS = {
     "method": "puri_gs_ru",
     "total_steps": 30000,
@@ -73,8 +117,18 @@ def load_experiment_config(path: str | Path) -> dict[str, Any]:
 def validate_experiment_config(config: dict[str, Any]) -> None:
     if config.get("schema_version") != 1:
         raise ValueError("schema_version must be 1")
-    if config.get("profile") not in {"b0", "b1", "a1", "b1c", "cvtr", "ru"}:
-        raise ValueError("profile must be one of b0, b1, a1, b1c, cvtr, ru")
+    if config.get("profile") not in {
+        "b0",
+        "b1",
+        "a1",
+        "b1c",
+        "cvtr",
+        "ru",
+        CAUSAL_PROFILE,
+    }:
+        raise ValueError(
+            "profile must be one of b0, b1, a1, b1c, cvtr, ru, ru_causal"
+        )
     if config.get("gsplat_version") != "1.5.3":
         raise ValueError("gsplat_version must remain pinned to 1.5.3")
     if config.get("seed") != 42:
@@ -85,7 +139,7 @@ def validate_experiment_config(config: dict[str, Any]) -> None:
         raise ValueError("training must be a mapping")
     required_training = (
         ("data_factor", "test_every")
-        if config["profile"] == "ru"
+        if config["profile"] in {"ru", CAUSAL_PROFILE}
         else ("data_factor", "test_every", "sh_degree", "ssim_lambda")
     )
     for field in required_training:
@@ -109,6 +163,69 @@ def validate_experiment_config(config: dict[str, Any]) -> None:
         if "strategy" in config or "responsibility" in config or "cvtr" in config:
             raise ValueError(
                 "PURI-GS-RU keeps its fixed fields flat and may not mix legacy methods"
+            )
+        return
+
+    if config["profile"] == CAUSAL_PROFILE:
+        common_mismatches = {
+            field: (config.get(field), expected)
+            for field, expected in CAUSAL_COMMON_FIXED_FIELDS.items()
+            if config.get(field) != expected
+        }
+        if common_mismatches:
+            raise ValueError(
+                f"Garden causal common fields differ: {common_mismatches}"
+            )
+        mask_enabled = config.get("mask_enabled")
+        delayed_topology = config.get("delayed_densification")
+        if not isinstance(mask_enabled, bool) or not isinstance(
+            delayed_topology, bool
+        ):
+            raise ValueError(
+                "ru_causal requires boolean mask_enabled and delayed_densification"
+            )
+        allowed = {
+            (False, True): "dg_only",
+            (True, False): "mask_only",
+        }
+        factors = (mask_enabled, delayed_topology)
+        expected_variant = allowed.get(factors)
+        if expected_variant is None:
+            raise ValueError(
+                "ru_causal permits only the missing (M,T) quadrants (0,1) and (1,0)"
+            )
+        if config.get("causal_variant") != expected_variant:
+            raise ValueError(
+                f"causal_variant must be {expected_variant!r} for factors {factors}"
+            )
+
+        active_groups = []
+        if mask_enabled:
+            active_groups.append(MASK_FIXED_FIELDS)
+        if delayed_topology:
+            active_groups.append(DELAYED_TOPOLOGY_FIXED_FIELDS)
+        for group in active_groups:
+            mismatches = {
+                field: (config.get(field), expected)
+                for field, expected in group.items()
+                if config.get(field) != expected
+            }
+            if mismatches:
+                raise ValueError(f"Garden causal fixed fields differ: {mismatches}")
+
+        inactive_fields = set()
+        if not mask_enabled:
+            inactive_fields.update(MASK_FIXED_FIELDS)
+        if not delayed_topology:
+            inactive_fields.update(DELAYED_TOPOLOGY_FIXED_FIELDS)
+        present_inactive = sorted(inactive_fields.intersection(config))
+        if present_inactive:
+            raise ValueError(
+                f"inactive causal subsystem fields must be absent: {present_inactive}"
+            )
+        if "strategy" in config or "responsibility" in config or "cvtr" in config:
+            raise ValueError(
+                "ru_causal keeps fixed factors flat and may not mix legacy methods"
             )
         return
 
@@ -210,6 +327,22 @@ def trainer_method_args(config: dict[str, Any]) -> list[str]:
             args.extend([f"--{field}", str(config[field])])
         return args
 
+    if config["profile"] == CAUSAL_PROFILE:
+        args = [
+            "--strategy.absgrad",
+            "--strategy.grow_grad2d",
+            str(config["grow_grad2d"]),
+        ]
+        if config["mask_enabled"]:
+            args.append("--puri_gs_mask_enabled")
+            for field in MASK_FIXED_FIELDS:
+                args.extend([f"--{field}", str(config[field])])
+        if config["delayed_densification"]:
+            args.append("--puri_gs_delayed_topology_enabled")
+            for field in DELAYED_TOPOLOGY_FIXED_FIELDS:
+                args.extend([f"--{field}", str(config[field])])
+        return args
+
     strategy = config["strategy"]
     responsibility = config["responsibility"]
     args = ["--strategy.grow_grad2d", str(strategy["grow_grad2d"])]
@@ -241,3 +374,16 @@ def trainer_method_args(config: dict[str, Any]) -> list[str]:
             ]
         )
     return args
+
+
+def causal_factors(config: dict[str, Any]) -> tuple[bool, bool] | None:
+    """Return semantic-mask/topology factors for the four audited profiles."""
+
+    profile = config.get("profile")
+    if profile == "b1":
+        return False, False
+    if profile == "ru":
+        return True, True
+    if profile == CAUSAL_PROFILE:
+        return bool(config["mask_enabled"]), bool(config["delayed_densification"])
+    return None

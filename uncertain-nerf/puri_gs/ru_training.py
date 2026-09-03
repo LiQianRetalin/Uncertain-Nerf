@@ -14,7 +14,11 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor
 
-from puri_gs.delayed_absgrad import DelayedAbsGradSchedule
+from puri_gs.delayed_absgrad import (
+    DelayedAbsGradSchedule,
+    mask_update_paused_after_resets,
+    topology_event_summary,
+)
 from puri_gs.dino_features import (
     COARSE_GRID,
     FEATURE_DIM,
@@ -71,6 +75,7 @@ class PURIGSRUTraining:
         parser: Any,
         trainset: Any,
         device: str | torch.device,
+        delayed_topology_enabled: bool = True,
     ) -> None:
         self.cfg = cfg
         self.parser = parser
@@ -113,14 +118,26 @@ class PURIGSRUTraining:
                 upper_quantile=cfg.residual_upper_quantile,
             )
         )
-        self.schedule = DelayedAbsGradSchedule(
-            densify_start_step=cfg.densify_start_step,
-            densify_stop_step=cfg.densify_stop_step,
-            densify_every=cfg.densify_every,
-            opacity_reset_start_step=cfg.opacity_reset_start_step,
-            opacity_reset_every=cfg.opacity_reset_every,
-            mask_pause_after_reset=cfg.mask_pause_after_reset,
+        self.delayed_topology_enabled = delayed_topology_enabled
+        self.schedule = (
+            DelayedAbsGradSchedule(
+                densify_start_step=cfg.densify_start_step,
+                densify_stop_step=cfg.densify_stop_step,
+                densify_every=cfg.densify_every,
+                opacity_reset_start_step=cfg.opacity_reset_start_step,
+                opacity_reset_every=cfg.opacity_reset_every,
+                mask_pause_after_reset=cfg.mask_pause_after_reset,
+            )
+            if delayed_topology_enabled
+            else None
         )
+        self.topology_events = topology_event_summary(
+            delayed_topology=delayed_topology_enabled,
+            total_steps=cfg.max_steps,
+            mask_pause_after_reset=cfg.mask_pause_after_reset,
+            delayed_schedule=self.schedule,
+        )
+        self.reset_steps = tuple(self.topology_events["reset_steps"])
         self.dino_render_seconds = 0.0
         self.dino_render_calls = 0
         self.mask_update_count = 0
@@ -215,7 +232,9 @@ class PURIGSRUTraining:
             predicted_grid=predicted_grid,
             safe_mask=safe_mask,
             probability=probability.detach(),
-            paused=self.schedule.mask_update_paused(step),
+            paused=mask_update_paused_after_resets(
+                step, self.reset_steps, self.cfg.mask_pause_after_reset
+            ),
         )
         self._last_state = state
         return state
@@ -341,12 +360,17 @@ class PURIGSRUTraining:
             self.aux_dir / f"residual_hist_step{step}.pt",
         )
         schedule = {
+            "semantic_mask_enabled": True,
+            "delayed_topology_enabled": self.delayed_topology_enabled,
             "bootstrap_switch_step": self.cfg.bootstrap_switch_step,
-            **asdict(self.schedule),
             "mask_begin_step": self.cfg.mask_begin_step,
             "mask_threshold": self.cfg.mask_threshold,
             "mask_erode_kernel": self.cfg.mask_erode_kernel,
+            "mask_pause_after_reset": self.cfg.mask_pause_after_reset,
+            "topology_events": self.topology_events,
         }
+        if self.schedule is not None:
+            schedule.update(asdict(self.schedule))
         (self.aux_dir / "training_schedule.json").write_text(
             json.dumps(schedule, indent=2) + "\n", encoding="utf-8"
         )

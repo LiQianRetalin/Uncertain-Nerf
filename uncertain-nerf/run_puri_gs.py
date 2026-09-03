@@ -16,7 +16,13 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from puri_gs.config import load_experiment_config, trainer_method_args
+from puri_gs.config import (
+    CAUSAL_PROFILE,
+    causal_factors,
+    load_experiment_config,
+    trainer_method_args,
+)
+from puri_gs.delayed_absgrad import DelayedAbsGradSchedule, topology_event_summary
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -24,6 +30,9 @@ REPOSITORY_ROOT = PROJECT_ROOT.parent
 PATCH_PATH = PROJECT_ROOT / "patches" / "gsplat_v1.5.3_robot_screen.patch"
 CVTR_PATCH_PATH = PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_cvtr.patch"
 RU_PATCH_PATH = PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_ru.patch"
+CAUSAL_PATCH_PATH = (
+    PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_garden_causal.patch"
+)
 EFFICIENCY_AUDIT_PATCH_PATH = (
     PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_efficiency_audit.patch"
 )
@@ -64,11 +73,26 @@ def _verify_gsplat(
     *,
     require_cvtr: bool = False,
     require_ru: bool = False,
+    require_causal: bool = False,
     require_efficiency_audit: bool = False,
     require_ontogo: bool = False,
 ) -> None:
     if _git("rev-parse", "HEAD", cwd=gsplat_dir) != EXPECTED_GSPLAT_COMMIT:
         raise RuntimeError("GSPLAT_DIR is not the pinned v1.5.3 checkout")
+    def verify_causal_stack() -> None:
+        _verify_applied_patch(gsplat_dir, CAUSAL_PATCH_PATH)
+        trainer_source = (gsplat_dir / "examples" / "simple_trainer.py").read_text(
+            encoding="utf-8"
+        )
+        required_markers = (
+            "puri_gs_ru_enabled",
+            "puri_gs_mask_enabled",
+            "puri_gs_delayed_topology_enabled",
+            "PURI-GS-FACTORS",
+        )
+        if any(marker not in trainer_source for marker in required_markers):
+            raise RuntimeError("Garden causal trainer patch stack is incomplete")
+
     def verify_efficiency_stack() -> None:
         # The audit patch is stacked on the RU superset and changes some of the
         # same evaluation hunks.  Once stacked, reverse-applying the older RU
@@ -113,6 +137,9 @@ def _verify_gsplat(
         if "_is_png_file" not in dataset_source:
             raise RuntimeError("On-the-go dataset patch stack is incomplete")
         return
+    if require_causal:
+        verify_causal_stack()
+        return
     if require_efficiency_audit:
         verify_efficiency_stack()
         return
@@ -125,7 +152,10 @@ def _verify_gsplat(
     if require_cvtr:
         _verify_applied_patch(gsplat_dir, CVTR_PATCH_PATH)
     elif require_ru:
-        _verify_applied_patch(gsplat_dir, RU_PATCH_PATH)
+        try:
+            verify_causal_stack()
+        except RuntimeError:
+            _verify_applied_patch(gsplat_dir, RU_PATCH_PATH)
         trainer_source = (gsplat_dir / "examples" / "simple_trainer.py").read_text(
             encoding="utf-8"
         )
@@ -138,9 +168,12 @@ def _verify_gsplat(
         try:
             _verify_applied_patch(gsplat_dir, PATCH_PATH)
         except RuntimeError:
-            # The RU patch is a strict, default-disabled superset of the base
-            # trainer. It is therefore also the source used for matched B1 runs.
-            _verify_applied_patch(gsplat_dir, RU_PATCH_PATH)
+            try:
+                verify_causal_stack()
+            except RuntimeError:
+                # The RU patch is a strict, default-disabled superset of the base
+                # trainer. It is therefore also the source used for matched B1 runs.
+                _verify_applied_patch(gsplat_dir, RU_PATCH_PATH)
 
 
 def _verify_dataset(
@@ -275,6 +308,43 @@ def _apply_runtime_overrides(
     return effective
 
 
+def _causal_contract(config: dict[str, Any]) -> dict[str, Any] | None:
+    factors = causal_factors(config)
+    if factors is None:
+        return None
+    mask_enabled, delayed_topology = factors
+    schedule = None
+    if delayed_topology:
+        schedule = DelayedAbsGradSchedule(
+            densify_start_step=config.get("densify_start_step", 10_000),
+            densify_stop_step=config.get("densify_stop_step", 20_000),
+            densify_every=config.get("densify_every", 100),
+            opacity_reset_start_step=config.get("opacity_reset_start_step", 15_000),
+            opacity_reset_every=config.get("opacity_reset_every", 3_000),
+            mask_pause_after_reset=config.get("mask_pause_after_reset", 300),
+        )
+    pause = config.get("mask_pause_after_reset", 0) if mask_enabled else 0
+    topology = topology_event_summary(
+        delayed_topology=delayed_topology,
+        total_steps=config["total_steps"],
+        mask_pause_after_reset=pause,
+        delayed_schedule=schedule,
+    )
+    return {
+        "protocol": "puri-gs-ru-garden-causal-2x2-v1",
+        "semantic_mask_enabled": mask_enabled,
+        "delayed_topology_enabled": delayed_topology,
+        "M": int(mask_enabled),
+        "T": int(delayed_topology),
+        "topology_events": topology,
+        "expected_mask_update_count": (
+            config["total_steps"] - topology["mask_pause_step_count"]
+            if mask_enabled
+            else 0
+        ),
+    }
+
+
 def _build_command(
     args: argparse.Namespace,
     config: dict[str, Any],
@@ -336,14 +406,16 @@ def _build_command(
             ]
         )
         command.extend(trainer_method_args(config))
-        if config["profile"] == "ru":
+        factors = causal_factors(config)
+        uses_mask = factors is not None and factors[0]
+        if uses_mask:
             for value, flag in (
                 (args.dino_repo_dir, "--dino_repo_dir"),
                 (args.dino_weight_path, "--dino_weight_path"),
                 (args.feature_cache_dir, "--feature_cache_dir"),
             ):
                 if value is None:
-                    raise ValueError(f"PURI-GS-RU training requires {flag}")
+                    raise ValueError(f"semantic-mask training requires {flag}")
                 command.extend([flag, str(value.resolve())])
         if args.resume_checkpoint is not None:
             command.extend(["--resume_ckpt", str(args.resume_checkpoint.resolve())])
@@ -429,17 +501,21 @@ def main() -> int:
     )
     is_continuation = config["profile"] in {"b1c", "cvtr"}
     is_ru = config["profile"] == "ru"
+    is_causal = config["profile"] == CAUSAL_PROFILE
+    factors = causal_factors(config)
+    uses_mask = factors is not None and factors[0]
     _verify_gsplat(
         gsplat_dir,
         require_cvtr=is_continuation,
         require_ru=is_ru,
+        require_causal=is_causal,
         require_efficiency_audit=bool(args.eval_warmup_renders),
         require_ontogo=args.dataset_format == "ontogo-patio-high",
     )
-    if is_ru and args.max_steps is not None:
+    if (is_ru or is_causal) and args.max_steps is not None:
         if args.max_steps != config["total_steps"] and not 1 <= args.max_steps <= 100:
             raise ValueError(
-                "PURI-GS-RU allows only the fixed 30000-step run or a <=100-step smoke"
+                "PURI-GS-RU profiles allow only the fixed 30000-step run or a <=100-step smoke"
             )
     data_factor = args.data_factor or config["training"]["data_factor"]
     _verify_dataset(
@@ -467,20 +543,27 @@ def main() -> int:
             raise RuntimeError(
                 f"CVTR mask manifest does not exist: {args.cvtr_mask_dir / 'manifest.json'}"
             )
-    if is_ru and args.checkpoint is None:
+    if uses_mask and args.checkpoint is None:
         for path, label, expected in (
             (args.dino_repo_dir, "DINOv2 repository", "hubconf.py"),
             (args.dino_weight_path, "DINOv2 weight", None),
             (args.feature_cache_dir, "feature cache", "manifest.json"),
         ):
             if path is None:
-                raise ValueError(f"{label} path is required for PURI-GS-RU training")
+                raise ValueError(f"{label} path is required for semantic-mask training")
             resolved = path.expanduser().resolve()
             required = resolved / expected if expected is not None else resolved
             if not required.exists():
                 raise RuntimeError(f"{label} is missing: {required}")
     command = _build_command(args, config, gsplat_dir, data_dir, result_dir)
     printable = f"CUDA_VISIBLE_DEVICES={args.gpu} {shlex.join(command)}"
+    contract = _causal_contract(config)
+    if contract is not None:
+        print(
+            "PURI-GS-FACTORS "
+            f"M={contract['M']} T={contract['T']} "
+            f"resets={contract['topology_events']['reset_steps']}"
+        )
     print(printable)
     if args.dry_run:
         return 0
@@ -505,6 +588,10 @@ def main() -> int:
         json.dumps(_runtime_environment(gsplat_dir, config), indent=2) + "\n",
         encoding="utf-8",
     )
+    if is_causal and contract is not None:
+        (result_dir / "causal_contract.json").write_text(
+            json.dumps(contract, indent=2) + "\n", encoding="utf-8"
+        )
     if args.dataset_format == "ontogo-patio-high":
         from puri_gs.ontogo import PROTOCOL_FILE, sha256_file
 
