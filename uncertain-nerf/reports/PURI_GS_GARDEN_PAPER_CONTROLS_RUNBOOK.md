@@ -148,3 +148,41 @@ PNG/tmp、发生冲突或push失败。不要清理、覆盖或重置用户改动
 5. 最终报告完成后停止。小报告经复核才进入Git里程碑2，不提交大文件，服务器暂不再次pull。
 
 本手册不提供尚未获前一步证据支持的正式训练命令。
+
+## 阶段 D 首次 smoke 失败与序列化修复
+
+阶段 B 的代码已由用户提交至 `e0915cefdd7cee71092388aa5078206b8964817c`，
+额外包含原有的小型归因分析报告；该提交已复核，无需移除这份报告。
+阶段 C 服务器审计通过：dev/commit、14个文件指纹、L20 GPU 6、固定环境、
+161/24划分、全部161张coarse/fine缓存以及两个正式结果目录不存在。
+
+用户随后上传了 SHA256 为
+`c8a8e7510ab35cb2ac8e495cf1d98d87de69294a343b7513e4638468b94bfbdd`
+的临时阶段 D 脚本。增量补丁和 Align dry-run 通过；DINO 成功加载且
+trainable=0，但 `Runner.train()` 在执行第0步之前的 `yaml.dump(vars(cfg), f)`
+失败，错误为 `TypeError: cannot pickle '_csv.writer' object`。
+因此 Align 100步、fine组件检查、两组独立评测及TAR短跑均不能视为通过。
+
+原因：`cfg.strategy.event_recorder` 是绑定到 `PaperControlRecorder` 的方法，
+PyYAML 序列化策略时递归访问其持有的CSV writer。
+修复在 `DelayedAbsGradStrategy.__getstate__` 中返回配置状态的浅拷贝，
+只将拷贝中的 `event_recorder` 设为 None。运行中的回调不变，策略参数和调度不变。
+不修改gsplat补丁、CUDA、损失、正式配置或checkpoint格式。
+
+新增回归测试先在未修复代码上复现 Align/TAR 两例同样错误，再验证
+RU/Align/TAR 的 YAML 写出、序列化往返、内存回调保留和后续CSV写入。
+两组完整30k调度模拟也在绑定真实CSV回调并写出YAML后执行。
+本地仅将系统已有PyYAML 5.4.1复制到被Git忽略的临时测试目录供CPU测试使用，
+没有安装或升级训练环境依赖。完整测试结果见机器审计JSON的 `serialization_fix`。
+
+当前只提交以下4个修复文件，建议备注：`修复论文对照训练配置序列化失败`。
+
+1. `puri_gs/delayed_absgrad.py`
+2. `tests/test_paper_controls.py`
+3. `reports/PURI_GS_GARDEN_PAPER_CONTROLS_RUNBOOK.md`
+4. `reports/phase_r_garden_paper_controls_code_audit.json`
+
+提交并push后先复核新commit，再提供一次服务器pull与更新的smoke命令。
+旧临时脚本锁定e0915cef及其输出目录，不能直接重跑。
+保留 `logs-puri/phase_r_paper_controls-smoke-e0915cef/` 失败证据，
+恢复时使用新目录并锁定修复commit；不得删除旧目录或手改服务器受跟踪代码。

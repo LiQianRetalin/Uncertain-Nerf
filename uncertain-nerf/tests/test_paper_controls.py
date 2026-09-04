@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 import torch
+import yaml
 
 from puri_gs.config import load_experiment_config, parse_refine_windows, validate_experiment_config
 from puri_gs.delayed_absgrad import DelayedAbsGradSchedule, delayed_strategy_from_default
@@ -20,6 +21,38 @@ from run_puri_gs import PROJECT_ROOT, _build_command
 
 def config(name):
     return load_experiment_config(PROJECT_ROOT / "configs" / f"puri_gs_{name}_full30k.yaml")
+
+
+@pytest.mark.parametrize("name", ["ru", "ru_align", "ru_tar"])
+def test_trainer_yaml_dump_excludes_live_recorder_without_detaching_it(tmp_path, name):
+    from gsplat.strategy import DefaultStrategy
+
+    cfg = config(name)
+    strategy = delayed_strategy_from_default(DefaultStrategy(), schedule_from_config(cfg))
+    recorder = None
+    if name != "ru":
+        recorder = PaperControlRecorder(tmp_path, cfg, 30000)
+        strategy.event_recorder = recorder.record_topology
+    original = dict(vars(strategy))
+    try:
+        # Same operation as Runner.train(), with the actual bound CSV callback.
+        with (tmp_path / "cfg.yml").open("w") as stream:
+            yaml.dump(vars(SimpleNamespace(strategy=strategy, max_steps=100)), stream)
+        dumped = (tmp_path / "cfg.yml").read_text()
+        assert "PaperControlRecorder" not in dumped and "record_topology" not in dumped
+        assert vars(strategy) == original
+        # Only deserialize YAML produced by this test, never external content.
+        restored = yaml.load(dumped, Loader=yaml.UnsafeLoader)["strategy"]
+        assert vars(restored) == {**original, "event_recorder": None}
+        if recorder is not None:
+            strategy.event_recorder(step=10000, gaussian_count_before=10,
+                                    clone_count=1, split_count=2, prune_count=1,
+                                    gaussian_count_after=12, reset_event=0)
+            assert recorder.topology_steps == [10000]
+    finally:
+        if recorder is not None:
+            for stream in recorder.streams:
+                stream.close()
 
 
 @pytest.mark.parametrize("name,count,switch,stop", [
@@ -123,6 +156,7 @@ def test_all_iterations_actual_strategy_event_log_and_raster_contract(tmp_path, 
     strategy = delayed_strategy_from_default(DefaultStrategy(), schedule_from_config(cfg))
     recorder = PaperControlRecorder(tmp_path, cfg, 30000)
     strategy.event_recorder = recorder.record_topology
+    yaml.dump(vars(SimpleNamespace(strategy=strategy)))
     visited, resets = [], []
     current = [0]
     def update(*args, **kwargs):

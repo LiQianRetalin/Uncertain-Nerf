@@ -188,6 +188,11 @@ class DelayedAbsGradStrategy(DefaultStrategy):  # type: ignore[misc]
         self.schedule = schedule
         self.event_recorder = None
 
+    def __getstate__(self) -> dict[str, Any]:
+        # Runner dumps cfg.strategy to YAML before training. The live callback
+        # owns CSV writers; retain it at runtime, but never serialize its owner.
+        return {**vars(self), "event_recorder": None}
+
     def step_post_backward(
         self,
         params,

@@ -694,7 +694,7 @@
   "test_names_sha256": "37de270739918344ffcddb55039ee15c4d65246a237b505910d2023de9269454",
   "audit_base_commit": "6e54008e244722b977a9a2b2c54e10207413b991",
   "branch": "dev",
-  "stage": "B: local code milestone; CUDA smoke and experiments pending",
+  "stage": "D: first smoke failed before step 0; serialization fix CPU-verified; CUDA rerun pending",
   "git_milestone_1_ready": true,
   "modified_files": [
     "puri_gs/config.py",
@@ -739,12 +739,12 @@
     "actual_trainer_config_parsed_with_tyro_0_8_8": true,
     "both_launcher_dry_runs": true,
     "git_diff_check": true,
-    "cuda_smoke": "NOT_RUN: reserved for pinned server L20",
+    "cuda_smoke": "FAILED_BEFORE_STEP_0 on e0915cef: cfg YAML reached a live CSV writer; fixed locally, CUDA rerun pending",
     "local_dry_run_asset_limit": "Existing repo/cache test placeholders validate arguments only, not CUDA or actual local cache"
   },
   "source_file_sha256": {
     "puri_gs/config.py": "c23291ef9b8ebd0b81d3a8b2fbb2c7b35e8df039cd2fdc3a1f55bfb3a7d5dc69",
-    "puri_gs/delayed_absgrad.py": "e2c5b77b053859bb1a812d249bc28566885665ad7e77465192410189674b525e",
+    "puri_gs/delayed_absgrad.py": "94dbaa63cdd6de1cb7b749838be9e866e0143bac4450392bf6967fe9a689b11e",
     "puri_gs/ru_training.py": "a652f13fecc14222657e88818fc8cd381e34eb508dcec2bec68422eca62355d3",
     "run_puri_gs.py": "344cd94c5254772c1003198e0909f799ca5fbdf09084e5afd5ae7d9e7ddd61e6",
     "configs/puri_gs_ru_align_full30k.yaml": "3c9ded8595d4127e786edfca036263571894e539e04a386cf787423a359efcea",
@@ -752,11 +752,11 @@
     "patches/gsplat_v1.5.3_puri_gs_paper_controls.patch": "80122039510622c2f57a3844f6abad0223c93509db20a942e930c2bcf7832ab1",
     "puri_gs/paper_controls.py": "b88054d521006e8b5c938090514afe8d07403f8a5c43e3a7c53aa7ccd9d595d5",
     "scripts/prepare_puri_gs_paper_controls.sh": "8d7638173d38fc1340f96198de1c0ffb7b6f5a3b47b37bcf2c643dbdcb18627a",
-    "tests/test_paper_controls.py": "b797134ffe5ad4eb97c9b60fde4ddb7fceccd543f281ba6681f1d9ae993c64cf",
+    "tests/test_paper_controls.py": "58e99ebab49e51a96d3a4092ba9566b790693b9f124ab977136f19bb07654645",
     "tests/test_paper_control_summary.py": "ef902e60878eab997ada2e0b4f2d1247f49cf285d4b6824de85c663a2f68dfdd",
     "tools/audit_puri_gs_paper_controls.py": "c90d12606c62b2a7b5bd76f62c70c9c342919dff9feacff9fc13db599b409831",
     "tools/summarize_puri_gs_garden_paper_controls.py": "64151fdd3296e9304a8917051c11c8168e744937961b1d50119d2ca1e2f2d33e",
-    "reports/PURI_GS_GARDEN_PAPER_CONTROLS_RUNBOOK.md": "67f3f9992a09a85f0967b8ecc4e0b12f34f2e31a38f0bd0978e93ab098fde998"
+    "reports/PURI_GS_GARDEN_PAPER_CONTROLS_RUNBOOK.md": "4e8ce3afb95c884edb513b3ba2e0f89b1839f1712dcfcf24cc8956f53ad9b106"
   },
   "remote_readonly_audit": {
     "source": "user supplied complete terminal output plus original Markdown/JSON",
@@ -773,5 +773,44 @@
   "excluded_user_file": "reports/GARDEN_2X2_CAUSAL_ATTRIBUTION_ANALYSIS_FOR_GPT.md",
   "adaptive_topology_implemented": false,
   "phase_U_implemented": false,
-  "formal_training_started": false
+  "formal_training_started": false,
+  "serialization_fix": {
+    "base_commit": "e0915cefdd7cee71092388aa5078206b8964817c",
+    "status": "LOCAL_CPU_VERIFIED_CUDA_RERUN_PENDING",
+    "failure": "TypeError: cannot pickle '_csv.writer' object",
+    "failure_location": "Runner.train: yaml.dump(vars(cfg), f), before the first training iteration",
+    "cause": "strategy.event_recorder bound method reaches PaperControlRecorder CSV writers",
+    "fix": "Serialize a shallow strategy-state copy with event_recorder=None; preserve the live callback and every other field",
+    "pre_fix_regression": {
+      "ru_passed": true,
+      "ru_align_same_error": true,
+      "ru_tar_same_error": true
+    },
+    "focused_pytest": {
+      "passed": 18,
+      "seconds": 45.74
+    },
+    "full_pytest": {
+      "passed": 236,
+      "skipped": 2,
+      "seconds": 74.55
+    },
+    "yaml_version_used_in_cpu_regression": "5.4.1 (existing system package copied to ignored local test directory)",
+    "training_environment_dependencies_changed": false,
+    "yaml_roundtrip_preserves_strategy_parameters": true,
+    "live_callback_and_csv_write_preserved_after_dump": true,
+    "full_100_120_event_simulations_after_yaml_dump": true,
+    "config_cli_schedules_equal_base_audit": true,
+    "protected_files_equal_base_commit": true,
+    "python_ast_pass": true,
+    "gsplat_patch_changed": false,
+    "changed_files": [
+      "puri_gs/delayed_absgrad.py",
+      "tests/test_paper_controls.py",
+      "reports/PURI_GS_GARDEN_PAPER_CONTROLS_RUNBOOK.md",
+      "reports/phase_r_garden_paper_controls_code_audit.json"
+    ],
+    "preserve_failed_output": "logs-puri/phase_r_paper_controls-smoke-e0915cef",
+    "recovery": "Review the repair commit after push, pull once, then use a new smoke directory and a script pinned to that commit"
+  }
 }
