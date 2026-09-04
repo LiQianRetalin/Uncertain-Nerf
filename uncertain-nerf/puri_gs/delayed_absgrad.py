@@ -7,6 +7,8 @@ from typing import Any
 
 import torch
 
+from puri_gs.config import parse_refine_windows
+
 try:  # Keep schedule-only CPU tests usable without a gsplat installation.
     from gsplat.strategy import DefaultStrategy
     from gsplat.strategy.ops import reset_opa
@@ -23,6 +25,7 @@ class DelayedAbsGradSchedule:
     opacity_reset_start_step: int = 15_000
     opacity_reset_every: int = 3_000
     mask_pause_after_reset: int = 300
+    refine_windows: tuple[tuple[int, int, int], ...] = ()
 
     def __post_init__(self) -> None:
         if not 0 <= self.densify_start_step < self.densify_stop_step:
@@ -33,11 +36,27 @@ class DelayedAbsGradSchedule:
             raise ValueError("opacity reset must start inside the densification interval")
         if self.mask_pause_after_reset < 0:
             raise ValueError("mask pause must be non-negative")
+        if self.refine_windows:
+            parse_refine_windows([
+                dict(zip(("start", "stop", "every"), window))
+                for window in self.refine_windows
+            ])
+
+    @property
+    def statistics_stop_step(self) -> int:
+        return self.refine_windows[-1][1] if self.refine_windows else self.densify_stop_step
 
     def densification_allowed(self, step: int) -> bool:
+        if self.refine_windows:
+            return any(start <= step < stop for start, stop, _ in self.refine_windows)
         return self.densify_start_step <= step < self.densify_stop_step
 
     def should_refine(self, step: int) -> bool:
+        if self.refine_windows:
+            return any(
+                start <= step < stop and (step - start) % every == 0
+                for start, stop, every in self.refine_windows
+            )
         return self.densification_allowed(step) and step % self.densify_every == 0
 
     def should_reset(self, step: int) -> bool:
@@ -54,10 +73,10 @@ class DelayedAbsGradSchedule:
         )
 
     def refine_steps(self, total_steps: int) -> tuple[int, ...]:
-        stop = min(total_steps, self.densify_stop_step)
+        stop = min(total_steps, self.statistics_stop_step)
         return tuple(
             step
-            for step in range(self.densify_start_step, stop)
+            for step in range(0 if self.refine_windows else self.densify_start_step, stop)
             if self.should_refine(step)
         )
 
@@ -98,7 +117,7 @@ def topology_event_summary(
         schedule = delayed_schedule or DelayedAbsGradSchedule()
         refine_steps = schedule.refine_steps(total_steps)
         reset_steps = schedule.reset_steps(total_steps)
-        statistics_window = [0, min(total_steps, schedule.densify_stop_step) - 1]
+        statistics_window = [0, min(total_steps, schedule.statistics_stop_step) - 1]
         name = "ru_delayed_default_strategy"
         post_backward_order = "before_gaussian_optimizer"
         reset_behavior = "explicit_delayed_schedule"
@@ -160,13 +179,14 @@ class DelayedAbsGradStrategy(DefaultStrategy):  # type: ignore[misc]
             raise ImportError("gsplat is required to construct DelayedAbsGradStrategy")
         super().__init__(
             refine_start_iter=schedule.densify_start_step - 1,
-            refine_stop_iter=schedule.densify_stop_step,
+            refine_stop_iter=schedule.statistics_stop_step,
             refine_every=schedule.densify_every,
             reset_every=schedule.opacity_reset_every,
             absgrad=True,
             **kwargs,
         )
         self.schedule = schedule
+        self.event_recorder = None
 
     def step_post_backward(
         self,
@@ -177,13 +197,14 @@ class DelayedAbsGradStrategy(DefaultStrategy):  # type: ignore[misc]
         info,
         packed: bool = False,
     ) -> None:
-        if step >= self.schedule.densify_stop_step:
+        if step >= self.schedule.statistics_stop_step:
             return
 
         # Statistics are accumulated from step zero even though topology is frozen.
         self._update_state(params, state, info, packed=packed)
 
         if self.schedule.should_refine(step):
+            count_before = len(params["means"])
             n_duplicate, n_split = self._grow_gs(params, optimizers, state, step)
             n_prune = self._prune_gs(params, optimizers, state, step)
             if self.verbose:
@@ -197,6 +218,7 @@ class DelayedAbsGradStrategy(DefaultStrategy):  # type: ignore[misc]
                 state["radii"].zero_()
             torch.cuda.empty_cache()
 
+        reset_applied = False
         if self.schedule.should_reset(step):
             reset_opa(
                 params=params,
@@ -204,8 +226,17 @@ class DelayedAbsGradStrategy(DefaultStrategy):  # type: ignore[misc]
                 state=state,
                 value=self.prune_opa * 2.0,
             )
+            reset_applied = True
             if self.verbose:
                 print(f"Step {step}: opacity reset applied.")
+
+        if self.event_recorder is not None and self.schedule.should_refine(step):
+            self.event_recorder(
+                step=step, gaussian_count_before=count_before,
+                clone_count=n_duplicate, split_count=n_split, prune_count=n_prune,
+                gaussian_count_after=len(params["means"]),
+                reset_event=int(reset_applied),
+            )
 
 
 def delayed_strategy_from_default(

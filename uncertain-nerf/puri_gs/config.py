@@ -22,6 +22,35 @@ REQUIRED_CVTR_FIELDS = set(CVTRConfig.__dataclass_fields__) | {"enabled"}
 
 CAUSAL_PROFILE = "ru_causal"
 
+PAPER_CONTROLS = ("ru_align", "ru_tar")
+TAR_REFINE_WINDOWS = [
+    {"start": 10000, "stop": 20000, "every": 100},
+    {"start": 20000, "stop": 24000, "every": 200},
+]
+
+
+def parse_refine_windows(value: Any, total_steps: int = 30000) -> tuple:
+    """Resolve optional ordered, non-overlapping [start, stop) windows."""
+    if value is None:
+        return ()
+    if isinstance(value, str):
+        value = json.loads(value)
+    if not isinstance(value, list) or not value:
+        raise ValueError("refine_windows must be a non-empty list")
+    windows = []
+    for window in value:
+        if not isinstance(window, dict) or set(window) != {"start", "stop", "every"}:
+            raise ValueError("refine window requires start, stop and every")
+        start, stop, every = (window[key] for key in ("start", "stop", "every"))
+        if any(type(v) is not int for v in (start, stop, every)):
+            raise ValueError("refine window values must be integers")
+        if not 0 <= start < stop <= total_steps or every <= 0:
+            raise ValueError("invalid refine window or window beyond total_steps")
+        if windows and start < windows[-1][1]:
+            raise ValueError("refine windows overlap or are out of order")
+        windows.append((start, stop, every))
+    return tuple(windows)
+
 CAUSAL_COMMON_FIXED_FIELDS = {
     "method": "puri_gs_ru_causal_2x2",
     "total_steps": 30000,
@@ -115,6 +144,25 @@ def load_experiment_config(path: str | Path) -> dict[str, Any]:
 
 
 def validate_experiment_config(config: dict[str, Any]) -> None:
+    control = config.get("paper_control")
+    if "paper_control" in config and control not in PAPER_CONTROLS:
+        raise ValueError("paper_control must be ru_align or ru_tar")
+    if control is not None:
+        expected = {
+            **RU_FIXED_FIELDS,
+            "schema_version": 1, "profile": "ru", "base_profile": "b1",
+            "gsplat_version": "1.5.3", "delayed_densification": True,
+            "training": {"data_factor": 4, "test_every": 8},
+            "bootstrap_switch_step": 10000, "paper_control": control,
+        }
+        if control == "ru_tar":
+            parse_refine_windows(config.get("refine_windows"), config.get("total_steps", 0))
+            expected["refine_windows"] = TAR_REFINE_WINDOWS
+        if config != expected:
+            raise ValueError("paper control differs from its fixed single-factor configuration")
+        return
+    if "refine_windows" in config:
+        raise ValueError("refine_windows is disabled for legacy profiles")
     if config.get("schema_version") != 1:
         raise ValueError("schema_version must be 1")
     if config.get("profile") not in {
@@ -325,6 +373,10 @@ def trainer_method_args(config: dict[str, Any]) -> list[str]:
         )
         for field in fields:
             args.extend([f"--{field}", str(config[field])])
+        if config.get("paper_control"):
+            args.extend(["--puri_gs_paper_control", config["paper_control"]])
+            if "refine_windows" in config:
+                args.extend(["--refine_windows", json.dumps(config["refine_windows"])])
         return args
 
     if config["profile"] == CAUSAL_PROFILE:

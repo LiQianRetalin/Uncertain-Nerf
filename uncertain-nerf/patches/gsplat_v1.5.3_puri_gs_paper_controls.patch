@@ -1,0 +1,61 @@
+diff --git a/examples/simple_trainer.py b/examples/simple_trainer.py
+--- a/examples/simple_trainer.py
++++ b/examples/simple_trainer.py
+@@ -169,6 +169,9 @@
+     opacity_reset_start_step: int = 15_000
+     opacity_reset_every: int = 3_000
+     mask_pause_after_reset: int = 300
++    # Fixed paper controls; default-disabled for every historical profile.
++    puri_gs_paper_control: Optional[str] = None
++    refine_windows: Optional[str] = None
+ 
+     # Near plane clipping distance
+     near_plane: float = 0.01
+@@ -499,6 +502,8 @@
+                 delayed_strategy_from_default,
+             )
+ 
++            from puri_gs.config import parse_refine_windows
++
+             ru_schedule = DelayedAbsGradSchedule(
+                 densify_start_step=cfg.densify_start_step,
+                 densify_stop_step=cfg.densify_stop_step,
+@@ -506,6 +511,7 @@
+                 opacity_reset_start_step=cfg.opacity_reset_start_step,
+                 opacity_reset_every=cfg.opacity_reset_every,
+                 mask_pause_after_reset=cfg.mask_pause_after_reset,
++                refine_windows=parse_refine_windows(cfg.refine_windows),
+             )
+             self.cfg.strategy = delayed_strategy_from_default(
+                 self.cfg.strategy, ru_schedule
+@@ -535,6 +541,11 @@
+                     device=self.device,
+                     delayed_topology_enabled=self.puri_gs_delayed_topology_enabled,
+                 )
++
++        if cfg.puri_gs_paper_control:
++            if self.ru_training is None or not self.puri_gs_delayed_topology_enabled:
++                raise ValueError("paper controls require both RU subsystems")
++            self.cfg.strategy.event_recorder = self.ru_training.paper_recorder.record_topology
+ 
+         # Compression Strategy
+         self.compression_method = None
+@@ -640,6 +651,8 @@
+         camera_model: Optional[Literal["pinhole", "ortho", "fisheye"]] = None,
+         **kwargs,
+     ) -> Tuple[Tensor, Tensor, Dict]:
++        if self.ru_training is not None and self.ru_training.paper_recorder is not None:
++            self.ru_training.paper_recorder.note_rasterization(width, height)
+         means = self.splats["means"]  # [N, 3]
+         # quats = F.normalize(self.splats["quats"], dim=-1)  # [N, 4]
+         # rasterization does normalization internally
+@@ -781,6 +794,9 @@
+ 
+             if cfg.pose_opt:
+                 camtoworlds = self.pose_adjust(camtoworlds, image_ids)
++
++            if self.ru_training is not None and self.ru_training.paper_recorder is not None:
++                self.ru_training.paper_recorder.begin_iteration(step, width, height)
+ 
+             # sh schedule
+             sh_degree_to_use = min(step // cfg.sh_degree_interval, cfg.sh_degree)

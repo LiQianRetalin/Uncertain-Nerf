@@ -20,6 +20,7 @@ from puri_gs.config import (
     CAUSAL_PROFILE,
     causal_factors,
     load_experiment_config,
+    parse_refine_windows,
     trainer_method_args,
 )
 from puri_gs.delayed_absgrad import DelayedAbsGradSchedule, topology_event_summary
@@ -33,6 +34,7 @@ RU_PATCH_PATH = PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_ru.patch"
 CAUSAL_PATCH_PATH = (
     PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_garden_causal.patch"
 )
+PAPER_CONTROL_PATCH_PATH = PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_paper_controls.patch"
 EFFICIENCY_AUDIT_PATCH_PATH = (
     PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_efficiency_audit.patch"
 )
@@ -76,9 +78,25 @@ def _verify_gsplat(
     require_causal: bool = False,
     require_efficiency_audit: bool = False,
     require_ontogo: bool = False,
+    require_paper_control: bool = False,
 ) -> None:
     if _git("rev-parse", "HEAD", cwd=gsplat_dir) != EXPECTED_GSPLAT_COMMIT:
         raise RuntimeError("GSPLAT_DIR is not the pinned v1.5.3 checkout")
+    source = (gsplat_dir / "examples" / "simple_trainer.py").read_text(encoding="utf-8")
+    if require_paper_control or "puri_gs_paper_control: Optional[str]" in source:
+        _verify_applied_patch(gsplat_dir, PAPER_CONTROL_PATCH_PATH)
+        required = ("puri_gs_ru_enabled", "puri_gs_mask_enabled",
+                    "puri_gs_delayed_topology_enabled", "PURI-GS-FACTORS",
+                    "train_keyword", "ru_validation.json", "per_image_metrics.csv")
+        if any(marker not in source for marker in required):
+            raise RuntimeError("paper-control trainer stack is incomplete")
+        if require_cvtr:
+            _verify_applied_patch(gsplat_dir, CVTR_PATCH_PATH)
+        if require_efficiency_audit:
+            _verify_applied_patch(gsplat_dir, EFFICIENCY_AUDIT_PATCH_PATH)
+        if require_ontogo:
+            _verify_applied_patch(gsplat_dir, ONTOGO_PATCH_PATH)
+        return
     def verify_causal_stack() -> None:
         _verify_applied_patch(gsplat_dir, CAUSAL_PATCH_PATH)
         trainer_source = (gsplat_dir / "examples" / "simple_trainer.py").read_text(
@@ -322,6 +340,7 @@ def _causal_contract(config: dict[str, Any]) -> dict[str, Any] | None:
             opacity_reset_start_step=config.get("opacity_reset_start_step", 15_000),
             opacity_reset_every=config.get("opacity_reset_every", 3_000),
             mask_pause_after_reset=config.get("mask_pause_after_reset", 300),
+            refine_windows=parse_refine_windows(config.get("refine_windows")),
         )
     pause = config.get("mask_pause_after_reset", 0) if mask_enabled else 0
     topology = topology_event_summary(
@@ -504,6 +523,16 @@ def main() -> int:
     is_causal = config["profile"] == CAUSAL_PROFILE
     factors = causal_factors(config)
     uses_mask = factors is not None and factors[0]
+    is_paper_control = bool(config.get("paper_control"))
+    if is_paper_control:
+        if _git("branch", "--show-current", cwd=REPOSITORY_ROOT) != "dev":
+            raise RuntimeError("paper controls must run on dev")
+        if result_dir.exists():
+            raise FileExistsError(f"paper-control output already exists: {result_dir}")
+        if (args.data_factor not in (None, 4) or args.train_keyword is not None
+                or args.test_keyword is not None or args.dataset_format != "colmap"
+                or args.eval_warmup_renders or args.eval_disable_image_save):
+            raise ValueError("paper controls require the fixed COLMAP split and evaluation protocol")
     _verify_gsplat(
         gsplat_dir,
         require_cvtr=is_continuation,
@@ -511,6 +540,7 @@ def main() -> int:
         require_causal=is_causal,
         require_efficiency_audit=bool(args.eval_warmup_renders),
         require_ontogo=args.dataset_format == "ontogo-patio-high",
+        require_paper_control=is_paper_control,
     )
     if (is_ru or is_causal) and args.max_steps is not None:
         if args.max_steps != config["total_steps"] and not 1 <= args.max_steps <= 100:
@@ -576,7 +606,7 @@ def main() -> int:
 
     if result_dir.exists() and any(result_dir.iterdir()):
         raise RuntimeError(f"result directory is not empty: {result_dir}")
-    result_dir.mkdir(parents=True, exist_ok=True)
+    result_dir.mkdir(parents=True, exist_ok=not is_paper_control)
     (result_dir / "config.yaml").write_text(
         json.dumps(config, indent=2) + "\n", encoding="utf-8"
     )
@@ -588,6 +618,15 @@ def main() -> int:
         json.dumps(_runtime_environment(gsplat_dir, config), indent=2) + "\n",
         encoding="utf-8",
     )
+    if is_paper_control:
+        from puri_gs.paper_controls import check_control_diffs, resolved_schedule, write_json_new
+
+        profiles = [load_experiment_config(PROJECT_ROOT / "configs" / name) for name in (
+            "puri_gs_ru_full30k.yaml", "puri_gs_ru_align_full30k.yaml", "puri_gs_ru_tar_full30k.yaml",
+        )]
+        write_json_new(result_dir / "resolved_config_diff.json", check_control_diffs(*profiles))
+        if args.checkpoint is not None:
+            write_json_new(result_dir / "resolved_schedule.json", resolved_schedule(config))
     if is_causal and contract is not None:
         (result_dir / "causal_contract.json").write_text(
             json.dumps(contract, indent=2) + "\n", encoding="utf-8"

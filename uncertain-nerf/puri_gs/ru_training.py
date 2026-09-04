@@ -19,6 +19,7 @@ from puri_gs.delayed_absgrad import (
     mask_update_paused_after_resets,
     topology_event_summary,
 )
+from puri_gs.config import parse_refine_windows
 from puri_gs.dino_features import (
     COARSE_GRID,
     FEATURE_DIM,
@@ -127,6 +128,7 @@ class PURIGSRUTraining:
                 opacity_reset_start_step=cfg.opacity_reset_start_step,
                 opacity_reset_every=cfg.opacity_reset_every,
                 mask_pause_after_reset=cfg.mask_pause_after_reset,
+                refine_windows=parse_refine_windows(getattr(cfg, "refine_windows", None)),
             )
             if delayed_topology_enabled
             else None
@@ -144,6 +146,16 @@ class PURIGSRUTraining:
         self.mask_pause_count = 0
         self._last_state: RUIterationState | None = None
         self._diagnostic_files = self._open_diagnostics()
+        self.paper_recorder = None
+        if getattr(cfg, "puri_gs_paper_control", None):
+            from puri_gs.paper_controls import PaperControlRecorder, schedule_from_config
+
+            config = json.loads((self.result_dir / "config.yaml").read_text())
+            if (config.get("paper_control") != cfg.puri_gs_paper_control
+                    or config["bootstrap_switch_step"] != cfg.bootstrap_switch_step
+                    or schedule_from_config(config) != self.schedule):
+                raise ValueError("runtime paper-control schedule differs from launch config")
+            self.paper_recorder = PaperControlRecorder(self.result_dir, config, cfg.max_steps)
 
         environment = {
             **self.dino_metadata,
@@ -346,6 +358,8 @@ class PURIGSRUTraining:
         if step % 100 == 0:
             for stream, _ in self._diagnostic_files.values():
                 stream.flush()
+        if self.paper_recorder is not None:
+            self.paper_recorder.record_iteration(step, state)
 
     def save_auxiliary(self, step: int, *, training_seconds: float) -> None:
         torch.save(
@@ -370,7 +384,10 @@ class PURIGSRUTraining:
             "topology_events": self.topology_events,
         }
         if self.schedule is not None:
-            schedule.update(asdict(self.schedule))
+            fields = asdict(self.schedule)
+            if not self.schedule.refine_windows:
+                fields.pop("refine_windows")
+            schedule.update(fields)
         (self.aux_dir / "training_schedule.json").write_text(
             json.dumps(schedule, indent=2) + "\n", encoding="utf-8"
         )
@@ -408,6 +425,8 @@ class PURIGSRUTraining:
         )
         for stream, _ in self._diagnostic_files.values():
             stream.flush()
+        if self.paper_recorder is not None:
+            self.paper_recorder.finish()
 
     def save_visuals(self, full_render: Tensor) -> None:
         state = self._last_state
