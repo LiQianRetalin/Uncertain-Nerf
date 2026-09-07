@@ -115,3 +115,41 @@ def test_rescue_is_exactly_zero_without_track_evidence():
         torch.zeros(1, 1, 4, 4), 0,
     )
     assert loss == 0
+
+
+def test_all_garden_training_views_use_matching_evidence_and_event():
+    controller = RUPARTController.__new__(RUPARTController)
+    indices = [i for i in range(185) if i % 8 != 0]
+    controller.trainset = SimpleNamespace(indices=indices)
+    controller.device = torch.device("cpu")
+    controller.global_to_train = {v: i for i, v in enumerate(indices)}
+    controller.evidence = torch.arange(161).view(161, 1, 1).expand(161, 36, 36).float()
+    controller.fixed_support_probe_count = 0
+    controller._camera = lambda item: SimpleNamespace(K=torch.eye(3).numpy(), width=36, height=36)
+    rgb = torch.zeros(1, 36, 36, 3)
+    alpha = torch.zeros(1, 36, 36, 1)
+    for item, expected_global_id in enumerate(indices):
+        global_id = controller.global_image_id_from_train(torch.tensor([item]))
+        assert global_id == expected_global_id
+        assert torch.all(controller.static_evidence(torch.tensor(global_id)) == item)
+        controller.prepare_event(
+            step=10200, global_image_id=global_id,
+            standard_alpha=alpha, fixed_support=alpha,
+            standard_rgb=rgb, target_rgb=rgb,
+            camtoworld=torch.eye(4)[None], K=torch.eye(3)[None],
+            fixed_support_probe_ms=0.0,
+        )
+        event = controller.take_event(10200)
+        assert event["train_view_id"] == item
+        assert event["global_image_id"] == expected_global_id
+        assert torch.all(event["evidence"] == item)
+    assert controller.global_image_id_from_train(120) == 138
+    for bad in [-1, 0, 120, 184, 185]:
+        for value in (bad, torch.tensor([bad])):
+            with pytest.raises(ValueError, match="non-training"):
+                controller.static_evidence(value)
+    for bad in [-1, 161]:
+        with pytest.raises(ValueError, match="out of range"):
+            controller.global_image_id_from_train(bad)
+    patch = (ROOT / "patches" / "gsplat_v1.5.3_puri_gs_ru_part.patch").read_text()
+    assert patch.count("global_image_id=self.ru_training.ru_part.global_image_id_from_train(image_ids)") == 2

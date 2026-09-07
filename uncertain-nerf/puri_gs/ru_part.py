@@ -129,15 +129,19 @@ class RUPARTController:
                 continue
             self._geometry[int(track_id_tensor)] = (scales, quat)
 
+    def global_image_id_from_train(self, image_id: int | Tensor) -> int:
+        """Convert Dataset.image_id (split-local) to the parser/cache ID."""
+        item = int(image_id.item()) if isinstance(image_id, Tensor) else int(image_id)
+        if not 0 <= item < len(self.trainset.indices):
+            raise ValueError("RU-PART training image index is out of range")
+        return int(self.trainset.indices[item])
+
     def static_evidence(self, global_image_id: int | Tensor, *, target_size: tuple[int, int] | None = None, device: torch.device | None = None) -> Tensor:
         if isinstance(global_image_id, Tensor):
-            local_id = self.global_to_train_lookup[global_image_id.long().reshape(())]
-            value = self.evidence[local_id]
-        else:
-            if global_image_id not in self.global_to_train:
-                self.test_images_opened_during_training += 1
-                raise ValueError("RU-PART attempted to use a non-training view")
-            value = self.evidence[self.global_to_train[global_image_id]]
+            global_image_id = int(global_image_id.item())
+        if global_image_id not in self.global_to_train:
+            raise ValueError("RU-PART attempted to use a non-training view")
+        value = self.evidence[self.global_to_train[global_image_id]]
         if target_size is not None:
             value = evidence_upsample(value, target_size)[0, 0]
         return value.to(device or self.device)

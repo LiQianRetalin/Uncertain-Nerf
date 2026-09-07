@@ -224,7 +224,7 @@ index dffcdb6..f2e7ee2 100644
 +                            pixels=pixels,
 +                            render_alphas=alphas,
 +                            safe_mask=ru_state.safe_mask.detach(),
-+                            global_image_id=image_ids,
++                            global_image_id=self.ru_training.ru_part.global_image_id_from_train(image_ids),
 +                        )
 +                        loss = loss + (1.0 - cfg.ssim_lambda) * rescue_loss
                  else:
@@ -260,7 +260,7 @@ index dffcdb6..f2e7ee2 100644
 +                        )
 +                    self.ru_training.ru_part.prepare_event(
 +                        step=step,
-+                        global_image_id=int(image_ids.item()),
++                        global_image_id=self.ru_training.ru_part.global_image_id_from_train(image_ids),
 +                        standard_alpha=alphas,
 +                        fixed_support=fixed_support,
 +                        standard_rgb=colors,
