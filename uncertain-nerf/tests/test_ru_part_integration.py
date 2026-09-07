@@ -39,7 +39,9 @@ def test_trainer_patch_is_training_only_and_preserves_standard_checkpoint():
     assert "cuda/" not in patch and "csrc/" not in patch
     assert "evaluation_loaded_track_cache" in patch
     assert "calibration_file = image_files[calibration_index]" in patch
-    assert "refuses dataset-wide resizing" in patch
+    assert 'prepared_dir = image_dir + "_png"' in patch
+    assert "set(prepared_files) != set(" in patch
+    assert "requires a complete pre-generated PNG image directory" in patch
 
 
 def test_no_forbidden_dense_or_second_backward_patterns():

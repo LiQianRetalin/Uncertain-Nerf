@@ -10,7 +10,7 @@ index c892089..83ba132 100644
      ):
          self.data_dir = data_dir
          self.factor = factor
-@@ -196,12 +197,19 @@ class Parser:
+@@ -196,15 +197,33 @@ class Parser:
          # so we need to map between the two sorted lists of files.
          colmap_files = sorted(_get_rel_paths(colmap_image_dir))
          image_files = sorted(_get_rel_paths(image_dir))
@@ -26,14 +26,32 @@ index c892089..83ba132 100644
 +            and os.path.splitext(calibration_file)[1].lower() in {".jpg", ".jpeg"}
 +            and not _is_png_file(calibration_path)
          ):
+-            image_dir = _resize_image_folder(
+-                colmap_image_dir, image_dir + "_png", factor=factor
+-            )
+-            image_files = sorted(_get_rel_paths(image_dir))
 +            if calibration_index != 0:
-+                raise RuntimeError(
-+                    "RU-PART refuses dataset-wide resizing because it would open test images"
++                prepared_dir = image_dir + "_png"
++                prepared_files = [
++                    os.path.splitext(path)[0] + ".png" for path in colmap_files
++                ]
++                if not os.path.isdir(prepared_dir) or set(prepared_files) != set(
++                    _get_rel_paths(prepared_dir)
++                ):
++                    raise RuntimeError(
++                        "RU-PART requires a complete pre-generated PNG image directory "
++                        "because dataset-wide resizing would open test images"
++                    )
++                image_dir = prepared_dir
++                image_files = prepared_files
++            else:
++                image_dir = _resize_image_folder(
++                    colmap_image_dir, image_dir + "_png", factor=factor
 +                )
-             image_dir = _resize_image_folder(
-                 colmap_image_dir, image_dir + "_png", factor=factor
-             )
-@@ -272,7 +280,7 @@ class Parser:
++                image_files = sorted(_get_rel_paths(image_dir))
+         colmap_to_image = dict(zip(colmap_files, image_files))
+         image_paths = [os.path.join(image_dir, colmap_to_image[f]) for f in image_names]
+@@ -272,7 +291,7 @@ class Parser:
  
          # load one image to check the size. In the case of tanksandtemples dataset, the
          # intrinsics stored in COLMAP corresponds to 2x upsampled images.
