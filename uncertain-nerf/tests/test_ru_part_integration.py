@@ -1,0 +1,110 @@
+from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
+import torch
+
+from puri_gs.config import load_experiment_config, trainer_method_args
+from puri_gs.delayed_absgrad import DelayedAbsGradSchedule
+from puri_gs.prospective_topology import SparseFootprint
+from puri_gs.ru_part import RUPARTController
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_ru_part_config_is_single_fixed_profile():
+    config = load_experiment_config(ROOT / "configs" / "puri_gs_ru_part_garden30k.yaml")
+    assert config["profile"] == "ru_part"
+    assert config["rho0"] == 0.5 and config["gaussian_hard_cap"] == 2_312_002
+    assert config["bootstrap_switch_step"] == 20_000
+    args = trainer_method_args(config)
+    assert "--puri_gs_ru_part_enabled" in args
+    assert "--puri_gs_paper_control" not in args and "--refine_windows" not in args
+
+
+def test_ru_part_schedule_has_exactly_100_events_and_no_tar_window():
+    schedule = DelayedAbsGradSchedule()
+    assert schedule.refine_steps(30_000) == tuple(range(10_000, 20_000, 100))
+    assert len(schedule.refine_steps(30_000)) == 100
+    assert not schedule.should_refine(20_000) and not schedule.should_refine(23_800)
+
+
+def test_trainer_patch_is_training_only_and_preserves_standard_checkpoint():
+    patch = (ROOT / "patches" / "gsplat_v1.5.3_puri_gs_ru_part.patch").read_text()
+    assert "puri_gs_ru_part_enabled" in patch
+    assert "opacity_override=0.5" in patch
+    assert "loss.backward()" in patch
+    assert "torch.save" not in patch
+    assert "cuda/" not in patch and "csrc/" not in patch
+    assert "evaluation_loaded_track_cache" in patch
+    assert "calibration_file = image_files[calibration_index]" in patch
+    assert "refuses dataset-wide resizing" in patch
+
+
+def test_no_forbidden_dense_or_second_backward_patterns():
+    source = (ROOT / "puri_gs" / "ru_part.py").read_text()
+    topology = (ROOT / "puri_gs" / "prospective_topology.py").read_text()
+    assert ".cdist(" not in source + topology
+    assert "N×H×W" not in source + topology
+    assert ".backward(" not in source + topology
+    assert "for candidate" not in source
+
+
+def test_fixed_profile_rejects_parameter_drift(tmp_path):
+    source = (ROOT / "configs" / "puri_gs_ru_part_garden30k.yaml").read_text()
+    changed = tmp_path / "changed.json"
+    changed.write_text(source.replace('"rho0": 0.5', '"rho0": 0.4'))
+    with pytest.raises(ValueError, match="fixed fields"):
+        load_experiment_config(changed)
+
+
+def test_four_fixed_representative_steps_write_the_registered_panels(tmp_path):
+    controller = RUPARTController.__new__(RUPARTController)
+    controller.aux_dir = tmp_path
+    controller.parser = SimpleNamespace(image_names=["train.jpg"])
+    controller._representatives = []
+    event = {
+        "step": 10_000, "global_image_id": 0,
+        "support": torch.zeros(36, 36), "evidence": torch.ones(36, 36),
+        "alpha": torch.zeros(36, 36), "standard_rgb": torch.zeros(36, 36, 3),
+        "target_rgb": torch.ones(36, 36, 3),
+    }
+    footprint = SparseFootprint(7, 4, 6, 5, 8, torch.ones(2, 3))
+    controller.save_representative(event, [footprint])
+    assert (tmp_path / "representative_step10000.png").is_file()
+    assert controller._representatives[0]["accepted_track_ids"] == [7]
+
+    event["step"] = 10_100
+    controller.save_representative(event, [footprint])
+    assert len(controller._representatives) == 1
+
+
+def test_rescue_gradient_is_local_and_detached_from_alpha_and_mask():
+    controller = RUPARTController.__new__(RUPARTController)
+    controller.device = torch.device("cpu")
+    controller.global_to_train = {0: 0}
+    controller.global_to_train_lookup = torch.tensor([0])
+    controller.evidence = torch.ones(1, 36, 36)
+    render = torch.zeros(1, 4, 4, 3, requires_grad=True)
+    target = torch.ones_like(render)
+    alpha = torch.zeros(1, 4, 4, 1, requires_grad=True)
+    mask = torch.zeros(1, 1, 4, 4, requires_grad=True)
+    loss = controller.rescue_loss(render, target, alpha, mask, 0)
+    loss.backward()
+    assert render.grad is not None and torch.count_nonzero(render.grad) == render.numel()
+    assert alpha.grad is None and mask.grad is None
+
+
+def test_rescue_is_exactly_zero_without_track_evidence():
+    controller = RUPARTController.__new__(RUPARTController)
+    controller.device = torch.device("cpu")
+    controller.global_to_train = {0: 0}
+    controller.global_to_train_lookup = torch.tensor([0])
+    controller.evidence = torch.zeros(1, 36, 36)
+    render = torch.rand(1, 4, 4, 3, requires_grad=True)
+    loss = controller.rescue_loss(
+        render, torch.zeros_like(render), torch.zeros(1, 4, 4, 1),
+        torch.zeros(1, 1, 4, 4), 0,
+    )
+    assert loss == 0

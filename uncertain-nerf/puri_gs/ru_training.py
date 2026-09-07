@@ -157,6 +157,18 @@ class PURIGSRUTraining:
                 raise ValueError("runtime paper-control schedule differs from launch config")
             self.paper_recorder = PaperControlRecorder(self.result_dir, config, cfg.max_steps)
 
+        self.ru_part = None
+        if getattr(cfg, "puri_gs_ru_part_enabled", False):
+            from puri_gs.ru_part import RUPARTController
+
+            self.ru_part = RUPARTController(
+                cache_path=cfg.ru_part_track_cache,
+                parser=parser,
+                trainset=trainset,
+                cfg=cfg,
+                device=self.device,
+            )
+
         environment = {
             **self.dino_metadata,
             "mask_head_parameter_count": sum(
@@ -296,6 +308,21 @@ class PURIGSRUTraining:
         state.residual = residual.detach()
         state.components = components
 
+    def ru_part_rescue_loss(
+        self,
+        *,
+        render: Tensor,
+        pixels: Tensor,
+        render_alphas: Tensor,
+        safe_mask: Tensor,
+        global_image_id: int | Tensor,
+    ) -> Tensor:
+        if self.ru_part is None:
+            return render.new_zeros(())
+        return self.ru_part.rescue_loss(
+            render, pixels, render_alphas, safe_mask, global_image_id
+        )
+
     def update_mask_head(self, state: RUIterationState) -> None:
         if state.mask_loss is None:
             raise RuntimeError("mask supervision must be completed before its update")
@@ -344,6 +371,8 @@ class PURIGSRUTraining:
         self._diagnostic_files["Gaussian_count_curve.csv"][1].writerow(
             [step, gaussian_count]
         )
+        if self.ru_part is not None:
+            self.ru_part.note_gaussian_count(gaussian_count)
         self._diagnostic_files["loss_curve.csv"][1].writerow(
             [
                 step,
@@ -427,6 +456,8 @@ class PURIGSRUTraining:
             stream.flush()
         if self.paper_recorder is not None:
             self.paper_recorder.finish()
+        if self.ru_part is not None:
+            self.ru_part.finish(training_seconds=training_seconds)
 
     def save_visuals(self, full_render: Tensor) -> None:
         state = self._last_state

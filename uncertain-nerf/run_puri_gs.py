@@ -18,6 +18,7 @@ from typing import Any
 
 from puri_gs.config import (
     CAUSAL_PROFILE,
+    RU_PART_PROFILE,
     causal_factors,
     load_experiment_config,
     parse_refine_windows,
@@ -39,6 +40,7 @@ EFFICIENCY_AUDIT_PATCH_PATH = (
     PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_efficiency_audit.patch"
 )
 ONTOGO_PATCH_PATH = PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_ontogo.patch"
+RU_PART_PATCH_PATH = PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_ru_part.patch"
 EXPECTED_GSPLAT_COMMIT = "937e29912570c372bed6747a5c9bf85fed877bae"
 
 
@@ -79,10 +81,17 @@ def _verify_gsplat(
     require_efficiency_audit: bool = False,
     require_ontogo: bool = False,
     require_paper_control: bool = False,
+    require_ru_part: bool = False,
 ) -> None:
     if _git("rev-parse", "HEAD", cwd=gsplat_dir) != EXPECTED_GSPLAT_COMMIT:
         raise RuntimeError("GSPLAT_DIR is not the pinned v1.5.3 checkout")
     source = (gsplat_dir / "examples" / "simple_trainer.py").read_text(encoding="utf-8")
+    if require_ru_part:
+        _verify_applied_patch(gsplat_dir, RU_PART_PATCH_PATH)
+        required = ("puri_gs_ru_part_enabled", "ru_part_track_cache", "RUPARTStrategy")
+        if any(marker not in source for marker in required):
+            raise RuntimeError("RU-PART trainer stack is incomplete")
+        return
     if require_paper_control or "puri_gs_paper_control: Optional[str]" in source:
         _verify_applied_patch(gsplat_dir, PAPER_CONTROL_PATCH_PATH)
         required = ("puri_gs_ru_enabled", "puri_gs_mask_enabled",
@@ -425,6 +434,12 @@ def _build_command(
             ]
         )
         command.extend(trainer_method_args(config))
+        if config["profile"] == RU_PART_PROFILE:
+            if args.track_cache is None:
+                raise ValueError("RU-PART training requires --track-cache")
+            command.extend(["--ru_part_track_cache", str(args.track_cache.resolve())])
+            if args.non_scientific_smoke:
+                command.append("--ru_part_non_scientific_smoke")
         factors = causal_factors(config)
         uses_mask = factors is not None and factors[0]
         if uses_mask:
@@ -490,6 +505,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dino-repo-dir", type=Path)
     parser.add_argument("--dino-weight-path", type=Path)
     parser.add_argument("--feature-cache-dir", type=Path)
+    parser.add_argument("--track-cache", type=Path)
+    parser.add_argument(
+        "--non-scientific-smoke",
+        action="store_true",
+        help="RU-PART only: stop after the real step-10000 event; never reusable as a result.",
+    )
     parser.add_argument(
         "--responsibility-start-step",
         type=int,
@@ -520,10 +541,39 @@ def main() -> int:
     )
     is_continuation = config["profile"] in {"b1c", "cvtr"}
     is_ru = config["profile"] == "ru"
+    is_ru_part = config["profile"] == RU_PART_PROFILE
     is_causal = config["profile"] == CAUSAL_PROFILE
     factors = causal_factors(config)
     uses_mask = factors is not None and factors[0]
     is_paper_control = bool(config.get("paper_control"))
+    if is_ru_part:
+        if _git("branch", "--show-current", cwd=REPOSITORY_ROOT) != "ru-part":
+            raise RuntimeError("RU-PART must run from the approved ru-part branch")
+        if result_dir.exists():
+            raise FileExistsError(f"RU-PART refuses to overwrite any existing output: {result_dir}")
+        if (
+            args.data_factor not in (None, 4)
+            or args.train_keyword is not None
+            or args.test_keyword is not None
+            or args.dataset_format != "colmap"
+            or data_dir.name.casefold() != "garden"
+        ):
+            raise ValueError("RU-PART first run is fixed to Garden factor4 and the every-eighth split")
+        if args.checkpoint is None:
+            if args.track_cache is None or not args.track_cache.expanduser().is_file():
+                raise RuntimeError("RU-PART static-track cache is missing")
+            from puri_gs.static_tracks import load_static_track_cache
+
+            load_static_track_cache(args.track_cache.expanduser().resolve())
+        if args.non_scientific_smoke:
+            if args.checkpoint is not None or args.max_steps != 10001:
+                raise ValueError("RU-PART smoke must train from step0 through the real step10000 event")
+            if "NON_SCIENTIFIC_SMOKE" not in result_dir.name:
+                raise ValueError("RU-PART smoke output name must contain NON_SCIENTIFIC_SMOKE")
+        elif args.max_steps not in (None, config["total_steps"]):
+            raise ValueError("RU-PART Full is fixed to 30000 steps")
+    elif args.track_cache is not None or args.non_scientific_smoke:
+        raise ValueError("RU-PART-only arguments were supplied to another profile")
     if is_paper_control:
         if _git("branch", "--show-current", cwd=REPOSITORY_ROOT) != "dev":
             raise RuntimeError("paper controls must run on dev")
@@ -541,6 +591,7 @@ def main() -> int:
         require_efficiency_audit=bool(args.eval_warmup_renders),
         require_ontogo=args.dataset_format == "ontogo-patio-high",
         require_paper_control=is_paper_control,
+        require_ru_part=is_ru_part,
     )
     if (is_ru or is_causal) and args.max_steps is not None:
         if args.max_steps != config["total_steps"] and not 1 <= args.max_steps <= 100:

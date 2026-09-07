@@ -21,6 +21,7 @@ REQUIRED_RESPONSIBILITY_FIELDS = {
 REQUIRED_CVTR_FIELDS = set(CVTRConfig.__dataclass_fields__) | {"enabled"}
 
 CAUSAL_PROFILE = "ru_causal"
+RU_PART_PROFILE = "ru_part"
 
 PAPER_CONTROLS = ("ru_align", "ru_tar")
 TAR_REFINE_WINDOWS = [
@@ -130,6 +131,18 @@ RU_FIXED_FIELDS = {
     "sh_degree": 3,
 }
 
+RU_PART_FIXED_FIELDS = {
+    **RU_FIXED_FIELDS,
+    "method": "ru_part",
+    "rho0": 0.5,
+    "gaussian_hard_cap": 2312002,
+    "track_pose_neighbors": 4,
+    "track_minimum_cameras": 3,
+    "track_tolerance_patches": 1.0,
+    "birth_radius_patches": 0.5,
+    "birth_initial_opacity": 0.1,
+}
+
 
 def load_experiment_config(path: str | Path) -> dict[str, Any]:
     """Load a JSON-compatible YAML profile without adding a YAML dependency."""
@@ -172,10 +185,11 @@ def validate_experiment_config(config: dict[str, Any]) -> None:
         "b1c",
         "cvtr",
         "ru",
+        RU_PART_PROFILE,
         CAUSAL_PROFILE,
     }:
         raise ValueError(
-            "profile must be one of b0, b1, a1, b1c, cvtr, ru, ru_causal"
+            "profile must be one of b0, b1, a1, b1c, cvtr, ru, ru_part, ru_causal"
         )
     if config.get("gsplat_version") != "1.5.3":
         raise ValueError("gsplat_version must remain pinned to 1.5.3")
@@ -187,7 +201,7 @@ def validate_experiment_config(config: dict[str, Any]) -> None:
         raise ValueError("training must be a mapping")
     required_training = (
         ("data_factor", "test_every")
-        if config["profile"] in {"ru", CAUSAL_PROFILE}
+        if config["profile"] in {"ru", RU_PART_PROFILE, CAUSAL_PROFILE}
         else ("data_factor", "test_every", "sh_degree", "ssim_lambda")
     )
     for field in required_training:
@@ -212,6 +226,27 @@ def validate_experiment_config(config: dict[str, Any]) -> None:
             raise ValueError(
                 "PURI-GS-RU keeps its fixed fields flat and may not mix legacy methods"
             )
+        return
+
+    if config["profile"] == RU_PART_PROFILE:
+        mismatches = {
+            field: (config.get(field), expected)
+            for field, expected in RU_PART_FIXED_FIELDS.items()
+            if config.get(field) != expected
+        }
+        if mismatches:
+            raise ValueError(f"RU-PART fixed fields differ: {mismatches}")
+        required = {
+            **RU_PART_FIXED_FIELDS,
+            "schema_version": 1,
+            "profile": RU_PART_PROFILE,
+            "base_profile": "ru",
+            "gsplat_version": "1.5.3",
+            "delayed_densification": True,
+            "training": {"data_factor": 4, "test_every": 8},
+        }
+        if config != required:
+            raise ValueError("RU-PART contains fields outside its fixed preregistration")
         return
 
     if config["profile"] == CAUSAL_PROFILE:
@@ -336,7 +371,7 @@ def validate_experiment_config(config: dict[str, Any]) -> None:
 def trainer_method_args(config: dict[str, Any]) -> list[str]:
     """Translate only the method-specific profile fields to gsplat CLI flags."""
 
-    if config["profile"] == "ru":
+    if config["profile"] in {"ru", RU_PART_PROFILE}:
         args = [
             "--puri_gs_ru_enabled",
             "--strategy.absgrad",
@@ -373,6 +408,8 @@ def trainer_method_args(config: dict[str, Any]) -> list[str]:
         )
         for field in fields:
             args.extend([f"--{field}", str(config[field])])
+        if config["profile"] == RU_PART_PROFILE:
+            args.append("--puri_gs_ru_part_enabled")
         if config.get("paper_control"):
             args.extend(["--puri_gs_paper_control", config["paper_control"]])
             if "refine_windows" in config:
@@ -434,7 +471,7 @@ def causal_factors(config: dict[str, Any]) -> tuple[bool, bool] | None:
     profile = config.get("profile")
     if profile == "b1":
         return False, False
-    if profile == "ru":
+    if profile in {"ru", RU_PART_PROFILE}:
         return True, True
     if profile == CAUSAL_PROFILE:
         return bool(config["mask_enabled"]), bool(config["delayed_densification"])
