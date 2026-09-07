@@ -42,6 +42,11 @@ def test_trainer_patch_is_training_only_and_preserves_standard_checkpoint():
     assert 'prepared_dir = image_dir + "_png"' in patch
     assert "set(prepared_files) != set(" in patch
     assert "requires a complete pre-generated PNG image directory" in patch
+    dump_position = patch.index("yaml.dump(vars(cfg), f)")
+    attach_position = patch.index(
+        "+            self.cfg.strategy.part_controller = self.ru_training.ru_part"
+    )
+    assert dump_position < attach_position
 
 
 def test_no_forbidden_dense_or_second_backward_patterns():
