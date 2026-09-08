@@ -154,7 +154,7 @@ class RUPARTController:
 
     def rescue_loss(self, render: Tensor, target: Tensor, alpha: Tensor, safe_mask: Tensor, global_image_id: int | Tensor) -> Tensor:
         if getattr(self, "intervention_mode", "current") == "noop":
-            return render.sum() * 0.0
+            raise RuntimeError("noop mode must not attach rescue loss to the training graph")
         if render.shape != target.shape or render.ndim != 4 or render.shape[0] != 1:
             raise ValueError("RU-PART supports batch=1 RGB training only")
         height, width = render.shape[1:3]

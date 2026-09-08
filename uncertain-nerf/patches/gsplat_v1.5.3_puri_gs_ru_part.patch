@@ -192,7 +192,7 @@ index f8e1b6a..2a92ebb 100644
 +            if self.ru_training is not None and self.ru_training.ru_part is not None:
 +                self.ru_training.ru_part.note_rgb_rasterization()
 @@ -858,0 +966,9 @@ class Runner:
-+                    if self.ru_training.ru_part is not None:
++                    if self.ru_training.ru_part is not None and cfg.ru_part_mode == "current":
 +                        rescue_loss = self.ru_training.ru_part_rescue_loss(
 +                            render=colors,
 +                            pixels=pixels,

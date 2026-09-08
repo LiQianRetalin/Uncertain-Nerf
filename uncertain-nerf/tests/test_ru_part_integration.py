@@ -87,6 +87,9 @@ def test_trainer_patch_is_training_only_and_preserves_standard_checkpoint():
     assert "requires a complete pre-generated PNG image directory" in patch
     assert 'cfg.ru_part_mode == "current"' in patch
     assert "self.cfg.strategy.part_controller = self.ru_training.ru_part" in patch
+    assert (
+        'self.ru_training.ru_part is not None and cfg.ru_part_mode == "current"'
+    ) in patch
     assert "from dataclasses import asdict, dataclass, field" in patch
     assert "+                yaml.dump(asdict(cfg), f)" in patch
     assert "-                yaml.dump(vars(cfg), f)" in patch
@@ -167,20 +170,19 @@ def test_rescue_is_exactly_zero_without_track_evidence():
     assert loss == 0
 
 
-def test_noop_rescue_is_connected_exact_zero():
+def test_noop_rescue_cannot_be_attached_to_training_graph():
     controller = RUPARTController.__new__(RUPARTController)
     controller.intervention_mode = "noop"
     render = torch.rand(1, 4, 4, 3, requires_grad=True)
-    loss = controller.rescue_loss(
-        render,
-        torch.zeros_like(render),
-        torch.zeros(1, 4, 4, 1),
-        torch.zeros(1, 1, 4, 4),
-        0,
-    )
-    loss.backward()
-    assert loss.item() == 0.0
-    assert render.grad is not None and torch.count_nonzero(render.grad) == 0
+    with pytest.raises(RuntimeError, match="must not attach rescue loss"):
+        controller.rescue_loss(
+            render,
+            torch.zeros_like(render),
+            torch.zeros(1, 4, 4, 1),
+            torch.zeros(1, 1, 4, 4),
+            0,
+        )
+    assert render.grad is None
 
 
 def test_all_garden_training_views_use_matching_evidence_and_event():
