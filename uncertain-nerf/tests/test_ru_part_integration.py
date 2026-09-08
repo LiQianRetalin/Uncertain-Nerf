@@ -76,6 +76,9 @@ def test_trainer_patch_is_training_only_and_preserves_standard_checkpoint():
     assert "from dataclasses import asdict, dataclass, field" in patch
     assert "+                yaml.dump(asdict(cfg), f)" in patch
     assert "-                yaml.dump(vars(cfg), f)" in patch
+    assert "fixed_camera_sequence(len(self.trainset), max_steps, 42)" in patch
+    assert '"seed": 42' in patch
+    assert "cfg.seed" not in patch
 
 
 def test_no_forbidden_dense_or_second_backward_patterns():

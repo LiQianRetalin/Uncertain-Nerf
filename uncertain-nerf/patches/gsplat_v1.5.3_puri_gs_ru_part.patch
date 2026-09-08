@@ -147,7 +147,7 @@ index f8e1b6a..2a92ebb 100644
 +                restore_training_state,
 +            )
 +
-+            camera_sequence = fixed_camera_sequence(len(self.trainset), max_steps, cfg.seed)
++            camera_sequence = fixed_camera_sequence(len(self.trainset), max_steps, 42)
 +            if cfg.ru_part_replay_ckpt is not None:
 +                replay_payload = load_replay_checkpoint(cfg.ru_part_replay_ckpt)
 +                source_mode = replay_payload["intervention_mode"]
@@ -167,7 +167,7 @@ index f8e1b6a..2a92ebb 100644
 +            torch.save(camera_sequence, Path(cfg.result_dir, "camera_sequence.pt"))
 +            Path(cfg.result_dir, "camera_sequence.json").write_text(
 +                json.dumps({
-+                    "seed": cfg.seed,
++                    "seed": 42,
 +                    "length": len(camera_sequence),
 +                    "sha256": camera_sequence_sha256(camera_sequence),
 +                    "start_step": init_step,
