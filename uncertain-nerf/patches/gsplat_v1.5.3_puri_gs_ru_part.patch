@@ -205,7 +205,7 @@ index f8e1b6a..2a92ebb 100644
 +            if self.ru_training is not None and self.ru_training.ru_part is not None:
 +                self.ru_training.ru_part.note_gaussian_backward()
 @@ -1089,0 +1208,33 @@ class Runner:
-+                if cfg.puri_gs_ru_part_enabled and self.cfg.strategy.schedule.should_refine(step):
++                if cfg.puri_gs_ru_part_enabled and cfg.ru_part_mode != "parent" and self.cfg.strategy.schedule.should_refine(step):
 +                    fixed_probe_started = time.perf_counter()
 +                    with torch.no_grad():
 +                        _, fixed_support, _ = self.rasterize_splats(

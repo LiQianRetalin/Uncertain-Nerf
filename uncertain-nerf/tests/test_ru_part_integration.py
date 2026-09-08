@@ -79,6 +79,10 @@ def test_trainer_patch_is_training_only_and_preserves_standard_checkpoint():
     assert "fixed_camera_sequence(len(self.trainset), max_steps, 42)" in patch
     assert '"seed": 42' in patch
     assert "cfg.seed" not in patch
+    assert (
+        'if cfg.puri_gs_ru_part_enabled and cfg.ru_part_mode != "parent" '
+        "and self.cfg.strategy.schedule.should_refine(step):"
+    ) in patch
 
 
 def test_no_forbidden_dense_or_second_backward_patterns():
