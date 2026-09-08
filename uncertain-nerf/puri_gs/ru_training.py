@@ -158,7 +158,10 @@ class PURIGSRUTraining:
             self.paper_recorder = PaperControlRecorder(self.result_dir, config, cfg.max_steps)
 
         self.ru_part = None
-        if getattr(cfg, "puri_gs_ru_part_enabled", False):
+        if (
+            getattr(cfg, "puri_gs_ru_part_enabled", False)
+            and getattr(cfg, "ru_part_mode", "current") != "parent"
+        ):
             from puri_gs.ru_part import RUPARTController
 
             self.ru_part = RUPARTController(
@@ -458,6 +461,32 @@ class PURIGSRUTraining:
             self.paper_recorder.finish()
         if self.ru_part is not None:
             self.ru_part.finish(training_seconds=training_seconds)
+
+    def replay_state_dict(self) -> dict[str, Any]:
+        return {
+            "mask_head": self.head.state_dict(),
+            "mask_optimizer": self.optimizer.state_dict(),
+            "residual_histogram": self.histogram.state_dict(),
+            "dino_render_seconds": self.dino_render_seconds,
+            "dino_render_calls": self.dino_render_calls,
+            "mask_update_count": self.mask_update_count,
+            "mask_pause_count": self.mask_pause_count,
+            "ru_part": self.ru_part.replay_state_dict() if self.ru_part is not None else None,
+        }
+
+    def load_replay_state_dict(self, state: Mapping[str, Any]) -> None:
+        self.head.load_state_dict(state["mask_head"])
+        self.optimizer.load_state_dict(state["mask_optimizer"])
+        self.histogram.load_state_dict(state["residual_histogram"])
+        self.dino_render_seconds = float(state["dino_render_seconds"])
+        self.dino_render_calls = int(state["dino_render_calls"])
+        self.mask_update_count = int(state["mask_update_count"])
+        self.mask_pause_count = int(state["mask_pause_count"])
+        part_state = state["ru_part"]
+        if self.ru_part is None and part_state is not None:
+            raise ValueError("cannot load intervened RU-PART state into parent mode")
+        if self.ru_part is not None and part_state is not None:
+            self.ru_part.load_replay_state_dict(part_state)
 
     def save_visuals(self, full_render: Tensor) -> None:
         state = self._last_state

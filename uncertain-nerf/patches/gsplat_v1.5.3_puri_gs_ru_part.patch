@@ -1,31 +1,21 @@
 diff --git a/examples/datasets/colmap.py b/examples/datasets/colmap.py
-index c892089..83ba132 100644
+index 2c35953..7def74d 100644
 --- a/examples/datasets/colmap.py
 +++ b/examples/datasets/colmap.py
-@@ -68,6 +68,7 @@ class Parser:
-         factor: int = 1,
-         normalize: bool = False,
-         test_every: int = 8,
+@@ -70,0 +71 @@ class Parser:
 +        calibration_index: int = 0,
-     ):
-         self.data_dir = data_dir
-         self.factor = factor
-@@ -196,15 +197,33 @@ class Parser:
-         # so we need to map between the two sorted lists of files.
-         colmap_files = sorted(_get_rel_paths(colmap_image_dir))
-         image_files = sorted(_get_rel_paths(image_dir))
+@@ -199 +200,4 @@ class Parser:
 -        first_image_path = os.path.join(image_dir, image_files[0])
 +        if not 0 <= calibration_index < len(image_files):
 +            raise ValueError("calibration_index is outside the registered image list")
 +        calibration_file = image_files[calibration_index]
 +        calibration_path = os.path.join(image_dir, calibration_file)
-         if (
-             factor > 1
+@@ -202,2 +206,2 @@ class Parser:
 -            and os.path.splitext(image_files[0])[1].lower() in {".jpg", ".jpeg"}
 -            and not _is_png_file(first_image_path)
 +            and os.path.splitext(calibration_file)[1].lower() in {".jpg", ".jpeg"}
 +            and not _is_png_file(calibration_path)
-         ):
+@@ -205,4 +209,19 @@ class Parser:
 -            image_dir = _resize_image_folder(
 -                colmap_image_dir, image_dir + "_png", factor=factor
 -            )
@@ -49,63 +39,30 @@ index c892089..83ba132 100644
 +                    colmap_image_dir, image_dir + "_png", factor=factor
 +                )
 +                image_files = sorted(_get_rel_paths(image_dir))
-         colmap_to_image = dict(zip(colmap_files, image_files))
-         image_paths = [os.path.join(image_dir, colmap_to_image[f]) for f in image_names]
-@@ -272,7 +291,7 @@ class Parser:
- 
-         # load one image to check the size. In the case of tanksandtemples dataset, the
-         # intrinsics stored in COLMAP corresponds to 2x upsampled images.
+@@ -275 +294 @@ class Parser:
 -        actual_image = imageio.imread(self.image_paths[0])[..., :3]
 +        actual_image = imageio.imread(self.image_paths[calibration_index])[..., :3]
-         actual_height, actual_width = actual_image.shape[:2]
-         colmap_width, colmap_height = self.imsize_dict[self.camera_ids[0]]
-         s_height, s_width = actual_height / colmap_height, actual_width / colmap_width
 diff --git a/examples/simple_trainer.py b/examples/simple_trainer.py
-index dffcdb6..f2e7ee2 100644
+index f8e1b6a..2a92ebb 100644
 --- a/examples/simple_trainer.py
 +++ b/examples/simple_trainer.py
-@@ -37,6 +37,7 @@ from puri_gs.responsibility import (
-     responsibility_weighted_l1,
- )
- from puri_gs.semantic_mask import masked_photo_loss
+@@ -39,0 +40 @@ from puri_gs.semantic_mask import masked_photo_loss
 +from puri_gs.ontogo import OnTheGoPatioHighParser
- 
- from gsplat import export_splats
- from gsplat.compression import PngCompression
-@@ -63,6 +64,8 @@ class Config:
-     data_dir: str = "data/360_v2/garden"
-     # Downsample factor for the dataset
-     data_factor: int = 4
+@@ -65,0 +67,2 @@ class Config:
 +    # Dataset parser contract; Patio-High is the only non-COLMAP option.
 +    dataset_format: Literal["colmap", "ontogo-patio-high"] = "colmap"
-     # Directory to save results
-     result_dir: str = "results/garden"
-     # Every N images there is a test image
-@@ -71,6 +74,10 @@ class Config:
-     val_every: int = 8
-     # Evaluation split; keep val during training and set test for final ckpt eval
-     eval_split: Literal["val", "test"] = "val"
+@@ -73,0 +77,4 @@ class Config:
 +    # Unmeasured renders before a checkpoint-only latency evaluation.
 +    eval_warmup_renders: int = 0
 +    # Skip PNG canvases during latency-only audits; metric computation is unchanged.
 +    eval_disable_image_save: bool = False
-     # Optional explicit filename-keyword split for degraded datasets.
-     train_keyword: Optional[str] = None
-     test_keyword: Optional[str] = None
-@@ -133,6 +140,9 @@ class Config:
-     # Orthogonal Garden causal capabilities. The legacy RU flag resolves to both.
-     puri_gs_mask_enabled: bool = False
-     puri_gs_delayed_topology_enabled: bool = False
+@@ -135,0 +143,5 @@ class Config:
 +    puri_gs_ru_part_enabled: bool = False
++    ru_part_mode: Literal["parent", "noop", "current"] = "current"
 +    ru_part_track_cache: Optional[str] = None
++    ru_part_replay_ckpt: Optional[str] = None
 +    ru_part_non_scientific_smoke: bool = False
-     dino_repo_dir: Optional[str] = None
-     dino_weight_path: Optional[str] = None
-     feature_cache_dir: Optional[str] = None
-@@ -396,11 +406,17 @@ class Runner:
-         self.writer = SummaryWriter(log_dir=f"{cfg.result_dir}/tb")
- 
-         # Load data: Training data should contain initial points and colors.
+@@ -399 +411,6 @@ class Runner:
 -        self.parser = Parser(
 +        parser_class = (
 +            Parser
@@ -113,26 +70,11 @@ index dffcdb6..f2e7ee2 100644
 +            else OnTheGoPatioHighParser
 +        )
 +        self.parser = parser_class(
-             data_dir=cfg.data_dir,
-             factor=cfg.data_factor,
-             normalize=cfg.normalize_world_space,
-             test_every=cfg.test_every,
+@@ -403,0 +421 @@ class Runner:
 +            calibration_index=1 if cfg.puri_gs_ru_part_enabled else 0,
-         )
-         self.trainset = Dataset(
-             self.parser,
-@@ -420,6 +436,7 @@ class Runner:
-         )
-         if world_rank == 0:
-             split = {
+@@ -422,0 +441 @@ class Runner:
 +                "dataset_format": cfg.dataset_format,
-                 "protocol": (
-                     "filename-keyword"
-                     if cfg.train_keyword is not None
-@@ -469,6 +486,13 @@ class Runner:
-         print("Model initialized. Number of GS:", len(self.splats["means"]))
- 
-         # Densification Strategy
+@@ -471,0 +491,7 @@ class Runner:
 +        if cfg.puri_gs_ru_part_enabled and (
 +            cfg.batch_size != 1 or cfg.packed or cfg.sparse_grad or cfg.antialiased
 +            or cfg.camera_model != "pinhole" or self.world_size != 1
@@ -140,13 +82,7 @@ index dffcdb6..f2e7ee2 100644
 +            raise ValueError(
 +                "RU-PART supports only batch=1, packed=False, classic pinhole, single-GPU training"
 +            )
-         self.puri_gs_mask_enabled = (
-             cfg.puri_gs_ru_enabled or cfg.puri_gs_mask_enabled
-         )
-@@ -494,9 +518,16 @@ class Runner:
-                 opacity_reset_every=cfg.opacity_reset_every,
-                 mask_pause_after_reset=cfg.mask_pause_after_reset,
-             )
+@@ -497,3 +523,13 @@ class Runner:
 -            self.cfg.strategy = delayed_strategy_from_default(
 -                self.cfg.strategy, ru_schedule
 -            )
@@ -154,37 +90,35 @@ index dffcdb6..f2e7ee2 100644
 +                from puri_gs.ru_part import ru_part_strategy_from_default
 +
 +                self.cfg.strategy = ru_part_strategy_from_default(
-+                    self.cfg.strategy, ru_schedule
++                    self.cfg.strategy,
++                    ru_schedule,
++                    intervention_mode=cfg.ru_part_mode,
++                    result_dir=cfg.result_dir,
 +                )
 +            else:
 +                self.cfg.strategy = delayed_strategy_from_default(
 +                    self.cfg.strategy, ru_schedule
 +                )
-         self.cfg.strategy.check_sanity(self.splats, self.optimizers)
- 
-         if isinstance(self.cfg.strategy, DefaultStrategy):
-@@ -522,6 +553,17 @@ class Runner:
-                     device=self.device,
-                     delayed_topology_enabled=self.puri_gs_delayed_topology_enabled,
-                 )
+@@ -509,0 +546,4 @@ class Runner:
 +        if cfg.puri_gs_ru_part_enabled:
++            self.cfg.strategy.ensure_lineage(
++                self.strategy_state, len(self.splats["means"]), self.splats["means"].device
++            )
+@@ -524,0 +565,13 @@ class Runner:
++        if cfg.puri_gs_ru_part_enabled and cfg.ru_part_mode != "parent":
 +            from puri_gs.ru_part import RUPARTStrategy
 +
 +            if self.ru_training is None or self.ru_training.ru_part is None:
-+                raise RuntimeError("RU-PART requires the RU training controller")
-+            if not isinstance(self.cfg.strategy, RUPARTStrategy):
-+                raise RuntimeError("RU-PART requires its prospective topology strategy")
++                raise RuntimeError("RU-PART noop/current requires the RU training controller")
++            if cfg.ru_part_mode == "current" and not isinstance(
++                self.cfg.strategy, RUPARTStrategy
++            ):
++                raise RuntimeError("RU-PART current requires its prospective topology strategy")
 +            if cfg.ru_part_non_scientific_smoke:
 +                Path(cfg.result_dir, "NON_SCIENTIFIC_SMOKE.json").write_text(
 +                    json.dumps({"scientific_result": False, "checkpoint_reusable": False}) + "\n"
 +                )
- 
-         # Compression Strategy
-         self.compression_method = None
-@@ -632,7 +674,12 @@ class Runner:
-         # rasterization does normalization internally
-         quats = self.splats["quats"]  # [N, 4]
-         scales = torch.exp(self.splats["scales"])  # [N, 3]
+@@ -635 +688,6 @@ class Runner:
 -        opacities = torch.sigmoid(self.splats["opacities"])  # [N,]
 +        opacity_override = kwargs.pop("opacity_override", None)
 +        opacities = (
@@ -192,32 +126,66 @@ index dffcdb6..f2e7ee2 100644
 +            if opacity_override is None
 +            else torch.full_like(self.splats["opacities"], float(opacity_override))
 +        )  # [N,]
- 
-         image_ids = kwargs.pop("image_ids", None)
-         if self.cfg.app_opt:
-@@ -689,6 +736,8 @@ class Runner:
-         if world_rank == 0:
-             with open(f"{cfg.result_dir}/cfg.yml", "w") as f:
-                 yaml.dump(vars(cfg), f)
--
-+        if cfg.puri_gs_ru_part_enabled:
+@@ -691,0 +750,2 @@ class Runner:
++        if cfg.puri_gs_ru_part_enabled and cfg.ru_part_mode == "current":
 +            self.cfg.strategy.part_controller = self.ru_training.ru_part
+@@ -725,0 +786,43 @@ class Runner:
++        camera_sequence = None
++        replay_payload = None
++        if cfg.puri_gs_ru_part_enabled:
++            from puri_gs.replay import (
++                camera_sequence_sha256,
++                fixed_camera_sequence,
++                load_replay_checkpoint,
++                restore_rng_state,
++                restore_training_state,
++            )
 +
-         max_steps = cfg.max_steps
-         init_step = 0
-@@ -785,6 +834,8 @@ class Runner:
-                 render_mode="RGB+ED" if cfg.depth_loss else "RGB",
-                 masks=masks,
-             )
++            camera_sequence = fixed_camera_sequence(len(self.trainset), max_steps, cfg.seed)
++            if cfg.ru_part_replay_ckpt is not None:
++                replay_payload = load_replay_checkpoint(cfg.ru_part_replay_ckpt)
++                source_mode = replay_payload["intervention_mode"]
++                if source_mode != "parent" and source_mode != cfg.ru_part_mode:
++                    raise ValueError("replay intervention mode is not a parent or exact match")
++                if not torch.equal(replay_payload["camera_sequence"], camera_sequence):
++                    raise ValueError("replay camera sequence differs from runtime")
++                self.strategy_state = restore_training_state(
++                    replay_payload,
++                    splats=self.splats,
++                    optimizers=self.optimizers,
++                    schedulers=schedulers,
++                    device=self.device,
++                )
++                self.ru_training.load_replay_state_dict(replay_payload["ru_training"])
++                init_step = int(replay_payload["next_step"])
++            torch.save(camera_sequence, Path(cfg.result_dir, "camera_sequence.pt"))
++            Path(cfg.result_dir, "camera_sequence.json").write_text(
++                json.dumps({
++                    "seed": cfg.seed,
++                    "length": len(camera_sequence),
++                    "sha256": camera_sequence_sha256(camera_sequence),
++                    "start_step": init_step,
++                }, indent=2) + "\n"
++            )
++
++        scheduled_trainset = (
++            torch.utils.data.Subset(self.trainset, camera_sequence[init_step:].tolist())
++            if camera_sequence is not None
++            else self.trainset
++        )
+@@ -727 +830 @@ class Runner:
+-            self.trainset,
++            scheduled_trainset,
+@@ -729 +832 @@ class Runner:
+-            shuffle=True,
++            shuffle=camera_sequence is None,
+@@ -734,0 +838,2 @@ class Runner:
++        if replay_payload is not None:
++            restore_rng_state(replay_payload["rng"])
+@@ -787,0 +893,2 @@ class Runner:
 +            if self.ru_training is not None and self.ru_training.ru_part is not None:
 +                self.ru_training.ru_part.note_rgb_rasterization()
-             if renders.shape[-1] == 4:
-                 colors, depths = renders[..., 0:3], renders[..., 3:4]
-             else:
-@@ -856,6 +907,15 @@ class Runner:
-                         fused_ssim_fn=fused_ssim,
-                         ssim_lambda=cfg.ssim_lambda,
-                     )
+@@ -858,0 +966,9 @@ class Runner:
 +                    if self.ru_training.ru_part is not None:
 +                        rescue_loss = self.ru_training.ru_part_rescue_loss(
 +                            render=colors,
@@ -227,22 +195,10 @@ index dffcdb6..f2e7ee2 100644
 +                            global_image_id=self.ru_training.ru_part.global_image_id_from_train(image_ids),
 +                        )
 +                        loss = loss + (1.0 - cfg.ssim_lambda) * rescue_loss
-                 else:
-                     l1loss = F.l1_loss(colors, pixels)
-                     ssimloss = 1.0 - fused_ssim(
-@@ -919,6 +979,8 @@ class Runner:
-                     info=info,
-                 )
-             loss.backward()
+@@ -921,0 +1038,2 @@ class Runner:
 +            if self.ru_training is not None and self.ru_training.ru_part is not None:
 +                self.ru_training.ru_part.note_gaussian_backward()
-             if ru_state is not None:
-                 self.ru_training.assert_photo_gradient_isolation()
-                 self.ru_training.complete_mask_supervision(
-@@ -1087,6 +1149,32 @@ class Runner:
-             # T=1 follows RU ordering: strategy post-backward first, then the
-             # Gaussian optimizer. T=0 preserves the pinned B1 order.
-             if self.puri_gs_delayed_topology_enabled:
+@@ -1089,0 +1208,33 @@ class Runner:
 +                if cfg.puri_gs_ru_part_enabled and self.cfg.strategy.schedule.should_refine(step):
 +                    fixed_probe_started = time.perf_counter()
 +                    with torch.no_grad():
@@ -269,22 +225,34 @@ index dffcdb6..f2e7ee2 100644
 +                        K=Ks,
 +                        fixed_support_probe_ms=(time.perf_counter() - fixed_probe_started) * 1000.0,
 +                    )
-                 self.cfg.strategy.step_post_backward(
-                     params=self.splats,
-                     optimizers=self.optimizers,
-@@ -1095,6 +1183,8 @@ class Runner:
-                     info=info,
-                     packed=cfg.packed,
-                 )
-+                if cfg.puri_gs_ru_part_enabled:
++                    if cfg.ru_part_mode == "noop":
++                        self.ru_training.ru_part.record_noop_event(
++                            self.splats,
++                            self.strategy_state,
++                            self.cfg.strategy,
++                            step,
++                        )
+@@ -1097,0 +1249,2 @@ class Runner:
++                if cfg.puri_gs_ru_part_enabled and cfg.ru_part_mode == "current":
 +                    self.ru_training.ru_part.lifecycle_counts(step, self.strategy_state)
- 
-             # optimize
-             for optimizer in self.optimizers.values():
-@@ -1222,8 +1312,33 @@ class Runner:
-         valloader = torch.utils.data.DataLoader(
-             self.valset, batch_size=1, shuffle=False, num_workers=1
-         )
+@@ -1190,0 +1344,16 @@ class Runner:
++            if cfg.puri_gs_ru_part_enabled:
++                from puri_gs.replay import REPLAY_SAVE_STEPS, save_replay_checkpoint
++
++                if step in REPLAY_SAVE_STEPS:
++                    save_replay_checkpoint(
++                        Path(cfg.result_dir, "replay_ckpts", f"replay_step{step}.pt"),
++                        step=step,
++                        splats=self.splats,
++                        optimizers=self.optimizers,
++                        schedulers=schedulers,
++                        strategy_state=self.strategy_state,
++                        camera_sequence=camera_sequence,
++                        intervention_mode=cfg.ru_part_mode,
++                        ru_training_state=self.ru_training.replay_state_dict(),
++                    )
++
+@@ -1224,0 +1394,24 @@ class Runner:
 +        if cfg.eval_warmup_renders < 0:
 +            raise ValueError("eval_warmup_renders must be non-negative")
 +        if cfg.eval_warmup_renders:
@@ -309,16 +277,9 @@ index dffcdb6..f2e7ee2 100644
 +            print(
 +                f"Evaluation warmup complete: {cfg.eval_warmup_renders} renders"
 +            )
-         ellipse_time = 0
-         latencies = []
+@@ -1226,0 +1420 @@ class Runner:
 +        latency_rows = []
-         metrics = defaultdict(list)
-         per_image_rows = []
-         for i, data in enumerate(valloader):
-@@ -1254,13 +1369,22 @@ class Runner:
-             canvas_list = [pixels, colors]
- 
-             if world_rank == 0:
+@@ -1257,6 +1451,8 @@ class Runner:
 -                # write images
 -                canvas = torch.cat(canvas_list, dim=2).squeeze(0).cpu().numpy()
 -                canvas = (canvas * 255).astype(np.uint8)
@@ -333,7 +294,7 @@ index dffcdb6..f2e7ee2 100644
 +                        "image_name": image_name,
 +                        "latency_ms": latency * 1000.0,
 +                    }
-                 )
+@@ -1263,0 +1460,7 @@ class Runner:
 +                if not cfg.eval_disable_image_save:
 +                    canvas = torch.cat(canvas_list, dim=2).squeeze(0).cpu().numpy()
 +                    canvas = (canvas * 255).astype(np.uint8)
@@ -341,25 +302,12 @@ index dffcdb6..f2e7ee2 100644
 +                        f"{self.render_dir}/{stage}_step{step}_{i:04d}.png",
 +                        canvas,
 +                    )
- 
-                 pixels_p = pixels.permute(0, 3, 1, 2)  # [1, 3, H, W]
-                 colors_p = colors.permute(0, 3, 1, 2)  # [1, 3, H, W]
-@@ -1270,10 +1394,9 @@ class Runner:
-                 metrics["psnr"].append(psnr_value)
-                 metrics["ssim"].append(ssim_value)
-                 metrics["lpips"].append(lpips_value)
+@@ -1273 +1475,0 @@ class Runner:
 -                parser_index = int(self.valset.indices[i])
-                 per_image_rows.append(
-                     {
+@@ -1276 +1478 @@ class Runner:
 -                        "image_name": self.parser.image_names[parser_index],
 +                        "image_name": image_name,
-                         "psnr": psnr_value.item(),
-                         "ssim": ssim_value.item(),
-                         "lpips": lpips_value.item(),
-@@ -1323,6 +1446,15 @@ class Runner:
-                     )
-                     writer.writeheader()
-                     writer.writerows(per_image_rows)
+@@ -1325,0 +1528,9 @@ class Runner:
 +                with open(
 +                    f"{cfg.result_dir}/per_image_latency.csv", "w", newline=""
 +                ) as f:
@@ -369,30 +317,15 @@ index dffcdb6..f2e7ee2 100644
 +                    )
 +                    writer.writeheader()
 +                    writer.writerows(latency_rows)
-                 latency_array = np.asarray(latencies, dtype=np.float64)
-                 efficiency = {
-                     "render_fps": float(1.0 / latency_array.mean()),
-@@ -1332,14 +1464,23 @@ class Runner:
-                     "inference_vram_gib": float(
-                         torch.cuda.max_memory_allocated() / 1024**3
-                     ),
+@@ -1334,0 +1546,2 @@ class Runner:
 +                    "warmup_render_count": cfg.eval_warmup_renders,
 +                    "raw_latency_sample_count": len(latencies),
-                 }
-                 with open(f"{cfg.result_dir}/efficiency_metrics.json", "w") as f:
-                     json.dump(efficiency, f, indent=2)
-                 validation = {
-                     "standard_checkpoint_load_pass": True,
-                     "evaluation_imported_dino": "puri_gs.dino_features" in sys.modules,
+@@ -1340,0 +1554,4 @@ class Runner:
 +                    "evaluation_loaded_track_cache": bool(
 +                        self.ru_training is not None
 +                        and self.ru_training.ru_part is not None
 +                    ),
-                     "evaluation_loaded_mask_head": self.ru_training is not None,
-                     "evaluation_rasterization_count_ratio": 1.0,
+@@ -1342,0 +1560,3 @@ class Runner:
 +                    "evaluation_warmup_render_count": cfg.eval_warmup_renders,
 +                    "raw_latency_sample_count": len(latencies),
 +                    "evaluation_image_save_disabled": cfg.eval_disable_image_save,
-                 }
-                 with open(f"{cfg.result_dir}/ru_validation.json", "w") as f:
-                     json.dump(validation, f, indent=2)

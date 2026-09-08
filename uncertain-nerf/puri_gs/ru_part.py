@@ -38,11 +38,13 @@ except ImportError:  # CPU-only unit tests can import the controller.
 
 
 EVENT_FIELDS = (
-    "step", "gaussians_before", "fixed_support_mean", "standard_clone_proposed",
+    "step", "intervention_mode", "diagnostic_only", "gaussians_before",
+    "fixed_support_mean", "standard_clone_proposed",
     "standard_split_proposed", "post_grow_prune_candidate_count",
     "track_candidates_visible", "track_candidates_geometry_valid",
     "candidate_B_positive", "candidate_alpha_mass_positive", "candidate_B_gt_H0",
-    "birth_pareto_dominates_clone", "coverage_birth_accepted", "regular_clone_replaced",
+    "birth_pareto_dominates_clone", "counterfactual_birth_selected",
+    "coverage_birth_accepted", "regular_clone_replaced",
     "regular_clone_executed", "split_executed", "prune_executed",
     "budget_rejected_clone", "budget_rejected_birth", "budget_rejected_split",
     "accepted_track_id_unique", "birth_survived_100", "birth_survived_500",
@@ -62,6 +64,9 @@ class RUPARTController:
         self.payload = load_static_track_cache(cache_path)
         self.device = torch.device(device)
         self.cfg = cfg
+        self.intervention_mode = str(cfg.ru_part_mode)
+        if self.intervention_mode not in {"noop", "current"}:
+            raise ValueError("RUPARTController is valid only for noop/current modes")
         self.parser = parser
         self.trainset = trainset
         runtime_names = [parser.image_names[int(i)] for i in trainset.indices]
@@ -147,6 +152,8 @@ class RUPARTController:
         return value.to(device or self.device)
 
     def rescue_loss(self, render: Tensor, target: Tensor, alpha: Tensor, safe_mask: Tensor, global_image_id: int | Tensor) -> Tensor:
+        if getattr(self, "intervention_mode", "current") == "noop":
+            return render.sum() * 0.0
         if render.shape != target.shape or render.ndim != 4 or render.shape[0] != 1:
             raise ValueError("RU-PART supports batch=1 RGB training only")
         height, width = render.shape[1:3]
@@ -208,6 +215,118 @@ class RUPARTController:
             raise RuntimeError("RU-PART topology event has no matching fixed-support probe")
         event, self._event = self._event, None
         return event
+
+    @torch.no_grad()
+    def record_noop_event(
+        self,
+        params: Mapping[str, Tensor],
+        state: Mapping[str, Any],
+        strategy: Any,
+        step: int,
+    ) -> None:
+        """Score the current intervention without changing parameters or topology."""
+
+        if self.intervention_mode != "noop":
+            raise RuntimeError("record_noop_event is exclusive to noop mode")
+        started = perf_counter()
+        event = self.take_event(step)
+        before = len(params["means"])
+        proposals = compute_default_grow_masks(params, state, strategy, step)
+        clone_indices = torch.where(proposals.clone)[0]
+        split_indices = torch.where(proposals.split)[0]
+        track_rows = self.visible_track_rows(event["train_view_id"])
+        decision_support = event["support"].float().cpu()
+        decision_alpha = event["alpha"].float().cpu()
+        decision_evidence = event["evidence"].float().cpu()
+
+        birth_footprints = []
+        if len(track_rows):
+            ids_cpu = self.track_ids[track_rows]
+            means = self.track_xyz[track_rows].to(params["means"].device)
+            scales = torch.as_tensor(
+                np.stack([self._geometry[int(value)][0] for value in ids_cpu.tolist()]),
+                device=means.device,
+            )
+            quats = torch.as_tensor(
+                np.stack([self._geometry[int(value)][1] for value in ids_cpu.tolist()]),
+                device=means.device,
+            )
+            radii, means2d, _, conics = project_gaussians(
+                means, quats, scales.exp(), event["viewmat"], event["K_grid"]
+            )
+            birth_footprints = sparse_footprints_from_projection(
+                ids_cpu, means2d.cpu(), conics.cpu(), radii.cpu()
+            )
+            initialize_footprint_scores(
+                birth_footprints,
+                decision_support,
+                decision_alpha,
+                decision_evidence,
+                initial_opacity=float(self.cfg.birth_initial_opacity),
+            )
+
+        clone_footprints = []
+        if len(clone_indices):
+            radii, means2d, _, conics = project_gaussians(
+                params["means"][clone_indices],
+                params["quats"][clone_indices],
+                params["scales"][clone_indices].exp(),
+                event["viewmat"],
+                event["K_grid"],
+            )
+            clone_footprints = sparse_footprints_from_projection(
+                clone_indices.cpu(), means2d.cpu(), conics.cpu(), radii.cpu()
+            )
+            initialize_footprint_scores(
+                clone_footprints,
+                decision_support,
+                decision_alpha,
+                decision_evidence,
+                initial_opacity=float(self.cfg.birth_initial_opacity),
+            )
+
+        clone_ids = clone_indices.detach().cpu().tolist()
+        clone_grads = proposals.average_grad2d[clone_indices].detach().cpu().tolist()
+        replacements, updated_support = pair_births_with_clones(
+            birth_footprints,
+            clone_footprints,
+            decision_support,
+            decision_evidence,
+            limit=len(clone_indices),
+            clone_tiebreak=dict(zip(clone_ids, clone_grads)),
+        )
+        accepted_b = [item.benefit for item in replacements]
+        accepted_h = [item.harm for item in replacements]
+        accepted_a = [item.alpha_mass for item in replacements]
+        self.record_event({
+            "step": step,
+            "intervention_mode": "noop",
+            "diagnostic_only": 1,
+            "gaussians_before": before,
+            "fixed_support_mean": float(decision_support.mean()),
+            "standard_clone_proposed": len(clone_indices),
+            "standard_split_proposed": len(split_indices),
+            "track_candidates_visible": int(
+                (self.track_views == event["train_view_id"]).any(1).sum()
+            ),
+            "track_candidates_geometry_valid": len(track_rows),
+            "candidate_B_positive": sum(item.initial_benefit > 0 for item in birth_footprints),
+            "candidate_alpha_mass_positive": sum(item.alpha_mass > 0 for item in birth_footprints),
+            "candidate_B_gt_H0": sum(
+                item.initial_benefit > item.initial_harm for item in birth_footprints
+            ),
+            "birth_pareto_dominates_clone": len(replacements),
+            "counterfactual_birth_selected": len(replacements),
+            "coverage_birth_accepted": 0,
+            "regular_clone_replaced": 0,
+            "mean_B_accepted": float(np.mean(accepted_b)) if accepted_b else 0.0,
+            "mean_H0_accepted": float(np.mean(accepted_h)) if accepted_h else 0.0,
+            "mean_prospective_alpha_mass": float(np.mean(accepted_a)) if accepted_a else 0.0,
+            "mean_fixed_support_gain": float((updated_support - decision_support).mean()),
+            "gaussians_after": before,
+            "fixed_support_probe_ms": event["probe_ms"],
+            "topology_total_ms": (perf_counter() - started) * 1000.0,
+        })
 
     def visible_track_rows(self, train_view_id: int) -> Tensor:
         member = (self.track_views == int(train_view_id)).any(dim=1)
@@ -369,8 +488,174 @@ class RUPARTController:
         self._event_stream.flush()
         self._accepted_stream.flush()
 
+    def replay_state_dict(self) -> dict[str, Any]:
+        return {
+            "intervention_mode": self.intervention_mode,
+            "born_track_ids": sorted(self.born_track_ids),
+            "accepted": self._accepted,
+            "full_rgb_rasterizations": self.full_rgb_rasterizations,
+            "fixed_support_probe_count": self.fixed_support_probe_count,
+            "gaussian_backward_count": self.gaussian_backward_count,
+            "sum_gaussians_over_train_steps": self.sum_gaussians_over_train_steps,
+            "peak_gaussian_count": self.peak_gaussian_count,
+        }
 
-class RUPARTStrategy(DelayedAbsGradStrategy):
+    def load_replay_state_dict(self, state: Mapping[str, Any]) -> None:
+        if state["intervention_mode"] != self.intervention_mode:
+            raise ValueError("replay intervention mode differs from runtime")
+        self.born_track_ids = {int(value) for value in state["born_track_ids"]}
+        self._accepted = {
+            int(key): dict(value) for key, value in state["accepted"].items()
+        }
+        for field in (
+            "full_rgb_rasterizations",
+            "fixed_support_probe_count",
+            "gaussian_backward_count",
+            "sum_gaussians_over_train_steps",
+            "peak_gaussian_count",
+        ):
+            setattr(self, field, int(state[field]))
+
+
+LINEAGE_KEYS = ("uid", "lineage_id", "parent_uid", "track_id", "birth_step")
+
+
+class LineageDelayedAbsGradStrategy(DelayedAbsGradStrategy):
+    """Default delayed topology with stable identity metadata and prune reasons."""
+
+    def __init__(
+        self,
+        *,
+        schedule: DelayedAbsGradSchedule,
+        result_dir: str | Path,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(schedule=schedule, **kwargs)
+        self._next_uid = 0
+        self._prune_stream = Path(result_dir, "ru_part_lineage_prune.csv").open(
+            "w", newline="", encoding="utf-8"
+        )
+        self._prune_writer = csv.DictWriter(
+            self._prune_stream,
+            fieldnames=(
+                "step", "uid", "lineage_id", "parent_uid", "track_id",
+                "birth_step", "opacity", "opacity_threshold", "max_scale",
+                "scale_threshold", "radius", "radius_threshold",
+                "reason_opacity", "reason_scale3d", "reason_scale2d",
+            ),
+        )
+        self._prune_writer.writeheader()
+
+    def ensure_lineage(self, state: dict[str, Any], count: int, device: torch.device) -> None:
+        present = [key in state for key in LINEAGE_KEYS]
+        if any(present) and not all(present):
+            raise RuntimeError("lineage state is partially initialized")
+        if all(present):
+            if any(len(state[key]) != count for key in LINEAGE_KEYS):
+                raise RuntimeError("lineage state length differs from Gaussian count")
+            self._next_uid = max(self._next_uid, int(state["uid"].max().item()) + 1)
+            return
+        uid = torch.arange(count, dtype=torch.int64, device=device)
+        state["uid"] = uid
+        state["lineage_id"] = uid.clone()
+        state["parent_uid"] = torch.full_like(uid, -1)
+        state["track_id"] = torch.full_like(uid, -1)
+        state["birth_step"] = torch.full_like(uid, -1)
+        self._next_uid = count
+
+    def _allocate_uids(self, count: int, device: torch.device) -> Tensor:
+        result = torch.arange(
+            self._next_uid, self._next_uid + count, dtype=torch.int64, device=device
+        )
+        self._next_uid += count
+        return result
+
+    @torch.no_grad()
+    def _grow_gs(self, params, optimizers, state, step: int) -> tuple[int, int]:
+        self.ensure_lineage(state, len(params["means"]), params["means"].device)
+        proposals = compute_default_grow_masks(params, state, self, step)
+        clone_indices = torch.where(proposals.clone)[0]
+        split_indices = torch.where(proposals.split)[0]
+        n_clone, n_split = len(clone_indices), len(split_indices)
+        if n_clone:
+            parent_uids = state["uid"][clone_indices].clone()
+            duplicate(params=params, optimizers=optimizers, state=state, mask=proposals.clone)
+            state["uid"][-n_clone:] = self._allocate_uids(n_clone, state["uid"].device)
+            state["parent_uid"][-n_clone:] = parent_uids
+        if n_split:
+            split_mask = torch.cat((
+                proposals.split,
+                torch.zeros(n_clone, dtype=torch.bool, device=proposals.split.device),
+            ))
+            parent_uids = state["uid"][split_mask].clone()
+            split(
+                params=params,
+                optimizers=optimizers,
+                state=state,
+                mask=split_mask,
+                revised_opacity=self.revised_opacity,
+            )
+            state["uid"][-2 * n_split:] = self._allocate_uids(
+                2 * n_split, state["uid"].device
+            )
+            state["parent_uid"][-2 * n_split:] = parent_uids.repeat(2)
+        return n_clone, n_split
+
+    @torch.no_grad()
+    def _prune_gs(self, params, optimizers, state, step: int) -> int:
+        self.ensure_lineage(state, len(params["means"]), params["means"].device)
+        opacity = torch.sigmoid(params["opacities"].flatten())
+        max_scale = torch.exp(params["scales"]).max(dim=-1).values
+        radius = state.get("radii")
+        reason_opacity = opacity < self.prune_opa
+        reason_scale3d = torch.zeros_like(reason_opacity)
+        reason_scale2d = torch.zeros_like(reason_opacity)
+        if step > self.reset_every:
+            reason_scale3d = max_scale > self.prune_scale3d * state["scene_scale"]
+            if step < self.refine_scale2d_stop_iter:
+                reason_scale2d = radius > self.prune_scale2d
+        prune_mask = reason_opacity | reason_scale3d | reason_scale2d
+        for index in torch.where(prune_mask)[0].tolist():
+            self._prune_writer.writerow({
+                "step": step,
+                "uid": int(state["uid"][index]),
+                "lineage_id": int(state["lineage_id"][index]),
+                "parent_uid": int(state["parent_uid"][index]),
+                "track_id": int(state["track_id"][index]),
+                "birth_step": int(state["birth_step"][index]),
+                "opacity": float(opacity[index]),
+                "opacity_threshold": float(self.prune_opa),
+                "max_scale": float(max_scale[index]),
+                "scale_threshold": float(self.prune_scale3d * state["scene_scale"]),
+                "radius": float(radius[index]) if isinstance(radius, Tensor) else -1.0,
+                "radius_threshold": float(self.prune_scale2d),
+                "reason_opacity": int(reason_opacity[index]),
+                "reason_scale3d": int(reason_scale3d[index]),
+                "reason_scale2d": int(reason_scale2d[index]),
+            })
+        if torch.any(prune_mask):
+            self._prune_stream.flush()
+        actual = super()._prune_gs(params, optimizers, state, step)
+        if actual != int(prune_mask.sum()):
+            raise RuntimeError("recorded prune mask differs from actual prune count")
+        return actual
+
+    def assign_birth_lineage(
+        self, state: dict[str, Any], selected_track_ids: list[int], step: int
+    ) -> None:
+        count = len(selected_track_ids)
+        if not count:
+            return
+        device = state["uid"].device
+        new_uids = self._allocate_uids(count, device)
+        state["uid"][-count:] = new_uids
+        state["lineage_id"][-count:] = new_uids
+        state["parent_uid"][-count:] = -1
+        state["track_id"][-count:] = torch.as_tensor(selected_track_ids, device=device)
+        state["birth_step"][-count:] = int(step)
+
+
+class RUPARTStrategy(LineageDelayedAbsGradStrategy):
     """Delayed strategy replacing eligible clone slots with prospective births."""
 
     def __init__(self, *, schedule: DelayedAbsGradSchedule, **kwargs: Any) -> None:
@@ -405,6 +690,7 @@ class RUPARTStrategy(DelayedAbsGradStrategy):
         assert controller is not None
         event = controller.take_event(step)
         before = len(params["means"])
+        self.ensure_lineage(state, before, params["means"].device)
         if "part_track_id" not in state:
             state["part_track_id"] = torch.full(
                 (before,), -1, dtype=torch.long, device=params["means"].device
@@ -500,14 +786,25 @@ class RUPARTStrategy(DelayedAbsGradStrategy):
 
         regular_clone_count = int(clone_mask.sum())
         if regular_clone_count:
+            clone_parent_uids = state["uid"][clone_mask].clone()
             duplicate(params=params, optimizers=optimizers, state=state, mask=clone_mask)
+            state["uid"][-regular_clone_count:] = self._allocate_uids(
+                regular_clone_count, state["uid"].device
+            )
+            state["parent_uid"][-regular_clone_count:] = clone_parent_uids
         extended_split = torch.cat((split_mask, torch.zeros(regular_clone_count, dtype=torch.bool, device=split_mask.device)))
         split_count = int(split_mask.sum())
         if split_count:
+            split_parent_uids = state["uid"][extended_split].clone()
             split(params=params, optimizers=optimizers, state=state, mask=extended_split, revised_opacity=self.revised_opacity)
+            state["uid"][-2 * split_count:] = self._allocate_uids(
+                2 * split_count, state["uid"].device
+            )
+            state["parent_uid"][-2 * split_count:] = split_parent_uids.repeat(2)
         if selected:
             rows = controller.birth_rows(selected, params)
             append_birth_rows(params, optimizers, state, rows)
+            self.assign_birth_lineage(state, selected, step)
             state["part_track_id"][-len(selected):] = torch.as_tensor(selected, device=params["means"].device)
             state["part_birth_step"][-len(selected):] = step
             controller.born_track_ids.update(selected)
@@ -531,13 +828,16 @@ class RUPARTStrategy(DelayedAbsGradStrategy):
             [item for item in birth_footprints if item.candidate_id in selected_set],
         )
         controller.record_event({
-            "step": step, "gaussians_before": before, "fixed_support_mean": float(decision_support.mean()),
+            "step": step, "intervention_mode": "current", "diagnostic_only": 0,
+            "gaussians_before": before, "fixed_support_mean": float(decision_support.mean()),
             "standard_clone_proposed": len(clone_indices), "standard_split_proposed": len(split_indices),
             "post_grow_prune_candidate_count": prune_count, "track_candidates_visible": int((controller.track_views == event["train_view_id"]).any(1).sum()),
             "track_candidates_geometry_valid": len(track_rows), "candidate_B_positive": sum(item.initial_benefit > 0 for item in birth_footprints),
             "candidate_alpha_mass_positive": sum(item.alpha_mass > 0 for item in birth_footprints),
             "candidate_B_gt_H0": sum(item.initial_benefit > item.initial_harm for item in birth_footprints),
-            "birth_pareto_dominates_clone": len(replacements), "coverage_birth_accepted": len(selected),
+            "birth_pareto_dominates_clone": len(replacements),
+            "counterfactual_birth_selected": len(replacements),
+            "coverage_birth_accepted": len(selected),
             "regular_clone_replaced": len(replaced), "regular_clone_executed": regular_clone_count,
             "split_executed": split_count, "prune_executed": prune_count,
             "budget_rejected_clone": budget_rejected_clone, "budget_rejected_birth": budget_rejected_birth,
@@ -555,10 +855,23 @@ class RUPARTStrategy(DelayedAbsGradStrategy):
         })
 
 
-def ru_part_strategy_from_default(strategy: Any, schedule: DelayedAbsGradSchedule) -> RUPARTStrategy:
+def ru_part_strategy_from_default(
+    strategy: Any,
+    schedule: DelayedAbsGradSchedule,
+    *,
+    intervention_mode: str = "current",
+    result_dir: str | Path = ".",
+) -> LineageDelayedAbsGradStrategy:
     fields = (
         "prune_opa", "grow_grad2d", "grow_scale3d", "grow_scale2d", "prune_scale3d",
         "prune_scale2d", "refine_scale2d_stop_iter", "pause_refine_after_reset",
         "revised_opacity", "verbose", "key_for_gradient",
     )
-    return RUPARTStrategy(schedule=schedule, **{field: getattr(strategy, field) for field in fields})
+    strategy_class = (
+        RUPARTStrategy if intervention_mode == "current" else LineageDelayedAbsGradStrategy
+    )
+    return strategy_class(
+        schedule=schedule,
+        result_dir=result_dir,
+        **{field: getattr(strategy, field) for field in fields},
+    )

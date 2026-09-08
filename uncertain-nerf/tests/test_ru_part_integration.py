@@ -18,9 +18,39 @@ def test_ru_part_config_is_single_fixed_profile():
     assert config["profile"] == "ru_part"
     assert config["rho0"] == 0.5 and config["gaussian_hard_cap"] == 2_312_002
     assert config["bootstrap_switch_step"] == 20_000
+    assert config["intervention_mode"] == "current"
     args = trainer_method_args(config)
     assert "--puri_gs_ru_part_enabled" in args
+    assert args[args.index("--ru_part_mode") + 1] == "current"
     assert "--puri_gs_paper_control" not in args and "--refine_windows" not in args
+
+
+def test_ru_part_control_configs_differ_only_by_intervention_mode():
+    paths = {
+        mode: ROOT / "configs" / name
+        for mode, name in {
+            "parent": "puri_gs_ru_part_parent_garden30k.yaml",
+            "noop": "puri_gs_ru_part_noop_garden30k.yaml",
+            "current": "puri_gs_ru_part_garden30k.yaml",
+        }.items()
+    }
+    configs = {mode: load_experiment_config(path) for mode, path in paths.items()}
+    common = {
+        mode: {key: value for key, value in config.items() if key != "intervention_mode"}
+        for mode, config in configs.items()
+    }
+    assert common["parent"] == common["noop"] == common["current"]
+    for mode, config in configs.items():
+        args = trainer_method_args(config)
+        assert args[args.index("--ru_part_mode") + 1] == mode
+
+
+def test_ru_part_rejects_unknown_intervention_mode(tmp_path):
+    source = (ROOT / "configs" / "puri_gs_ru_part_garden30k.yaml").read_text()
+    changed = tmp_path / "changed.json"
+    changed.write_text(source.replace('"intervention_mode": "current"', '"intervention_mode": "invalid"'))
+    with pytest.raises(ValueError, match="intervention_mode"):
+        load_experiment_config(changed)
 
 
 def test_ru_part_schedule_has_exactly_100_events_and_no_tar_window():
@@ -34,19 +64,15 @@ def test_trainer_patch_is_training_only_and_preserves_standard_checkpoint():
     patch = (ROOT / "patches" / "gsplat_v1.5.3_puri_gs_ru_part.patch").read_text()
     assert "puri_gs_ru_part_enabled" in patch
     assert "opacity_override=0.5" in patch
-    assert "loss.backward()" in patch
-    assert "torch.save" not in patch
+    assert "ru_part_replay_ckpt" in patch and "replay_ckpts" in patch
     assert "cuda/" not in patch and "csrc/" not in patch
     assert "evaluation_loaded_track_cache" in patch
     assert "calibration_file = image_files[calibration_index]" in patch
     assert 'prepared_dir = image_dir + "_png"' in patch
     assert "set(prepared_files) != set(" in patch
     assert "requires a complete pre-generated PNG image directory" in patch
-    dump_position = patch.index("yaml.dump(vars(cfg), f)")
-    attach_position = patch.index(
-        "+            self.cfg.strategy.part_controller = self.ru_training.ru_part"
-    )
-    assert dump_position < attach_position
+    assert 'cfg.ru_part_mode == "current"' in patch
+    assert "self.cfg.strategy.part_controller = self.ru_training.ru_part" in patch
 
 
 def test_no_forbidden_dense_or_second_backward_patterns():
@@ -115,6 +141,22 @@ def test_rescue_is_exactly_zero_without_track_evidence():
         torch.zeros(1, 1, 4, 4), 0,
     )
     assert loss == 0
+
+
+def test_noop_rescue_is_connected_exact_zero():
+    controller = RUPARTController.__new__(RUPARTController)
+    controller.intervention_mode = "noop"
+    render = torch.rand(1, 4, 4, 3, requires_grad=True)
+    loss = controller.rescue_loss(
+        render,
+        torch.zeros_like(render),
+        torch.zeros(1, 4, 4, 1),
+        torch.zeros(1, 1, 4, 4),
+        0,
+    )
+    loss.backward()
+    assert loss.item() == 0.0
+    assert render.grad is not None and torch.count_nonzero(render.grad) == 0
 
 
 def test_all_garden_training_views_use_matching_evidence_and_event():

@@ -14,12 +14,12 @@ if grep '^+++ b/' "${PATCH}" | grep -E '/(cuda|csrc|third_party)/' >/dev/null; t
   echo "RU-PART patch contains CUDA/kernel sources"
   exit 3
 fi
-if git -C "${TARGET_DIR}" apply --reverse --check --ignore-whitespace "${PATCH}" >/dev/null 2>&1; then
+if git -C "${TARGET_DIR}" apply --reverse --check --unidiff-zero --ignore-whitespace "${PATCH}" >/dev/null 2>&1; then
   echo "PURI-GS-RU-PART-PATCH-READY"
   exit 0
 fi
 bash "${ROOT_DIR}/scripts/prepare_puri_gs_ru.sh" "${TARGET_DIR}"
-git -C "${TARGET_DIR}" apply --check --ignore-whitespace "${PATCH}"
-git -C "${TARGET_DIR}" apply --ignore-whitespace "${PATCH}"
-git -C "${TARGET_DIR}" apply --reverse --check --ignore-whitespace "${PATCH}"
+git -C "${TARGET_DIR}" apply --check --unidiff-zero --ignore-whitespace "${PATCH}"
+git -C "${TARGET_DIR}" apply --unidiff-zero --ignore-whitespace "${PATCH}"
+git -C "${TARGET_DIR}" apply --reverse --check --unidiff-zero --ignore-whitespace "${PATCH}"
 echo "PURI-GS-RU-PART-PATCH-READY"

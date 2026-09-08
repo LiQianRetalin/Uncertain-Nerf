@@ -22,6 +22,7 @@ REQUIRED_CVTR_FIELDS = set(CVTRConfig.__dataclass_fields__) | {"enabled"}
 
 CAUSAL_PROFILE = "ru_causal"
 RU_PART_PROFILE = "ru_part"
+RU_PART_MODES = ("parent", "noop", "current")
 
 PAPER_CONTROLS = ("ru_align", "ru_tar")
 TAR_REFINE_WINDOWS = [
@@ -229,6 +230,11 @@ def validate_experiment_config(config: dict[str, Any]) -> None:
         return
 
     if config["profile"] == RU_PART_PROFILE:
+        mode = config.get("intervention_mode")
+        if mode not in RU_PART_MODES:
+            raise ValueError(
+                f"RU-PART intervention_mode must be one of {RU_PART_MODES}"
+            )
         mismatches = {
             field: (config.get(field), expected)
             for field, expected in RU_PART_FIXED_FIELDS.items()
@@ -244,6 +250,7 @@ def validate_experiment_config(config: dict[str, Any]) -> None:
             "gsplat_version": "1.5.3",
             "delayed_densification": True,
             "training": {"data_factor": 4, "test_every": 8},
+            "intervention_mode": mode,
         }
         if config != required:
             raise ValueError("RU-PART contains fields outside its fixed preregistration")
@@ -410,6 +417,7 @@ def trainer_method_args(config: dict[str, Any]) -> list[str]:
             args.extend([f"--{field}", str(config[field])])
         if config["profile"] == RU_PART_PROFILE:
             args.append("--puri_gs_ru_part_enabled")
+            args.extend(["--ru_part_mode", config["intervention_mode"]])
         if config.get("paper_control"):
             args.extend(["--puri_gs_paper_control", config["paper_control"]])
             if "refine_windows" in config:

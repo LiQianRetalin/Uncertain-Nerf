@@ -53,13 +53,17 @@ def _git(*args: str, cwd: Path) -> str:
     return result.stdout.strip()
 
 
-def _verify_applied_patch(gsplat_dir: Path, patch_path: Path) -> None:
+def _verify_applied_patch(
+    gsplat_dir: Path, patch_path: Path, *, unidiff_zero: bool = False
+) -> None:
+    zero_context = ["--unidiff-zero"] if unidiff_zero else []
     check = subprocess.run(
         [
             "git",
             "apply",
             "--reverse",
             "--check",
+            *zero_context,
             "--ignore-whitespace",
             str(patch_path),
         ],
@@ -87,8 +91,14 @@ def _verify_gsplat(
         raise RuntimeError("GSPLAT_DIR is not the pinned v1.5.3 checkout")
     source = (gsplat_dir / "examples" / "simple_trainer.py").read_text(encoding="utf-8")
     if require_ru_part:
-        _verify_applied_patch(gsplat_dir, RU_PART_PATCH_PATH)
-        required = ("puri_gs_ru_part_enabled", "ru_part_track_cache", "RUPARTStrategy")
+        _verify_applied_patch(gsplat_dir, RU_PART_PATCH_PATH, unidiff_zero=True)
+        required = (
+            "puri_gs_ru_part_enabled",
+            "ru_part_mode",
+            "ru_part_track_cache",
+            "ru_part_replay_ckpt",
+            "RUPARTStrategy",
+        )
         if any(marker not in source for marker in required):
             raise RuntimeError("RU-PART trainer stack is incomplete")
         return
@@ -435,11 +445,15 @@ def _build_command(
         )
         command.extend(trainer_method_args(config))
         if config["profile"] == RU_PART_PROFILE:
-            if args.track_cache is None:
-                raise ValueError("RU-PART training requires --track-cache")
-            command.extend(["--ru_part_track_cache", str(args.track_cache.resolve())])
+            if config["intervention_mode"] != "parent":
+                if args.track_cache is None:
+                    raise ValueError("RU-PART noop/current training requires --track-cache")
+                command.extend(["--ru_part_track_cache", str(args.track_cache.resolve())])
             if args.non_scientific_smoke:
                 command.append("--ru_part_non_scientific_smoke")
+            replay_checkpoint = getattr(args, "replay_checkpoint", None)
+            if replay_checkpoint is not None:
+                command.extend(["--ru_part_replay_ckpt", str(replay_checkpoint.resolve())])
         factors = causal_factors(config)
         uses_mask = factors is not None and factors[0]
         if uses_mask:
@@ -506,6 +520,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dino-weight-path", type=Path)
     parser.add_argument("--feature-cache-dir", type=Path)
     parser.add_argument("--track-cache", type=Path)
+    parser.add_argument("--replay-checkpoint", type=Path)
     parser.add_argument(
         "--non-scientific-smoke",
         action="store_true",
@@ -559,12 +574,14 @@ def main() -> int:
             or data_dir.name.casefold() != "garden"
         ):
             raise ValueError("RU-PART first run is fixed to Garden factor4 and the every-eighth split")
-        if args.checkpoint is None:
+        if args.checkpoint is None and config["intervention_mode"] != "parent":
             if args.track_cache is None or not args.track_cache.expanduser().is_file():
-                raise RuntimeError("RU-PART static-track cache is missing")
+                raise RuntimeError("RU-PART noop/current static-track cache is missing")
             from puri_gs.static_tracks import load_static_track_cache
 
             load_static_track_cache(args.track_cache.expanduser().resolve())
+        elif args.checkpoint is None and args.track_cache is not None:
+            raise ValueError("RU-PART parent must not receive --track-cache")
         if args.non_scientific_smoke:
             if args.checkpoint is not None or args.max_steps != 10001:
                 raise ValueError("RU-PART smoke must train from step0 through the real step10000 event")
@@ -572,7 +589,17 @@ def main() -> int:
                 raise ValueError("RU-PART smoke output name must contain NON_SCIENTIFIC_SMOKE")
         elif args.max_steps not in (None, config["total_steps"]):
             raise ValueError("RU-PART Full is fixed to 30000 steps")
-    elif args.track_cache is not None or args.non_scientific_smoke:
+        if args.replay_checkpoint is not None:
+            args.replay_checkpoint = args.replay_checkpoint.expanduser().resolve()
+            if not args.replay_checkpoint.is_file():
+                raise RuntimeError(
+                    f"RU-PART replay checkpoint is missing: {args.replay_checkpoint}"
+                )
+    elif (
+        args.track_cache is not None
+        or args.replay_checkpoint is not None
+        or args.non_scientific_smoke
+    ):
         raise ValueError("RU-PART-only arguments were supplied to another profile")
     if is_paper_control:
         if _git("branch", "--show-current", cwd=REPOSITORY_ROOT) != "dev":

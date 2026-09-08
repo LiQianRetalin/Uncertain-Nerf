@@ -3,13 +3,10 @@
   "profile": "ru_part",
   "base_profile": "ru",
   "method": "ru_part",
-  "intervention_mode": "current",
+  "intervention_mode": "noop",
   "gsplat_version": "1.5.3",
   "total_steps": 30000,
-  "training": {
-    "data_factor": 4,
-    "test_every": 8
-  },
+  "training": {"data_factor": 4, "test_every": 8},
   "absgrad": true,
   "grow_grad2d": 0.0006,
   "mask_enabled": true,
