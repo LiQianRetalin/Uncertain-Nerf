@@ -46,6 +46,9 @@ diff --git a/examples/simple_trainer.py b/examples/simple_trainer.py
 index f8e1b6a..2a92ebb 100644
 --- a/examples/simple_trainer.py
 +++ b/examples/simple_trainer.py
+@@ -8 +8 @@ import sys
+-from dataclasses import dataclass, field
++from dataclasses import asdict, dataclass, field
 @@ -39,0 +40 @@ from puri_gs.semantic_mask import masked_photo_loss
 +from puri_gs.ontogo import OnTheGoPatioHighParser
 @@ -65,0 +67,2 @@ class Config:
@@ -126,6 +129,9 @@ index f8e1b6a..2a92ebb 100644
 +            if opacity_override is None
 +            else torch.full_like(self.splats["opacities"], float(opacity_override))
 +        )  # [N,]
+@@ -690 +749 @@ class Runner:
+-                yaml.dump(vars(cfg), f)
++                yaml.dump(asdict(cfg), f)
 @@ -691,0 +750,2 @@ class Runner:
 +        if cfg.puri_gs_ru_part_enabled and cfg.ru_part_mode == "current":
 +            self.cfg.strategy.part_controller = self.ru_training.ru_part

@@ -73,6 +73,9 @@ def test_trainer_patch_is_training_only_and_preserves_standard_checkpoint():
     assert "requires a complete pre-generated PNG image directory" in patch
     assert 'cfg.ru_part_mode == "current"' in patch
     assert "self.cfg.strategy.part_controller = self.ru_training.ru_part" in patch
+    assert "from dataclasses import asdict, dataclass, field" in patch
+    assert "+                yaml.dump(asdict(cfg), f)" in patch
+    assert "-                yaml.dump(vars(cfg), f)" in patch
 
 
 def test_no_forbidden_dense_or_second_backward_patterns():
