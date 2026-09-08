@@ -14,6 +14,7 @@ GARDEN="$ROOT/data/mipnerf360/360_v2/garden"
 DINO_REPO="$ROOT/external/dinov2"
 DINO_WEIGHT="$ROOT/data/PURI-GS-assets/dinov2/dinov2_vits14_reg4_pretrain.pth"
 FEATURE_CACHE="$ROOT/data/PURI-GS-derived/semantic_features/garden"
+TRACK_CACHE=UNUSED_FOR_PARENT
 OUT="$ROOT/logs-puri/ru_part_reference_controls"
 CONSOLE="$ROOT/logs-puri/ru_part_reference_controls_console"
 GPU=6
@@ -23,17 +24,14 @@ test "$(git branch --show-current)" = ru-part
 test -d "$GARDEN/images_4_png"
 test -f "$DINO_WEIGHT"
 test -f "$FEATURE_CACHE/manifest.json"
-mapfile -t TRACKS < <(find "$ROOT/data/PURI-GS-derived" -type f -name 'garden_factor4_static_tracks.pt' -print)
-test "${#TRACKS[@]}" -eq 1
-TRACK_CACHE="${TRACKS[0]}"
 mkdir -p "$OUT" "$CONSOLE"
 bash scripts/prepare_puri_gs_ru_part.sh "$GSPLAT"
 ```
 
 Completion criteria: the last command prints
-`PURI-GS-RU-PART-PATCH-READY`; all `test` commands return zero; exactly one
-track cache is selected. If more than one cache exists, stop and select the
-Garden cache by inspecting its adjacent `static_track_manifest.json`.
+`PURI-GS-RU-PART-PATCH-READY`; all `test` commands return zero. A Garden track
+cache is not required by the parent mode. It is checked only after
+the parent is accepted and before launching noop/current.
 
 ## 2. Launch one control at a time
 
@@ -54,6 +52,9 @@ After parent completes successfully, launch noop:
 ```bash
 cd "$ROOT"
 test -f "$OUT/parent_seed42/ckpts/ckpt_29999_rank0.pt"
+mapfile -t TRACKS < <(find "$ROOT/data/PURI-GS-derived" -type f -name 'garden_factor4_static_tracks.pt' -print)
+test "${#TRACKS[@]}" -eq 1
+TRACK_CACHE="${TRACKS[0]}"
 nohup env PURI_GSPLAT_PYTHON="$ROOT/.venv-gsplat153/bin/python" \
   bash scripts/train_puri_gs_ru_part.sh \
   "$GSPLAT" "$GARDEN" "$OUT/noop_seed42" "$GPU" \
