@@ -17,6 +17,7 @@ from torch import Tensor
 
 from puri_gs.delayed_absgrad import DelayedAbsGradSchedule, DelayedAbsGradStrategy
 from puri_gs.prospective_topology import (
+    BIRTH_INITIAL_OPACITY,
     N_MAX,
     RHO0,
     append_birth_rows,
@@ -262,7 +263,7 @@ class RUPARTController:
                 decision_support,
                 decision_alpha,
                 decision_evidence,
-                initial_opacity=float(self.cfg.birth_initial_opacity),
+                initial_opacity=BIRTH_INITIAL_OPACITY,
             )
 
         clone_footprints = []
@@ -282,7 +283,7 @@ class RUPARTController:
                 decision_support,
                 decision_alpha,
                 decision_evidence,
-                initial_opacity=float(self.cfg.birth_initial_opacity),
+                initial_opacity=BIRTH_INITIAL_OPACITY,
             )
 
         clone_ids = clone_indices.detach().cpu().tolist()
@@ -345,7 +346,12 @@ class RUPARTController:
             "means": self.track_xyz[rows].to(device=device, dtype=dtype),
             "scales": scales,
             "quats": quats,
-            "opacities": torch.full((len(rows),), torch.logit(torch.tensor(0.1)).item(), device=device, dtype=dtype),
+            "opacities": torch.full(
+                (len(rows),),
+                torch.logit(torch.tensor(BIRTH_INITIAL_OPACITY)).item(),
+                device=device,
+                dtype=dtype,
+            ),
             "sh0": rgb_to_sh0(rgb)[:, None, :],
             "shN": torch.zeros((len(rows), *params["shN"].shape[1:]), device=device, dtype=dtype),
         }

@@ -132,7 +132,7 @@ for MODE in parent noop current; do
 done
 ```
 
-Evaluation completion requires `metrics.json`, `per_image_metrics.csv`, and
+Evaluation completion requires `test_metrics.json`, `per_image_metrics.csv`, and
 `ru_validation.json` in each evaluation directory. Compare the three runs only
 after checking that `camera_sequence.json` SHA-256 values are identical.
 

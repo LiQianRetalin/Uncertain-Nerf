@@ -6,7 +6,7 @@ import torch
 
 from puri_gs.config import load_experiment_config, trainer_method_args
 from puri_gs.delayed_absgrad import DelayedAbsGradSchedule
-from puri_gs.prospective_topology import SparseFootprint
+from puri_gs.prospective_topology import BIRTH_INITIAL_OPACITY, SparseFootprint
 from puri_gs.ru_part import RUPARTController
 
 
@@ -23,6 +23,20 @@ def test_ru_part_config_is_single_fixed_profile():
     assert "--puri_gs_ru_part_enabled" in args
     assert args[args.index("--ru_part_mode") + 1] == "current"
     assert "--puri_gs_paper_control" not in args and "--refine_windows" not in args
+    assert config["birth_initial_opacity"] == BIRTH_INITIAL_OPACITY
+
+
+def test_ru_part_runtime_cfg_references_match_trainer_contract():
+    source = (ROOT / "puri_gs" / "ru_part.py").read_text()
+    referenced = set(
+        __import__("re").findall(r"(?<![A-Za-z_])(?:self\.)?cfg\.([A-Za-z_]\w*)", source)
+    )
+    assert referenced == {
+        "max_steps",
+        "result_dir",
+        "ru_part_mode",
+        "ru_part_track_cache",
+    }
 
 
 def test_ru_part_control_configs_differ_only_by_intervention_mode():
