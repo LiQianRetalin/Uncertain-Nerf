@@ -1,7 +1,9 @@
+import pytest
 import torch
 
 from puri_gs.semantic_mask import (
     ResidualHistogram,
+    ResidualHistogramConfig,
     StaticResponsibilityHead,
     cosine_static_target,
     hard_static_mask,
@@ -43,8 +45,32 @@ def test_histogram_quantiles_and_cosine_target():
     torch.testing.assert_close(target, torch.ones_like(target))
 
 
+def test_histogram_state_roundtrip_and_contract_validation():
+    config = ResidualHistogramConfig(
+        bins=32, momentum=0.8, lower_quantile=0.5, upper_quantile=0.75
+    )
+    source = ResidualHistogram(config)
+    source.update(torch.linspace(0, 1, 257))
+    state = source.state_dict()
+
+    restored = ResidualHistogram(config)
+    restored.load_state_dict(state)
+    assert torch.equal(restored.histogram, source.histogram)
+    assert restored.thresholds() == source.thresholds()
+
+    state["histogram"].zero_()
+    assert torch.count_nonzero(restored.histogram) > 0
+
+    incompatible = ResidualHistogram(
+        ResidualHistogramConfig(
+            bins=32, momentum=0.9, lower_quantile=0.5, upper_quantile=0.75
+        )
+    )
+    with pytest.raises(ValueError, match="configuration differs"):
+        incompatible.load_state_dict(source.state_dict())
+
+
 def test_reference_weight_regularizer_is_value_only():
     head = StaticResponsibilityHead()
     regularizer = head.reference_weight_regularizer()
     assert regularizer.requires_grad is False
-

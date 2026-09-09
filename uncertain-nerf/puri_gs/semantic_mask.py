@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Mapping
 
 import torch
 import torch.nn.functional as F
@@ -93,6 +93,33 @@ class ResidualHistogram:
             "lower_quantile": self.config.lower_quantile,
             "upper_quantile": self.config.upper_quantile,
         }
+
+    @torch.no_grad()
+    def load_state_dict(self, state: Mapping[str, Any]) -> None:
+        """Restore the exact accumulated histogram after validating its contract."""
+        required = {
+            "histogram", "bins", "momentum", "lower_quantile", "upper_quantile"
+        }
+        if not isinstance(state, Mapping) or set(state) != required:
+            raise ValueError("residual histogram state has an invalid schema")
+        saved_config = ResidualHistogramConfig(
+            bins=state["bins"],
+            momentum=state["momentum"],
+            lower_quantile=state["lower_quantile"],
+            upper_quantile=state["upper_quantile"],
+        )
+        if saved_config != self.config:
+            raise ValueError("residual histogram configuration differs from runtime")
+        histogram = state["histogram"]
+        if (
+            not isinstance(histogram, Tensor)
+            or histogram.shape != self.histogram.shape
+            or histogram.dtype != self.histogram.dtype
+            or not torch.isfinite(histogram).all()
+            or torch.any(histogram < 0)
+        ):
+            raise ValueError("residual histogram tensor is invalid")
+        self.histogram.copy_(histogram.to(device=self.histogram.device))
 
 
 def residual_interval_mask(residual: Tensor, threshold: float) -> Tensor:
@@ -194,4 +221,3 @@ def semantic_mask_loss(
         "static_prior": static_prior,
         "weight_regularizer": weight_regularizer,
     }
-
