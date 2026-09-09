@@ -144,3 +144,46 @@ V3 补丁叠加顺序：原 robot baseline → 原 RU → 原 causal → 原 eff
 修复将该缓存拒绝条件限定为非`v3_screening=v3`；没有整体跳过旧参数保护，V3的replay/diagnostic等参数仍拒绝，Parent仍拒绝静态缓存。trainer补丁、训练公式、调度和缓存内容未改，成功Parent smoke保留。新增13项真实CLI入口回归检查，本地V3、GPU与旧PART集成合计47项通过（11.95秒）；外部gsplat/数据检查在这些CPU测试中被隔离，CUDA V3 smoke仍待服务器修复重试。
 
 runbook提供仅适用于本次step=-1启动失败的归档流程，保留原错误日志/状态和预检快照；同步修复后重新`preflight --gpu 0`登记当前commit，再重新初始化V3 smoke。没有将失败状态改为成功，也没有续训失败快照。
+
+## 11. 用户提供的修复后 V3 smoke 完成结果
+
+后续服务器状态确认`smoke-v3`达到`SMOKE_COMPLETE / exit_code=0 / last_step=599`。包装PID 2291006、child PID 2291078；GPU 0，UUID `GPU-e75e3686-bd4e-bbaf-9417-28a4a31d5744`。标准checkpoint存在且可加载，Gaussian数138766，checkpoint SHA-256 `e8eba8d15f9ca3da2c19497683e8c5c252df7c5c6922ad29abbe2ffc9853d20e`。实际命令包含`--ru_v3_mode v3`和`--ru_v3_track_cache`，调度仍为30000步，终点599。
+
+日志记录训练统计`ellipse_time=11.515226125717163`秒；整个子进程墙钟时间43.90043603582308秒。后者覆盖初始化、缓存准备、训练及训练结束后的证据导出等阶段，不能用其与Parent子进程墙钟时间相除来判定训练资源门。完整600步时间也包含499步之后才开启新增监督的warmup，不能替代step520..539中位数比值；具体分项与Q激活仍须读取JSON明细。
+
+这是用户粘贴的完成记录，未直接读取服务器checkpoint或证据图。下一步只读取两组`v3_training_checks.json`、输入清单和相机序列，以及V3 `evidence_check.json`，核对梯度、调用计数、配对耗时、Q激活和早期覆盖。同时收集两个历史完整Parent候选的原配置、环境、训练/独立评测记录；未完成可比性审计前不额外启动完整Parent。正式质量和资源门仍为未验证，总体`COMPARISON_INCOMPLETE`。
+
+## 12. 用户提供的历史Parent部分记录
+
+用户终端滚动截断后粘贴的部分包含三个完整目录对象：标准RU的`independent_eval`、旧PART的`parent_seed42`及`parent_seed42_eval`。标准RU训练目录仅保留末尾split/训练指标片段，其训练配置、环境和命令尚未完整收到；两组smoke的profiler、Q激活记录不在此次粘贴中。
+
+| 历史候选 | PSNR | SSIM | LPIPS | Gaussian数 |
+|---|---:|---:|---:|---:|
+| `ru-generalization-rerun-9e292309/garden_ru_30k/independent_eval` | 26.650571823120117 | 0.8573052287101746 | 0.09050631523132324 | 2274197 |
+| `ru_part_reference_controls/parent_seed42_eval` | 26.6882381439209 | 0.856406569480896 | 0.09113087505102158 | 2277169 |
+
+标准RU独立评测的配置与本轮Parent配置删除`v3_screening`后逐字段相同，split为161/24；评测commit `9e29230952be700dc5b527008e2f60f05b82717d`。其标准checkpoint加载通过，未导入DINO或加载mask head，rasterization ratio为1.0。该结果支持优先审计复用此候选，但不是训练算法、原数据内容和成本可比性审计已经全部通过。
+
+旧PART训练配置确认为`profile=ru_part / intervention_mode=parent`，训练目录有`ru_part_lineage_prune.csv`；其配置列出的cap字段不能单独证明实际启用cap，策略等价性仍依第5节源代码审计判断，暂不自动替代标准RU。
+
+两组历史独立评测命令均为GPU 6，warmup_render_count=0。标准RU历史render_fps为39.69095847805575，旧PART为37.805169667020444。当前V3协议使用GPU 0、正式评测warmup=10，不能直接将旧FPS用于同口径效率门；该限制不单独否定历史质量复用。标准RU训练尾部片段记录1347.4549956321716秒，旧PART完整训练对象记录1214.6701657772064秒，尚未接受为本轮训练成本对照。
+
+后续回读改为保存完整元数据到服务器日志目录中的唯一命名JSON文件，终端只输出必要摘要，不再展开185个图像文件名或相机数组。只补缺失信息，不重复训练或为读取报告同步代码。
+
+## 13. 配对smoke审计与逐步开销修复
+
+用户摘要来自服务器`audit_readback_20260909_130355_414942.json`：
+
+- Parent的step520..539中位数16.28751354292035毫秒；V3为18.009644583798945毫秒；比值1.1057332069956833，即增加10.5733%，超过1.08的实现开销检查线。该结果保留，不能写成已通过或代替完整30k成本门。
+- 两组均600次Gaussian backward、1200次训练raster、600次head更新，禁用路径调用均为0；step500/599参数梯度均有限且存在非零梯度。两组输入manifest和相机序列相同。
+- V3为`NO_Q_SAMPLED`，active_samples=0，added_loss_sum=0；固定张量功能检查的新增RGB梯度最大误差为0。Parent的相同状态标签仅表示其不启用新增分支。
+- 早期证据状态为`SUPERVISION_INACTIVE_AT_AUDITED_STATE / EARLY_ACTIVATION_ONLY`。DSC07987的C非零比例0.02002423256635666、mean_C=0.0054010734893381596；DSC07989分别为0.026104196906089783、0.006943968124687672。两图Mask拒绝率为0，因此Q和高残差区域Q覆盖均为0。
+- C非零且固定张量检查通过，按附件E2允许之后做一次候选筛选；早期Q=0不能推导为训练全程无监督，也不要求额外10k前缀或放宽证据。当前继续阻止完整训练的直接原因是开销仍需复测，以及历史Parent复用登记/重评未完成。
+- 缓存准备0.5744172120466828秒，原缓存构建561.2696381960995秒，feature_extraction_seconds=8.505113261984661。分别记录，不把子进程43.90秒全部归因于缓存准备。
+- 历史标准RU的训练配置逐字段差异为空，train/test名单与本轮一致；训练GPU确认是1号（先前已知的6号为独立评测GPU）。历史训练1347.4549956321716秒，不自动接受为当前GPU 0的同口径成本。优先继续该历史质量对照的复用核对，不因成本缺失就追加完整Parent。
+
+源代码审计发现原V3 `ScreeningRun.add_loss`先计算Q用于统计，又在`static_rescue_l1`中重复计算Q；`StaticSupport.current`每步使用默认阻塞CPU到CUDA拷贝。修改为私有共享helper一次计算Q供损失和统计共同使用；原CPU的161×36×36 float32网格仅在初始化时pin_memory（约0.80MiB），训练时只异步传输当前相机36×36网格，随后仍调用原`evidence_upsample`，同一CUDA stream保证先拷贝后上采样，网格在整个运行中保持存活且不被修改。
+
+新增实现版本`v3-single-q-pinned-transfer-v1`写入运行manifest和training_checks。Parent热路径、trainer补丁、上采样、完整RGB分母、0.8系数、所有Mask/head参数与调度均未改。新增4项实际hook梯度/统计与当前视图映射检查，合计51项相关CPU测试通过（11.92秒）。这证明数学和CPU集成检查通过，不证明CUDA提速比例已经达标，也未证明这两处开销解释了全部1.72毫秒差值。
+
+按runbook保留旧完整V3 smoke为`measurements/smoke-v3-before-transfer-fix`，不篡改原FAILED或SMOKE_COMPLETE状态。同步优化后仅做一次V3 600步复测，保留已完成Parent；不进行重复计时直到碰巧通过，不放宽1.08，也不重训完整Parent。若仍超限，读取有限profile明细进一步归因，不自动追加更多前缀训练。

@@ -5,9 +5,9 @@
 实现仅增加 0.8 × mean((1−M)C × RGB绝对误差)，step 500 开启。基础 RU/DSSIM/责任头和常规 ADC 保留。
 此处协议字段描述固定设计；是否完成训练以 training_actually_completed 和阶段状态文件为准。
 
-阶段进度（用户提供的服务器输出）：GPU 0上的`smoke-parent`已达到`SMOKE_COMPLETE`，exit_code=0、last_step=599，标准checkpoint存在且可加载，Gaussian数138766。V3 smoke、配对耗时与证据激活尚待核验；600步Parent结果不代表正式30k对照完成，也不改变下列验收项状态。
+阶段进度（用户提供的服务器输出）：GPU 0上的`smoke-parent`与修复后的`smoke-v3`均达到`SMOKE_COMPLETE`，exit_code=0、last_step=599，标准checkpoint存在且可加载，Gaussian数均为138766。配对profiler中位数为16.2875/18.0096毫秒，比值1.105733（增加10.57%），超过1.08的实现开销检查线。两次600步smoke不代表正式30k训练完成，也不改变下列最终验收项状态。
 
-最新V3尝试在launcher参数检查阶段失败：`FAILED / exit_code=1 / last_step=-1`，尚未启动训练。`--track-cache`被旧PART参数保护误拒绝的问题已在本地修复，47项相关CPU测试通过；等待服务器同步、保留失败记录后重新预检和V3 smoke，不改变总体未完成状态。
+首次V3尝试曾在launcher参数检查阶段失败：`FAILED / exit_code=1 / last_step=-1`。`--track-cache`被旧PART参数保护误拒绝的问题修复后，47项相关CPU测试通过，服务器后续V3 smoke已完成。最新checkpoint SHA-256为`e8eba8d15f9ca3da2c19497683e8c5c252df7c5c6922ad29abbe2ffc9853d20e`；训练统计11.5152秒、子进程总墙钟43.9004秒，两者均不能代替配对profiler或完整30k成本验收。
 
 | 指标 | B1 历史参考 | 可比 Parent | V3 | V3−Parent |
 |---|---:|---:|---:|---:|
@@ -22,7 +22,7 @@ Parent 质量保护：psnr=NOT_ASSESSABLE；ssim=NOT_ASSESSABLE；lpips=NOT_ASSE
 
 资源门：gaussian_count=NOT_ASSESSABLE；training_time_ratio=NOT_ASSESSABLE；single_rasterization=NOT_ASSESSABLE；fps_ratio=NOT_ASSESSABLE
 
-证据激活：未测
+早期证据激活：`NO_Q_SAMPLED / SUPERVISION_INACTIVE_AT_AUDITED_STATE`。两张固定训练图C非零，但Mask拒绝率=0，因此Q=0；固定张量功能检查梯度误差=0。正式训练期激活与最终覆盖仍未测。实现已消除重复Q计算并改用当前视图的锁页内存异步传输，51项相关CPU测试通过，CUDA开销复测待执行。
 
 孔洞 ROI：{"status": "NOT_ASSESSABLE"}
 

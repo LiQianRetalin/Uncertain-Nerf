@@ -183,6 +183,60 @@ def test_shared_parameter_receives_added_gradient():
     assert parameter.grad.item() == pytest.approx(.8, abs=2e-7)
 
 
+@pytest.mark.parametrize("step", [499, 500, 599])
+def test_screening_hook_loss_gradient_and_activation(step):
+    from types import SimpleNamespace
+    from puri_gs.ru_part_v3 import ScreeningRun
+
+    hook = ScreeningRun.__new__(ScreeningRun)
+    mask = torch.tensor([[[[1., 0.], [0., 0.]]]], requires_grad=True)
+    support = torch.tensor([[[[.7, 0.], [1., .25]]]], requires_grad=True)
+    calls = []
+    def current(local_id, size):
+        calls.append((local_id, size))
+        return support.detach()
+    hook.support = SimpleNamespace(current=current)
+    hook.cfg = SimpleNamespace(ssim_lambda=.2)
+    hook.sequence = []
+    hook.active = torch.zeros((), dtype=torch.int64)
+    hook.loss_sum = torch.zeros(())
+    parameter = torch.tensor(.4, requires_grad=True)
+    render = parameter.expand(1, 2, 2, 3)
+    target = torch.zeros_like(render)
+    extra = hook.add_loss(step, 7, render, target, mask)
+    # A real combined backward; Parent's illustrative scalar term stays intact.
+    (parameter.square() + extra).backward()
+    enabled = step >= 500
+    assert parameter.grad.item() == pytest.approx(.8 + (.25 if enabled else 0), abs=2e-7)
+    assert extra.item() == pytest.approx(.1 if enabled else 0, abs=2e-7)
+    assert mask.grad is None and support.grad is None
+    assert int(hook.active) == int(enabled)
+    assert hook.loss_sum.item() == pytest.approx(extra.item())
+    assert hook.sequence == [7]
+    assert calls == ([(7, (2, 2))] if enabled else [])
+    if enabled:
+        torch.testing.assert_close(hook.q, torch.tensor([[[[0., 0.], [1., .25]]]]))
+        assert not hook.q.requires_grad
+    else:
+        assert hook.q is None
+
+
+def test_current_support_preserves_view_and_original_bilinear_mapping():
+    from puri_gs.ru_part_v3 import StaticSupport
+    from puri_gs.static_tracks import evidence_upsample
+
+    support = StaticSupport.__new__(StaticSupport)
+    support.device = torch.device("cpu")
+    support.grid = torch.zeros(2, 36, 36)
+    support.grid[1, 3, 8] = 1
+    original = support.grid.clone()
+    assert not support.current(0, (73, 91)).any()
+    actual = support.current(1, (73, 91))
+    torch.testing.assert_close(actual, evidence_upsample(original[1], (73, 91)), atol=0, rtol=0)
+    assert ((actual > 0) & (actual < 1)).any()  # bilinear values, no threshold
+    torch.testing.assert_close(support.grid, original, atol=0, rtol=0)
+
+
 def test_report_never_promotes_unknown_or_failed_gates():
     from puri_gs.v3_report import classify
     yes = {"gate": True}

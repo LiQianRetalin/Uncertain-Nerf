@@ -33,6 +33,7 @@ PROTOCOL = {
 DISABLED_COUNTS = {name: 0 for name in (
     "birth", "probe", "scoring", "cap", "lineage", "extra_training_rasterization", "per_step_matching",
 )}
+IMPLEMENTATION_REVISION = "v3-single-q-pinned-transfer-v1"
 
 
 def write_json(path, value):
@@ -49,15 +50,21 @@ def static_rescue_l1(render, target, final_mask, support, *, step):
     M is the exact already-thresholded, already-eroded Parent [B,1,H,W] mask.
     C is the existing bilinear support [B,1,H,W], without further processing.
     """
+    loss, _ = _static_rescue_terms(render, target, final_mask, support, step=step)
+    return loss
+
+
+def _static_rescue_terms(render, target, final_mask, support, *, step):
+    """Return the loss and its SAME detached Q for activation diagnostics."""
     if render.shape != target.shape or render.ndim != 4 or render.shape[-1] != 3:
         raise ValueError("RGB must have matching [B,H,W,3] shapes")
     expected = (render.shape[0], 1, render.shape[1], render.shape[2])
     if final_mask.shape != expected or support.shape != expected:
         raise ValueError("M and C must be [B,1,H,W] matching RGB")
     if step < 500:
-        return render.sum() * 0.0
-    q = ((1.0 - final_mask.detach()) * support.detach()).permute(0, 2, 3, 1)
-    return (q * (render - target).abs()).mean()
+        return render.sum() * 0.0, None
+    q = (1.0 - final_mask.detach()) * support.detach()
+    return (q.permute(0, 2, 3, 1) * (render - target).abs()).mean(), q
 
 
 def runtime_identity(parser, trainset, valset):
@@ -136,6 +143,10 @@ class StaticSupport:
         self.grid = payload["track_evidence_binary"].float()  # CPU, load once
         if not bool(self.grid.any()):
             raise ValueError("EVIDENCE_INACTIVE")
+        # Pin the small CPU grid once; transfer only the current view on the
+        # training CUDA stream. The pinned source lives for the entire run.
+        if torch.device(device).type == "cuda":
+            self.grid = self.grid.pin_memory()
         self.device = device
         self.payload = payload
         manifest = self.path.with_name("static_track_manifest.json")
@@ -150,13 +161,17 @@ class StaticSupport:
             "grid_nonzero_fraction_by_view": (self.grid > 0).float().mean((1, 2)).tolist(),
             "grid_mean_by_view": self.grid.mean((1, 2)).tolist(),
             "upsample": "bilinear / align_corners=False / no second threshold",
+            "cpu_grid_pinned": self.grid.is_pinned(),
+            "transfer": "current view only / non_blocking / current stream",
             "cache_prepare_seconds": time.perf_counter() - started,
             "historical_source_image_content_hashes": "NOT_RECORDED_BY_V2_SCHEMA",
         }
 
     def current(self, local_image_id, size):
         # Dataset.image_id is split-local; caller obtains it on CPU before H2D.
-        return evidence_upsample(self.grid[local_image_id].to(self.device), size).detach()
+        return evidence_upsample(
+            self.grid[local_image_id].to(self.device, non_blocking=True), size,
+        ).detach()
 
 
 class ScreeningRun:
@@ -205,6 +220,7 @@ class ScreeningRun:
         write_json(self.out / "v3_input_manifest.json", self.identity)
         write_json(self.out / "v3_run_manifest.json", {
             **PROTOCOL, "mode": self.mode, "last_step_planned": self.stop,
+            "implementation_revision": IMPLEMENTATION_REVISION,
             "strategy_class": type(cfg.strategy).__name__,
             "disabled_call_counts": DISABLED_COUNTS,
             "cache": self.support.audit if self.support else None,
@@ -256,8 +272,8 @@ class ScreeningRun:
             self.q = None
             self.extra = render.new_zeros(())
             return self.extra
-        self.q = (1 - mask.detach()) * self.c
-        self.extra = (1 - self.cfg.ssim_lambda) * static_rescue_l1(render, target, mask, self.c, step=step)
+        unweighted, self.q = _static_rescue_terms(render, target, mask, self.c, step=step)
+        self.extra = (1 - self.cfg.ssim_lambda) * unweighted
         self.active += (self.q.detach().amax() > 0).to(torch.int64)
         self.loss_sum += self.extra.detach()
         return self.extra
@@ -301,6 +317,7 @@ class ScreeningRun:
                     raise ValueError("fixed-input activation gradient check failed")
                 fixed_check = {"type": "FIXED_TENSOR_FUNCTIONAL_CHECK", "gradient_max_abs_error": error}
             write_json(self.out / "v3_training_checks.json", {
+                "implementation_revision": IMPLEMENTATION_REVISION,
                 "last_step": step, "active_samples": int(self.active),
                 "added_loss_sum": float(self.loss_sum), "disabled_call_counts": DISABLED_COUNTS,
                 "profile_steps": list(range(520, 540)) if self.profile_ms else [],

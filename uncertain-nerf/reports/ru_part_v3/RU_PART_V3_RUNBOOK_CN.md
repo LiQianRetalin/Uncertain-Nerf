@@ -1,6 +1,85 @@
 # RU-PART-V3 逐步操作说明
 
-本地代码与CPU检查已完成；用户已提供GPU 0 Parent smoke完成记录，正式训练与质量结论仍未取得。最新V3 smoke在启动器参数校验阶段失败，尚未开始训练；按下面的修复重试流程继续。以下服务器目录/GPU来自项目已记录的实际设置，本次SSH连接无权限，运行状态以用户提供的服务器记录为准。
+当前进度：两组GPU 0 smoke均完成且输入/相机序列一致，但V3耗时比值1.105733超过1.08检查线。C非零、早期Mask全部接受，Q未激活；固定张量功能检查通过。已修复重复Q计算和阻塞网格拷贝，51项CPU检查通过；按下节保留原记录并仅做一次优化后的V3 smoke复测，尚不启动30k训练。后面的启动参数故障流程仅供追溯，不再执行。服务器结果来自用户记录，本机未直接登录。
+
+## 当前操作：逐步开销修复后的单次V3复测
+
+1. **图形界面：**主项目保持`ru-part`，提交本次代码、测试与说明，建议备注：**消除V3重复Q计算并异步传输当前视图缓存**。本地上传、服务器下拉，确认相同commit。未改trainer补丁、Mask/head参数和训练算法；原Parent smoke无需重跑。同步失败就停止并发回报错。
+2. **服务器终端：**仅归档已完成但超限的原V3 smoke，包含checkpoint、原日志/状态和旧预检快照。脚本拒绝活动任务、正式训练目录以及已优化后的重复尝试。看到`ARCHIVED`才继续；报错即停止。
+
+```bash
+cd /home/chenglong/Uncertain-Nerf/uncertain-nerf
+.venv-gsplat153/bin/python - <<'PY'
+import json
+import math
+import shutil
+from pathlib import Path
+
+base = Path("logs-puri/ru_part_v3_screening").resolve()
+def read(path):
+    return json.loads(path.read_text())
+for path in base.glob("*.status.json"):
+    assert read(path)["status"] not in ("STARTING", "RUNNING"), path
+assert not (base / "parent").exists() and not (base / "v3").exists()
+run = base / "smoke-v3"
+state = read(base / "smoke-v3.status.json")
+assert state["status"] == "SMOKE_COMPLETE" and state["exit_code"] == 0
+assert state["last_step"] == 599 and state["gpu"] == 0
+checks = read(run / "v3_training_checks.json")
+assert "implementation_revision" not in checks, "Optimized smoke already ran; stop."
+p = read(base / "smoke-parent/v3_training_checks.json")["profile_median_ms"]
+assert p > 0
+ratio = checks["profile_median_ms"] / p
+assert math.isfinite(ratio) and ratio > 1.08, ratio
+assert (run / "ckpts/ckpt_599_rank0.pt").is_file()
+paths = [run, base / "smoke-v3.log", base / "smoke-v3.status.json"]
+assert all(path.exists() and not path.is_symlink() and path.resolve().parent == base for path in paths)
+archive = base / "measurements/smoke-v3-before-transfer-fix"
+assert archive.resolve().is_relative_to(base)
+archive.mkdir(parents=True, exist_ok=False)
+for name in ("environment_resolved.json", "preflight.json"):
+    shutil.copy2(base / name, archive / name)
+for path in paths:
+    path.rename(archive / path.name)
+print("ARCHIVED", archive)
+PY
+```
+
+3. **服务器终端：**重新预检登记当前commit和GPU 0，预期38项预检测试通过并显示`PREFLIGHT_READY`。0号忙时等待空闲；不更换本轮设备。
+
+```bash
+.venv-gsplat153/bin/python tools/ru_part_v3_screen.py preflight --gpu 0
+```
+
+4. **服务器终端：**仅READY后执行下列单次V3 smoke，从step0开始、保留30k调度、到599停止。Ctrl+C只退出日志查看。
+
+```bash
+.venv-gsplat153/bin/python tools/ru_part_v3_screen.py launch smoke-v3
+tail -n 40 -f logs-puri/ru_part_v3_screening/smoke-v3.log
+```
+
+5. **服务器终端：**检查状态与最近80行日志。应为`SMOKE_COMPLETE / exit_code=0 / last_step=599`且checkpoint可加载。把状态与下面的短摘要发回；失败发回状态和最近80行日志。若仍超限，停止，不再次归档重跑或修改门槛。
+
+```bash
+.venv-gsplat153/bin/python tools/ru_part_v3_screen.py status smoke-v3
+tail -n 80 logs-puri/ru_part_v3_screening/smoke-v3.log
+.venv-gsplat153/bin/python - <<'PY'
+import json
+from pathlib import Path
+r = Path("logs-puri/ru_part_v3_screening")
+p = json.loads((r / "smoke-parent/v3_training_checks.json").read_text())
+v = json.loads((r / "smoke-v3/v3_training_checks.json").read_text())
+print("revision:", v.get("implementation_revision"))
+print("Parent_ms:", p["profile_median_ms"], "V3_ms:", v["profile_median_ms"])
+print("ratio:", v["profile_median_ms"] / p["profile_median_ms"])
+print("activation:", v["activation_status"], "active_samples:", v["active_samples"])
+print("backward/raster:", v["actual_gaussian_backward_count"], v["actual_training_rasterization_count"])
+print("disabled:", v["disabled_call_counts"])
+print("gradients:", v["parameter_gradient_checks"])
+PY
+```
+
+成功的实现复测目标为ratio≤1.08、计数600/1200、禁用项全0、梯度检查通过。仍显示`NO_Q_SAMPLED`时按附件保留固定张量检查，不调整Mask阈值、静态证据或额外训练前缀。历史标准Parent训练GPU为1、评测GPU为6，本轮GPU为0；优先继续质量复用登记和重评，同口径成本未接受，不为此自动追加完整Parent。
 
 服务器后续反馈已确认：预检、trainer帮助和14项V3专项测试通过；两端commit仍以preflight.json和图形界面为准。用户指定GPU优先级为 **6→7→0→1→2→3→4→5**。新增GPU选择功能属于后续代码变更，本地含GPU选择的34项相关测试已通过；下次同步可与Parent审计后的必要适配合并，避免仅为读取报告重复Git操作。提交备注建议：**按指定GPU优先级选择空闲设备并固定筛选对照设备**。主项目仍保持ru-part；gsplat子目录的detached HEAD是固定第三方版本的正常状态。
 
@@ -14,7 +93,7 @@ nvidia-smi -i 0
 
 当前服务器旧版本的显式选卡不自动检查占用；若0号出现新的计算进程，先不要启动smoke。预检成功后按第4步启动smoke-parent，GPU参数已保存到`environment_resolved.json`，启动命令无需再加GPU参数。已有静态缓存已通过预检，可跳过第3步构建。600步smoke、后续正式训练及独立评测保持同一设备。
 
-## 当前修复：V3缓存参数被旧RU-PART检查误拒绝
+## 已处理的启动故障：V3缓存参数被旧RU-PART检查误拒绝
 
 用户记录：`smoke-v3`包装PID 2289957、child PID 2290031，`FAILED / exit_code=1 / last_step=-1`，报错`RU-PART-only arguments were supplied to another profile`。V3配置保留`profile=ru`，启动器却将`--track-cache`一律当作旧PART专属参数。修复只允许`v3_screening=v3`通过该缓存参数检查；旧PART replay/diagnostic选项继续拒绝，标准Parent继续不加载静态支持。没有修改trainer补丁、损失或训练调度，已完成的Parent smoke保留。
 
