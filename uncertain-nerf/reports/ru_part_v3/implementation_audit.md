@@ -96,7 +96,7 @@ V3 补丁叠加顺序：原 robot baseline → 原 RU → 原 causal → 原 eff
 - preflight列出服务器历史RU/旧parent候选；存在候选时，包装器阻止未经可比性审计就额外跑Parent。仅缺计时不能否定其质量可比性；若能复用，应先完成复用登记和0.001dB重评核对，再继续。**历史Parent自动复用适配尚待服务器实际记录映射，不能把目前未访问的数据编造成已适配。**
 - 若证据确认没有算法与数据可比Parent，只补一次标准Parent。先向用户说明原因和额外成本，不自行做多seed。
 
-## 7. 当前验证状态
+## 7. 初次本地验证状态（后续服务器结果见第8、9节）
 
 - 固定张量、旧集成兼容、结果判定和checkpoint完成条件测试：27项通过。
 - float32 loss最大误差1.65e−8；float64约1.39e−17；固定RGB新增梯度最大误差0。
@@ -107,3 +107,40 @@ V3 补丁叠加顺序：原 robot baseline → 原 RU → 原 causal → 原 eff
 - 本地检查日志位于Git外：`E:\7-DataSet\PURI-GS-derived\ru_part_v3_local_checks`。
 
 旧状态始终为`REPLAY_NOT_EQUIVALENT`，没有被本次CPU测试重新分类。
+
+## 8. 用户提供的服务器预检补充
+
+后续粘贴输出确认服务器分支`ru-part`、commit `e85dbd413c8a7e890bbc2640f8aa9d4a3f800129`，`PREFLIGHT_READY`，14项V3专项测试通过，实际trainer帮助已通过。以下属于用户提供的服务器结果，不是本机直接登录读取。
+
+- gsplat trainer SHA-256：`51813287fb19d556a06585bb478f05d8c65da56aee5c71ce9146f7a5c05a6675`。
+- 已有缓存：`data/PURI-GS-derived/static_tracks/garden_factor4_v1/garden_factor4_static_tracks.pt`。
+- cache file SHA-256：`2489df8a6586f95731ac9ee7948bf0c27f9cdf8c62afbe32965bcd4e637ba1a7`。
+- payload SHA-256：`327101f76a227e2e0f3129b7fba548a91e38d41c6eef41d672359a0d513f4f94`。
+- build commit：`fe12483a7af0ab09b6a5789c4cb2edf0e47a2559`。
+- feature manifest SHA-256：`c43f9628d44bf7069781ce4e061d4bd0f3316bf3764878592d602f4cb3137d1b`。
+- 参数与本协议固定值一致；161张训练图；fine-grid非零比例`.0042030904442071915`（约0.4203%）。该比例不是上采样后C或Q覆盖率，也不能据此宣称孔洞证据充分。
+- 两个运行具有标准step29999 checkpoint：`logs-puri/ru-generalization-rerun-9e292309/garden_ru_30k`、`logs-puri/ru_part_reference_controls/parent_seed42`。其配置、原质量和数据/成本可比性仍待核对；不因旧运行缺少后来新增的`v3_input_manifest.json`就直接否定旧质量对照。
+- 本次用户指定优先GPU0。快照中0号L20为71MiB/0%利用率，6/7号各有约30GiB VLLM计算进程。现有服务器命令支持`preflight --gpu 0`，无需为参数选择再次同步代码；后续本轮对照固定同卡。
+
+本节预检阶段尚未收到600步smoke或30k训练完成结果；后续Parent smoke结果见第9节。
+
+## 9. 用户提供的 GPU 0 Parent smoke 结果
+
+用户后续粘贴的服务器状态和日志确认：
+
+- 阶段：`smoke-parent`；实际命令`--gpu 0`，`--v3-stop-step 599`，训练调度仍为`--max_steps 30000`。
+- 状态：`SMOKE_COMPLETE`，`exit_code=0`，`last_step=599`；完成step 0..599共600次更新。
+- 标准checkpoint存在且可加载；Gaussian数138766；checkpoint SHA-256：`eed4884e48bb4245b991652b3ee0e9c86f91a6e6bb2a429c4d86f4268c7d35a6`。
+- Parser实际记录185张图像、161张train/24张test；DINO参数22058112、trainable=0。
+- 子进程总墙钟时间20.17361391405575秒；step599训练统计`ellipse_time=11.217679262161255`秒。这两项不能替代step520..539的profiler中位数，也不能用于宣称30k训练成本门通过。
+- `599/30000`和2%为保留30k调度的预期提前停止表现。xFormers/torch.load和reconstruction image_path警告没有导致本次运行失败。
+
+上述结果来自用户附件，未直接读取服务器checkpoint；`v3_training_checks.json`原始明细仍待收集。本次完成仅证明Parent smoke阶段完成，不证明V3新增监督已经激活。下一阶段为同一GPU 0上的独立`smoke-v3`。历史完整Parent可比性审计、V3 E2/Q覆盖、配对profiler、正式30k训练与独立评测仍待完成；总体保持`COMPARISON_INCOMPLETE`。
+
+## 10. V3 smoke 启动参数兼容修复
+
+用户提供的首次V3 smoke状态为`FAILED / exit_code=1 / last_step=-1`，包装PID 2289957、child PID 2290031，子进程约1.136秒即退出。错误发生在`run_puri_gs.py`创建结果目录和启动trainer之前：旧`is_ru_part`分支后的参数拒绝检查，将合法V3的`--track-cache`误认作旧PART专属参数。之前测试覆盖了配置、损失和补丁，但未经过包装器到launcher主入口，未发现这个入口错误。
+
+修复将该缓存拒绝条件限定为非`v3_screening=v3`；没有整体跳过旧参数保护，V3的replay/diagnostic等参数仍拒绝，Parent仍拒绝静态缓存。trainer补丁、训练公式、调度和缓存内容未改，成功Parent smoke保留。新增13项真实CLI入口回归检查，本地V3、GPU与旧PART集成合计47项通过（11.95秒）；外部gsplat/数据检查在这些CPU测试中被隔离，CUDA V3 smoke仍待服务器修复重试。
+
+runbook提供仅适用于本次step=-1启动失败的归档流程，保留原错误日志/状态和预检快照；同步修复后重新`preflight --gpu 0`登记当前commit，再重新初始化V3 smoke。没有将失败状态改为成功，也没有续训失败快照。

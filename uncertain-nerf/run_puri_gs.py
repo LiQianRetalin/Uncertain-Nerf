@@ -694,7 +694,8 @@ def main() -> int:
         ):
             raise ValueError("diagnostic options require --diagnostic-stage")
     elif (
-        args.track_cache is not None
+        # V3 reuses static support while retaining the standard RU profile.
+        (args.track_cache is not None and config.get("v3_screening") != "v3")
         or args.replay_checkpoint is not None
         or args.non_scientific_smoke
         or args.diagnostic_stage is not None

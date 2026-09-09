@@ -1,6 +1,73 @@
 # RU-PART-V3 逐步操作说明
 
-本地代码与CPU检查已完成；还没有CUDA smoke、正式训练或质量结论。请按顺序执行，前一阶段失败就停止后续阶段。以下服务器目录/GPU来自项目已记录的实际设置，本次SSH连接无权限，必须以第2步预检为准；不会把Windows数据路径传给Linux。
+本地代码与CPU检查已完成；用户已提供GPU 0 Parent smoke完成记录，正式训练与质量结论仍未取得。最新V3 smoke在启动器参数校验阶段失败，尚未开始训练；按下面的修复重试流程继续。以下服务器目录/GPU来自项目已记录的实际设置，本次SSH连接无权限，运行状态以用户提供的服务器记录为准。
+
+服务器后续反馈已确认：预检、trainer帮助和14项V3专项测试通过；两端commit仍以preflight.json和图形界面为准。用户指定GPU优先级为 **6→7→0→1→2→3→4→5**。新增GPU选择功能属于后续代码变更，本地含GPU选择的34项相关测试已通过；下次同步可与Parent审计后的必要适配合并，避免仅为读取报告重复Git操作。提交备注建议：**按指定GPU优先级选择空闲设备并固定筛选对照设备**。主项目仍保持ru-part；gsplat子目录的detached HEAD是固定第三方版本的正常状态。
+
+**本次运行覆盖：用户随后指定优先使用GPU 0。** 本轮使用下面的 `--gpu 0` 固定设备；后续任务仍保留上述通用优先级。本参数在服务器现有`e85dbd4`版本中已经支持，不需要为本次改选0号重新Git同步。用户提供的2026-09-09 12:25快照中，0号71MiB、利用率0%，6/7号有VLLM计算进程；这只是当时状态，启动前须再次查看`nvidia-smi -i 0`。
+
+```bash
+cd /home/chenglong/Uncertain-Nerf/uncertain-nerf
+nvidia-smi -i 0
+.venv-gsplat153/bin/python tools/ru_part_v3_screen.py preflight --gpu 0
+```
+
+当前服务器旧版本的显式选卡不自动检查占用；若0号出现新的计算进程，先不要启动smoke。预检成功后按第4步启动smoke-parent，GPU参数已保存到`environment_resolved.json`，启动命令无需再加GPU参数。已有静态缓存已通过预检，可跳过第3步构建。600步smoke、后续正式训练及独立评测保持同一设备。
+
+## 当前修复：V3缓存参数被旧RU-PART检查误拒绝
+
+用户记录：`smoke-v3`包装PID 2289957、child PID 2290031，`FAILED / exit_code=1 / last_step=-1`，报错`RU-PART-only arguments were supplied to another profile`。V3配置保留`profile=ru`，启动器却将`--track-cache`一律当作旧PART专属参数。修复只允许`v3_screening=v3`通过该缓存参数检查；旧PART replay/diagnostic选项继续拒绝，标准Parent继续不加载静态支持。没有修改trainer补丁、损失或训练调度，已完成的Parent smoke保留。
+
+本地47项相关测试通过，其中新增13项从阶段包装器真实参数进入launcher的回归检查，覆盖Parent/V3短测与完整训练命令、旧参数拒绝、Parent禁用缓存和V3缺缓存失败。测试使用占位资产并隔离外部环境检查，不冒充服务器CUDA验收。
+
+1. **本地/服务器Git图形界面：**在`ru-part`提交本次代码、测试与说明（包含此前未同步的GPU选择文件），备注建议：**修复V3缓存参数校验并完善GPU选择与回归检查**。本地上传，服务器下拉；确认两端相同commit。不要提交运行日志或缓存。图形同步失败时停止并发回报错。
+2. **服务器终端：**同步后执行下面的归档。仅接受本次尚未创建训练目录的启动校验失败，保留失败日志、状态和旧预检快照；不删除或移动成功的Parent结果。看到`ARCHIVED`后继续；任何断言失败就停止并发回输出。
+
+```bash
+cd /home/chenglong/Uncertain-Nerf/uncertain-nerf
+.venv-gsplat153/bin/python - <<'PY'
+import json
+import shutil
+from pathlib import Path
+
+base = Path("logs-puri/ru_part_v3_screening").resolve()
+stage = "smoke-v3"
+status = base / f"{stage}.status.json"
+log = base / f"{stage}.log"
+state = json.loads(status.read_text())
+assert state["stage"] == stage and state["status"] == "FAILED", state
+assert state["exit_code"] == 1 and state["last_step"] == -1, state
+assert "RU-PART-only arguments were supplied to another profile" in log.read_text()
+assert not (base / stage).exists(), "Training directory exists; stop and inspect."
+archive = base / "failed_attempts" / f"smoke-v3-launcher-{state['pid']}"
+archive.mkdir(parents=True, exist_ok=False)
+for name in ("environment_resolved.json", "preflight.json"):
+    shutil.copy2(base / name, archive / name)
+for path in (log, status):
+    path.rename(archive / path.name)
+print("ARCHIVED", archive)
+PY
+```
+
+3. **服务器终端：**重新预检以登记修复后的commit，并继续固定GPU 0。预期34项预检测试通过（V3及GPU测试）和`PREFLIGHT_READY`。这一步不训练；原Parent记录仍在。0号忙时先等待0号空闲，不更换本轮对照设备。
+
+```bash
+.venv-gsplat153/bin/python tools/ru_part_v3_screen.py preflight --gpu 0
+```
+
+4. **服务器终端：**仅在READY后，从step0重新启动V3 smoke，查看后台日志。按Ctrl+C仅退出日志查看。
+
+```bash
+.venv-gsplat153/bin/python tools/ru_part_v3_screen.py launch smoke-v3
+tail -n 40 -f logs-puri/ru_part_v3_screening/smoke-v3.log
+```
+
+5. **服务器终端：**检查`SMOKE_COMPLETE / exit_code=0 / last_step=599`及checkpoint可加载。发回状态与最近80行日志；失败即停止，不重复覆盖。完成后按第5步收集两组`v3_training_checks.json`与V3证据检查，以核对Q激活和配对耗时。历史完整Parent可比性审计仍待完成，不跳到30k Parent。
+
+```bash
+.venv-gsplat153/bin/python tools/ru_part_v3_screen.py status smoke-v3
+tail -n 80 logs-puri/ru_part_v3_screening/smoke-v3.log
+```
 
 ## 第1步：一次正常代码提交和同步
 
@@ -21,10 +88,12 @@
 
 ```bash
 cd /home/chenglong/Uncertain-Nerf/uncertain-nerf
-.venv-gsplat153/bin/python tools/ru_part_v3_screen.py preflight --gpu 6
+.venv-gsplat153/bin/python tools/ru_part_v3_screen.py preflight --gpu auto
 ```
 
 脚本核对分支、CUDA设备、gsplat版本、数据/PNG、DINO、feature cache，查找已有静态缓存，并列出历史Parent候选。它在专用`external/gsplat-v1.5.3-ru-part-v3`里准备原版本Python补丁，不动已有RU/PART例程；运行CPU测试和真正的trainer命令帮助。
+
+`--gpu auto`（也为默认值）按6→7→0→1→2→3→4→5选择首张空闲设备。此处空闲指无compute进程、显存占用≤512MiB、利用率≤5%；只在预检/启动时检查，不做持续轮询。仍支持`--gpu 6`显式固定。第一次smoke启动后，本轮保持同一GPU，重新预检也不自动换卡；忙时不抢占其他进程、不偷偷切卡。空闲检查不是服务器资源锁，其他用户仍可能随后启动任务。
 
 查看结果：
 
@@ -224,7 +293,7 @@ cat logs-puri/ru_part_v3_screening/RU_PART_V3_SCREENING_REPORT.md
 
 ```bash
 ps -eo pid,ppid,etime,stat,args | grep -E 'ru_part_v3_screen.py worker|simple_trainer.py' | grep -v grep
-nvidia-smi -i 6
+nvidia-smi
 ```
 
 - PID消失但无完成标志为未完成，不能当成功。已存在输出会被拒绝覆盖；异常后先发回状态和最近80行日志，不自行删除结果目录或重复运行。

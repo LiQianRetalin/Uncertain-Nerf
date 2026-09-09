@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from puri_gs.ru_part_v3 import PROTOCOL, DISABLED_COUNTS, write_json
 from puri_gs.static_tracks import sha256_file
+from puri_gs.v3_gpu import GPU_PRIORITY, gpu_inventory, select_gpu
 
 STAGES = ("cache", "smoke-parent", "smoke-v3", "parent", "v3", "eval-parent", "eval-v3")
 
@@ -36,6 +37,18 @@ def preflight(args):
     import torch
     out = output_root()
     out.mkdir(parents=True, exist_ok=True)
+    pinned = None
+    for stage in STAGES:
+        state_path = out / f"{stage}.status.json"
+        if state_path.is_file():
+            state = read(state_path)
+            if state.get("status") in ("STARTING", "RUNNING"):
+                raise RuntimeError(f"{stage} is active or interrupted; inspect its status before re-running preflight")
+            if stage != "cache":
+                pinned = environment()["gpu"]
+    inventory = gpu_inventory()
+    selected = select_gpu(inventory, args.gpu, pinned=pinned)
+    print(f"GPU_SELECTED={selected['index']} ({selected['name']}); priority={list(GPU_PRIORITY)}", flush=True)
     paths = {
         "root": str(ROOT), "python": str(Path(sys.executable).resolve()),
         "gsplat": str(ROOT / "external/gsplat-v1.5.3-ru-part-v3"),
@@ -43,7 +56,8 @@ def preflight(args):
         "dino_repo": str(ROOT / "external/dinov2"),
         "dino_weight": str(ROOT / "data/PURI-GS-assets/dinov2/dinov2_vits14_reg4_pretrain.pth"),
         "feature_cache": str(ROOT / "data/PURI-GS-derived/semantic_features/garden"),
-        "gpu": args.gpu,
+        "gpu": selected["index"], "gpu_uuid": selected["uuid"],
+        "gpu_priority": list(GPU_PRIORITY), "gpu_inventory_at_preflight": inventory,
     }
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     branch = subprocess.check_output(["git", "branch", "--show-current"], cwd=ROOT, text=True).strip()
@@ -58,8 +72,8 @@ def preflight(args):
         path = Path(paths[key]) / suffix
         if not path.exists():
             problems.append(f"missing {path}")
-    if not torch.cuda.is_available() or args.gpu >= torch.cuda.device_count():
-        problems.append(f"CUDA device {args.gpu} unavailable")
+    if not torch.cuda.is_available():
+        problems.append("CUDA unavailable in the existing Python environment")
     try:
         if importlib.metadata.version("gsplat").split("+")[0] != "1.5.3":
             problems.append("installed gsplat must be 1.5.3")
@@ -123,12 +137,12 @@ def preflight(args):
     else:
         env = os.environ.copy()
     subprocess.run(["bash", str(ROOT / "scripts/prepare_puri_gs_ru_part_v3.sh"), paths["gsplat"]], env=env, check=True)
-    subprocess.run([sys.executable, "-m", "pytest", "tests/test_ru_part_v3.py", "-q"], cwd=ROOT, check=True)
+    subprocess.run([sys.executable, "-m", "pytest", "tests/test_ru_part_v3.py", "tests/test_v3_gpu.py", "-q"], cwd=ROOT, check=True)
     # Trainer help is checked in the exact Python environment before any launch.
     subprocess.run([sys.executable, "simple_trainer.py", "default", "--help"],
                    cwd=Path(paths["gsplat"]) / "examples", env={**env, "PYTHONPATH": str(ROOT)},
                    stdout=(out / "trainer_help.txt").open("w"), stderr=subprocess.STDOUT, check=True)
-    paths["gpu_name"] = torch.cuda.get_device_name(args.gpu)
+    paths["gpu_name"] = selected["name"]
     paths["trainer_sha256"] = sha256_file(Path(paths["gsplat"], "examples/simple_trainer.py"))
     write_json(out / "environment_resolved.json", paths)
     audit["status"] = "PREFLIGHT_CACHE_REQUIRED" if paths.get("cache_build_required") else "PREFLIGHT_READY"
@@ -239,8 +253,12 @@ def launch(args):
         source_mode = args.stage[5:]
         if sha256_file(stage_paths(source_mode)[0] / "ckpts/ckpt_29999_rank0.pt") != read(stage_paths(source_mode)[2])["checkpoint_sha256"]:
             raise ValueError("checkpoint changed since TRAIN_COMPLETE")
+    selected = select_gpu(gpu_inventory(), pinned=env["gpu"])
+    if env.get("gpu_uuid") and selected["uuid"] != env["gpu_uuid"]:
+        raise RuntimeError("GPU UUID changed since preflight; stop and inspect device mapping")
     write_json(status_path, {"stage": args.stage, "status": "STARTING", "start_time": time.time(),
-                             "pid": None, "exit_code": None, "last_step": -1})
+                             "pid": None, "exit_code": None, "last_step": -1,
+                             "gpu": env["gpu"], "gpu_uuid": selected["uuid"]})
     with log.open("w", encoding="utf-8") as stream:
         process = subprocess.Popen([env["python"], str(Path(__file__).resolve()), "worker", args.stage],
                                    cwd=ROOT, stdout=stream, stderr=subprocess.STDOUT,
@@ -260,6 +278,8 @@ def worker(args):
     write_json(status_path, state)
     exit_code = -1
     try:
+        # Recheck at worker start; selection does not reserve a shared server GPU.
+        select_gpu(gpu_inventory(), pinned=env["gpu"])
         cmd = command_for(args.stage, env)
         state["command"] = cmd
         write_json(status_path, state)
@@ -347,7 +367,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="action", required=True)
     p = sub.add_parser("preflight")
-    p.add_argument("--gpu", type=int, default=6)
+    p.add_argument("--gpu", default="auto", help="auto selects an idle GPU in order 6,7,0,1,2,3,4,5; an index pins a device")
     p.add_argument("--track-cache", type=Path)
     for action in ("launch", "worker", "status"):
         p = sub.add_parser(action)

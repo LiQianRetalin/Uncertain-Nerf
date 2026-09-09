@@ -5,6 +5,10 @@
 实现仅增加 0.8 × mean((1−M)C × RGB绝对误差)，step 500 开启。基础 RU/DSSIM/责任头和常规 ADC 保留。
 此处协议字段描述固定设计；是否完成训练以 training_actually_completed 和阶段状态文件为准。
 
+阶段进度（用户提供的服务器输出）：GPU 0上的`smoke-parent`已达到`SMOKE_COMPLETE`，exit_code=0、last_step=599，标准checkpoint存在且可加载，Gaussian数138766。V3 smoke、配对耗时与证据激活尚待核验；600步Parent结果不代表正式30k对照完成，也不改变下列验收项状态。
+
+最新V3尝试在launcher参数检查阶段失败：`FAILED / exit_code=1 / last_step=-1`，尚未启动训练。`--track-cache`被旧PART参数保护误拒绝的问题已在本地修复，47项相关CPU测试通过；等待服务器同步、保留失败记录后重新预检和V3 smoke，不改变总体未完成状态。
+
 | 指标 | B1 历史参考 | 可比 Parent | V3 | V3−Parent |
 |---|---:|---:|---:|---:|
 | psnr | 27.716728 | 未测 | 未测 | 未测 |
