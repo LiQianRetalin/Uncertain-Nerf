@@ -1,0 +1,22 @@
+{
+  "protocol": "V3_SINGLE_SURFACE_DIAGNOSTIC_V1",
+  "source_run": "logs-puri/ru_part_v3_screening/v3",
+  "previous_prepare": "logs-puri/ru_part_v3_coverage_recoverability_diag/garden_v3_final_diag_v1",
+  "previous_preparation_sha256": "437076a392baec665626d558c0668383ce8c763183d87da550b1837adb4fee20",
+  "source_checkpoint_sha256": "14563fbbcfbb722879929be31fd19ad5e6a02939e8d2409e6a6855ce909d417c",
+  "source_step": 29999,
+  "gaussian_count": 2266597,
+  "target_view": "DSC07987.JPG",
+  "context_view": "DSC07989.JPG",
+  "target_surface": "upper brick face of the house gable",
+  "candidate_limit": 8,
+  "groups": ["Va", "Vb", "O"],
+  "updates_per_group": 400,
+  "evaluation_updates": [0, 400],
+  "progress_every": 50,
+  "seed": 42,
+  "sh_degree": 3,
+  "preferred_gpu": 0,
+  "learning_rates": {"means": 1.962743359643857e-06, "scales": 0.005, "quats": 0.001, "opacities": 0.05, "sh0": 0.0025, "shN": 0.000125},
+  "criteria": {"local_fraction": 0.05, "check_fraction": 0.02, "protection_fraction": 0.01, "repeat_margin_multiplier": 3.0, "absolute_floor": 0.0001, "low_alpha_threshold": 0.3}
+}

@@ -2,7 +2,7 @@
 
 本次落实用户更正后的《RU_PART_V3_COVERAGE_RECOVERABILITY_CODEX_INSTRUCTION.md》。原 V3 筛选已经结束，结论仍为 `QUALITY_RECOVERY_FAIL / NO_GO`；旧重放仍为 `REPLAY_NOT_EQUIVALENT`。本次使用现有 V3 终态做覆盖审计及有条件的 Va/Vb/O 局部诊断。
 
-当前已完成本地实现和 CPU 验证。服务器终态 checkpoint、Mask head 和静态轨迹缓存不在当前本地工作区，服务器准备与 CUDA 预检尚未执行，四视图静态 ROI 尚未确认，三组实际更新数均为 0。
+当前已完成本地实现、65 项 CPU 检查，并收到服务器准备压缩包：161 张训练图的终态 M 全部可用，来源与图像哈希核对通过。原图与 Mask 复核暂为 **ROI_NOT_READY**，原因是尚未找到四视图共同可见且能产生新增监督的同一静态表面。详见 [ROI 复核记录](E:/6-Project/1-UncertainNerf/uncertain-nerf/reports/ru_part_v3/COVERAGE_RECOVERABILITY_ROI_REVIEW.md)。以下步骤 1–4 已完成对应的代码同步与产物回传，本次不需要重复 prepare；先停在步骤 5，尚未启动 CUDA 更新预检或 Va/Vb/O。
 
 ## 1. 用 Git 图形界面同步本次代码
 

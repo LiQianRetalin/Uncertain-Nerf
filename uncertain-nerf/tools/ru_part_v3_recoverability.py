@@ -122,19 +122,25 @@ def launch(args):
         check(prereg["roi_confirmation"]["confirmed"] is True, "ROI_NOT_READY: static labels not confirmed")
         gpu = choose_gpu(args.gpu, locked=runtime["gpu"])
         check(not (root / "run.status.json").exists(), "diagnostic was already launched; no retry/resume")
-    status_path = root / f"{args.phase}.status.json"
+    command = [sys.executable, str(Path(__file__).resolve()), "--run-id", args.run_id, "worker", args.phase]
+    return start_worker(root, args.phase, gpu, command)
+
+
+def start_worker(root, phase, gpu, command):
+    """Shared background wrapper; the caller has validated its own protocol."""
+    status_path = root / f"{phase}.status.json"
     check(not status_path.exists(), "phase already exists")
-    new_json(status_path, {"phase": args.phase, "status": "STARTING", "pid": None, "start_time": time.time(),
+    new_json(status_path, {"phase": phase, "status": "STARTING", "pid": None, "start_time": time.time(),
                            "exit_code": None, "gpu": gpu["index"], "gpu_uuid": gpu["uuid"], "current_group": None,
                            "updates_completed": 0})
-    command = [sys.executable, str(Path(__file__).resolve()), "--run-id", args.run_id, "worker", args.phase]
-    with (root / f"{args.phase}.log").open("x", encoding="utf-8") as stream:
+    with (root / f"{phase}.log").open("x", encoding="utf-8") as stream:
         child = subprocess.Popen(command, cwd=ROOT, env={**os.environ, "CUDA_VISIBLE_DEVICES": str(gpu["index"])},
                                  stdout=stream, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, start_new_session=True)
-    print(f"已启动 {args.phase}，PID={child.pid}，GPU={gpu['index']}，UUID={gpu['uuid']}")
-    print(f"最近日志：tail -n 80 '{root / (args.phase + '.log')}'")
-    print(f"持续查看：tail -n 40 -f '{root / (args.phase + '.log')}'")
-    print(f"状态：{sys.executable} {Path(__file__).resolve()} --run-id {args.run_id} status")
+    print(f"已启动 {phase}，PID={child.pid}，GPU={gpu['index']}，UUID={gpu['uuid']}")
+    print(f"最近日志：tail -n 80 '{root / (phase + '.log')}'")
+    print(f"持续查看：tail -n 40 -f '{root / (phase + '.log')}'")
+    print("状态：" + " ".join(command[:-2] + ["status"]))
+    print(f"进程：ps -p {child.pid} -o pid,etime,stat,args")
     return 0
 
 
@@ -515,18 +521,21 @@ def tensor_digest(parameters):
     return digest.hexdigest()
 
 
-def perform_update(engine, inputs, name, group, *, precheck=False):
+def perform_update(engine, inputs, name, group, *, precheck=False, retain_image_gradient=False):
     import torch
     from fused_ssim import fused_ssim
     from puri_gs.coverage_recoverability import diagnostic_loss
     frozen = inputs[name]
     rgb, target, _ = engine.render(name, kind="precheck" if precheck else "training")
+    if retain_image_gradient:
+        check(precheck, "RGB gradients are retained only for the bounded CUDA precheck")
+        rgb.retain_grad()
     loss, base, extra = diagnostic_loss(rgb, target, frozen["M"], frozen["C"], frozen["S"][None, None].float(),
                                       group=group, fused_ssim_fn=fused_ssim)
     check(bool(torch.isfinite(loss)), "non-finite diagnostic loss")
     loss.backward()
-    if not precheck:
-        engine.counts["gaussian_backward"] += 1
+    backward_key = "precheck_backward" if precheck else "gaussian_backward"
+    engine.counts[backward_key] = engine.counts.get(backward_key, 0) + 1
     gradients = [p.grad for p in engine.splats.values() if p.grad is not None]
     check(gradients and bool(torch.stack([torch.isfinite(g).all() for g in gradients]).all()), "non-finite Gaussian gradients")
     nonzero = bool(torch.stack([(g != 0).any() for g in gradients]).any()) if precheck else None
@@ -538,8 +547,88 @@ def perform_update(engine, inputs, name, group, *, precheck=False):
     engine.counts["precheck_updates" if precheck else "optimizer_updates"] += 1
     check(bool(torch.stack([torch.isfinite(p).all() for p in engine.splats.values()]).all()), "non-finite updated Gaussian parameters")
     check(len(engine.splats["means"]) == engine.protocol["gaussian_count"], "frozen Gaussian count changed")
-    return {"base_loss": float(base.detach()), "recovery_loss": float(extra.detach()),
-            "actual_intervention": intervened, "some_parameter_gradient_nonzero": nonzero}
+    result = {"base_loss": float(base.detach()), "recovery_loss": float(extra.detach()),
+              "actual_intervention": intervened, "some_parameter_gradient_nonzero": nonzero}
+    if retain_image_gradient:
+        return result, {"rgb": rgb.detach().cpu(), "target": target.detach().cpu(), "gradient": rgb.grad.detach().cpu()}
+    return result
+
+
+def reset_rng():
+    import random
+    import numpy as np
+    import torch
+    random.seed(42)
+    np.random.seed(42)
+    torch.manual_seed(42)
+    torch.cuda.manual_seed_all(42)
+
+
+def run_group(root, engine, group, prereg, inputs, state, *, evaluate_group, evaluation_updates, prereg_path):
+    """Shared serial 400-update loop; protocol-specific evaluation stays separate."""
+    import torch
+    from puri_gs.recoverability_runtime import validate_splats
+    directory = root / group
+    directory.mkdir()
+    reset_rng()
+    digest = engine.load_parameters()
+    settings = engine.optimizer_description()
+    check(digest == prereg["source_parameter_digest"] and settings == prereg["optimizer"], "group initial state/settings differ")
+    start_counts = dict(engine.counts)
+    group_state = {"GROUP_STATUS": "RUNNING", "process_exit_code": None, "group": group,
+                   "start_time": time.time(), "end_time": None,
+                   "updates_completed": 0, "last_diagnostic_step": -1, "source_step": 29999,
+                   "diagnostic_only": True, "gaussian_count_initial": len(engine.splats["means"]),
+                   "initial_parameter_digest": digest, "fresh_optimizer": True, "actual_intervention_updates": 0}
+    state_write(directory / "status.json", group_state)
+    metrics = {"0": evaluate_group(engine, directory, update=0)}
+    state.update(current_stage="optimization", current_group=group, updates_completed=0)
+    state_write(root / "run.status.json", state)
+    started = time.perf_counter()
+    with (directory / "progress.jsonl").open("x") as log:
+        for step, name in enumerate(prereg["camera_sequence"]):
+            try:
+                values = perform_update(engine, inputs, name, group)
+            finally:
+                # Preserve the actual number of fully applied optimizer updates,
+                # including an update that subsequently fails the finite check.
+                completed = engine.counts["optimizer_updates"] - start_counts["optimizer_updates"]
+                group_state.update(updates_completed=completed, last_diagnostic_step=completed-1)
+                group_state["counts"] = {key: engine.counts[key] - start_counts[key] for key in start_counts}
+                state_write(directory / "status.json", group_state)
+            group_state["actual_intervention_updates"] += int(values["actual_intervention"])
+            updates = step + 1
+            group_state.update(updates_completed=updates, last_diagnostic_step=step)
+            if updates % 50 == 0:
+                row = {"group": group, "updates_completed": updates, "image": name,
+                       "gaussian_count": len(engine.splats["means"]), "elapsed_seconds": time.perf_counter()-started, **values}
+                log.write(json.dumps(row) + "\n")
+                log.flush()
+                print(json.dumps(row), flush=True)
+                state.update(current_group=group, updates_completed=updates)
+                state_write(root / "run.status.json", state)
+                state_write(directory / "status.json", group_state)
+            if updates in evaluation_updates:
+                metrics[str(updates)] = evaluate_group(engine, directory, update=updates)
+    artifact = directory / "diagnostic_splats.pt"
+    torch.save({"step": 399, "splats": {key: p.detach().cpu() for key, p in engine.splats.items()},
+                "diagnostic_only": True, "source_step": 29999, "diagnostic_updates": 400}, artifact)
+    saved = torch.load(artifact, map_location="cpu", weights_only=True)
+    validate_splats(saved, count=engine.protocol["gaussian_count"], step=399)
+    del saved
+    counts = {key: engine.counts[key] - start_counts[key] for key in engine.counts}
+    check(counts["training_rasterization"] == counts["gaussian_backward"] == counts["optimizer_updates"] == 400 and
+          counts["evaluation_rasterization"] == len(evaluation_updates) * len(metrics["0"]) and counts["head_updates"] == counts["topology_events"] == 0, "diagnostic call budget violated")
+    group_state.update(GROUP_STATUS="UPDATES_COMPLETE", end_time=time.time(), gaussian_count_final=len(engine.splats["means"]),
+                       final_parameter_artifact_exists=True, final_parameter_artifact_loadable=True,
+                       final_metrics_finite=True, head_updates=0, topology_events=0, counts=counts,
+                       artifact_sha256=sha(artifact))
+    new_json(directory / "manifest.json", {"source_step": 29999, "diagnostic_updates": 400, "diagnostic_only": True,
+        "preregistration_sha256": sha(prereg_path), "optimizer": settings,
+        "M_C_S_sha256": prereg["frozen_sha256"], "initial_parameter_digest": digest})
+    state_write(directory / "status.json", group_state)
+    engine.discard()
+    return metrics, group_state
 
 
 def run_diagnostic(root, runtime, state):
@@ -578,69 +667,10 @@ def run_diagnostic(root, runtime, state):
         "training_rasterization": 0, "precheck_rasterization": 1, "precheck_backward": 1,
         "parameters_changed": before != after, "gaussian_count_unchanged": True, "source_file_unchanged": True, **precheck})
     all_metrics, group_states = {}, {}
-    initial_digest, optimizer_settings = None, None
     for group in ("Va", "Vb", "O"):
-        directory = root / group
-        directory.mkdir()
-        reset_seed()
-        digest = engine.load_parameters()
-        settings = engine.optimizer_description()
-        if initial_digest is None:
-            initial_digest, optimizer_settings = digest, settings
-        check(digest == initial_digest == before and settings == optimizer_settings == prereg["optimizer"], "group initial state/settings differ")
-        start_counts = dict(engine.counts)
-        group_state = {"GROUP_STATUS": "RUNNING", "process_exit_code": None, "group": group,
-                       "updates_completed": 0, "last_diagnostic_step": -1, "source_step": 29999,
-                       "diagnostic_only": True, "gaussian_count_initial": len(engine.splats["means"]),
-                       "initial_parameter_digest": digest, "fresh_optimizer": True, "actual_intervention_updates": 0}
-        state_write(directory / "status.json", group_state)
-        metrics = {"0": evaluate(engine, inputs, directory, update=0)}
-        state.update(current_stage="optimization", current_group=group, updates_completed=0)
-        state_write(root / "run.status.json", state)
-        started = time.perf_counter()
-        with (directory / "progress.jsonl").open("x") as log:
-            for step, name in enumerate(prereg["camera_sequence"]):
-                try:
-                    values = perform_update(engine, inputs, name, group)
-                finally:
-                    # Preserve the actual number of fully applied optimizer updates,
-                    # including an update that subsequently fails the finite check.
-                    completed = engine.counts["optimizer_updates"] - start_counts["optimizer_updates"]
-                    group_state.update(updates_completed=completed, last_diagnostic_step=completed-1)
-                    state_write(directory / "status.json", group_state)
-                group_state["actual_intervention_updates"] += int(values["actual_intervention"])
-                updates = step + 1
-                group_state.update(updates_completed=updates, last_diagnostic_step=step)
-                if updates % 50 == 0:
-                    row = {"group": group, "updates_completed": updates, "image": name,
-                           "gaussian_count": len(engine.splats["means"]), "elapsed_seconds": time.perf_counter()-started, **values}
-                    log.write(json.dumps(row) + "\n")
-                    log.flush()
-                    print(json.dumps(row), flush=True)
-                    state.update(current_group=group, updates_completed=updates)
-                    state_write(root / "run.status.json", state)
-                    state_write(directory / "status.json", group_state)
-                if updates in (100, 200, 400):
-                    metrics[str(updates)] = evaluate(engine, inputs, directory, update=updates)
-        artifact = directory / "diagnostic_splats.pt"
-        torch.save({"step": 399, "splats": {key: p.detach().cpu() for key, p in engine.splats.items()},
-                    "diagnostic_only": True, "source_step": 29999, "diagnostic_updates": 400}, artifact)
-        saved = torch.load(artifact, map_location="cpu", weights_only=True)
-        validate_splats(saved, count=runtime["config"]["gaussian_count"], step=399)
-        del saved
-        counts = {key: engine.counts[key] - start_counts[key] for key in engine.counts}
-        check(counts["training_rasterization"] == counts["gaussian_backward"] == counts["optimizer_updates"] == 400 and
-              counts["evaluation_rasterization"] == 16 and counts["head_updates"] == counts["topology_events"] == 0, "diagnostic call budget violated")
-        group_state.update(GROUP_STATUS="UPDATES_COMPLETE", gaussian_count_final=len(engine.splats["means"]),
-                           final_parameter_artifact_exists=True, final_parameter_artifact_loadable=True,
-                           final_metrics_finite=True, head_updates=0, topology_events=0, counts=counts,
-                           artifact_sha256=sha(artifact))
-        new_json(directory / "manifest.json", {"source_step": 29999, "diagnostic_updates": 400, "diagnostic_only": True,
-            "preregistration_sha256": sha(root / "diagnostic_preregistration.json"), "optimizer": settings,
-            "M_C_S_sha256": prereg["frozen_sha256"], "initial_parameter_digest": digest})
-        state_write(directory / "status.json", group_state)
-        all_metrics[group], group_states[group] = metrics, group_state
-        engine.discard()
+        all_metrics[group], group_states[group] = run_group(root, engine, group, prereg, inputs, state,
+            evaluate_group=lambda engine, directory, update: evaluate(engine, inputs, directory, update=update),
+            evaluation_updates=(0, 100, 200, 400), prereg_path=root / "diagnostic_preregistration.json")
     decision = diagnostic_decision(all_metrics, roi["optimization_views"], roi["check_views"])
     check(decision["status"] != "DIAGNOSTIC_INVALID", f"invalid final evaluation: {decision}")
     check(group_states["O"]["actual_intervention_updates"] > 0, "NO_ORACLE_INTERVENTION during actual O updates")

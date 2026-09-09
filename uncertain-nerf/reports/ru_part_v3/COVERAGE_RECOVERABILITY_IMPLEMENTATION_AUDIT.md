@@ -50,6 +50,6 @@ Windows 命令行帮助和四个新增 Python 文件 AST 检查通过。本地�
 
 ## 待服务器完成的事实
 
-真实准备、四视图静态 ROI 确认、预注册、CUDA 预检以及 Va/Vb/O 都尚未运行。因此当前 actual updates 为 Va=0、Vb=0、O=0，不能标记为可恢复、不可恢复或诊断通过。
+更新：已收到 GPU 0 的准备压缩包，161 张 M 全部可用，checkpoint 与导出图 SHA 核对通过，准备阶段没有参数更新。逐图覆盖复算与原图复核见 [ROI 可用性复核](E:/6-Project/1-UncertainNerf/uncertain-nerf/reports/ru_part_v3/COVERAGE_RECOVERABILITY_ROI_REVIEW.md)。
 
-下一步按 `COVERAGE_RECOVERABILITY_RUNBOOK_CN.md` 执行 GPU 0 的 prepare，并回传生成的 review_bundle.zip。获得原图、Mask 对齐和候选视图后才能绘制并确认 ROI。
+当前为 ROI_NOT_READY。静态 ROI 确认、预注册、CUDA 更新预检和 Va/Vb/O 尚未由本次复核启动；没有可恢复性实验结论。不用 PNG 反推数值 M，不通过改变固定优化图或 Mask 绕过 ROI 条件。

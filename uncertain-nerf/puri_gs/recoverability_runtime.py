@@ -80,7 +80,7 @@ def terminal_learning_rates(cfg, scene_scale):
     return result
 
 
-def runtime_environment(device):
+def runtime_environment(device, *, package_hashes=True):
     import importlib.metadata
     import platform
     import os
@@ -94,7 +94,7 @@ def runtime_environment(device):
             packages[name] = "UNAVAILABLE"
     package_root = Path(gsplat.__file__).resolve().parent
     installed_files = sorted(path for path in package_root.rglob("*") if path.is_file()
-                             and path.suffix in (".py", ".so", ".pyd", ".cu", ".cuh", ".h", ".hpp", ".cpp"))
+                             and path.suffix in (".py", ".so", ".pyd", ".cu", ".cuh", ".h", ".hpp", ".cpp")) if package_hashes else []
     return {"python": sys.version, "executable": sys.executable, "platform": platform.platform(),
             "torch": str(torch.__version__), "cuda_runtime": torch.version.cuda,
             "gpu_name": torch.cuda.get_device_name(device),
@@ -123,11 +123,13 @@ def validate_splats(checkpoint, *, count, step):
 
 
 class FinalStateRuntime:
-    def __init__(self, paths, protocol, *, device="cuda:0"):
+    def __init__(self, paths, protocol, *, device="cuda:0", frozen_views=None):
         self.paths, self.protocol = paths, protocol
         self.source = Path(paths["source_run"])
         self.device = torch.device(device)
         self.identity = read_json(self.source / "v3_input_manifest.json")
+        self.readable_views = set(frozen_views) if frozen_views is not None else set(self.identity["train_basenames"])
+        require(self.readable_views <= set(self.identity["train_basenames"]), "requested view is not a training view")
         self.run_manifest = read_json(self.source / "v3_run_manifest.json")
         self.raw_cfg = read_runtime_yaml(self.source / "cfg.yml")
         require(self.run_manifest["implementation_revision"] == "v3-single-q-pinned-transfer-v1", "source V3 revision differs")
@@ -172,6 +174,8 @@ class FinalStateRuntime:
         self.source_hashes = {}
         for local, index in enumerate(self.trainset.indices):
             name = self.parser.image_names[int(index)]
+            if name not in self.readable_views:
+                continue
             path = Path(self.parser.image_paths[int(index)])
             digest = sha256_file(path)
             require(digest == self.identity["train_image_sha256"][name], f"training image changed: {name}")
@@ -185,23 +189,25 @@ class FinalStateRuntime:
         self.local_ids = {name: i for i, name in enumerate(self.names)}
         self.cfg.data_dir = paths["data"]
         self.cfg.feature_cache_dir = paths["feature_cache"]
-        self.support = StaticSupport(paths["track_cache"], identity=self.identity, cfg=self.cfg, device=self.device)
-        require(self.support.audit["cache_file_sha256"] == self.run_manifest["cache"]["cache_file_sha256"], "source C cache changed")
-        self.source_hashes[str(Path(paths["track_cache"]))] = self.support.audit["cache_file_sha256"]
+        self.support = None
         self.head, self.feature_cache, self.mask_problem = None, None, None
-        head_path = self.source / "aux/mask_head_step29999.pt"
-        try:
-            from puri_gs.dino_features import FeatureCache
-            metadata = read_json(self.source / "aux/dino_environment.json")
-            self.feature_cache = FeatureCache(paths["feature_cache"], expected_weight_sha256=metadata["weight_sha256"])
-            self.head = StaticResponsibilityHead(self.cfg.dino_feature_dim, self.cfg.mask_hidden_dim).to(self.device)
-            self.head.load_state_dict(torch.load(head_path, map_location="cpu", weights_only=True), strict=True)
-            require(all(torch.isfinite(p).all() for p in self.head.parameters()), "non-finite final head")
-            self.head.eval().requires_grad_(False)
-            self.source_hashes[str(head_path)] = sha256_file(head_path)
-        except (OSError, ValueError, RuntimeError, KeyError) as error:
-            self.head = None
-            self.mask_problem = f"MASK_STATE_UNAVAILABLE: {error}"
+        if frozen_views is None:
+            self.support = StaticSupport(paths["track_cache"], identity=self.identity, cfg=self.cfg, device=self.device)
+            require(self.support.audit["cache_file_sha256"] == self.run_manifest["cache"]["cache_file_sha256"], "source C cache changed")
+            self.source_hashes[str(Path(paths["track_cache"]))] = self.support.audit["cache_file_sha256"]
+            head_path = self.source / "aux/mask_head_step29999.pt"
+            try:
+                from puri_gs.dino_features import FeatureCache
+                metadata = read_json(self.source / "aux/dino_environment.json")
+                self.feature_cache = FeatureCache(paths["feature_cache"], expected_weight_sha256=metadata["weight_sha256"])
+                self.head = StaticResponsibilityHead(self.cfg.dino_feature_dim, self.cfg.mask_hidden_dim).to(self.device)
+                self.head.load_state_dict(torch.load(head_path, map_location="cpu", weights_only=True), strict=True)
+                require(all(torch.isfinite(p).all() for p in self.head.parameters()), "non-finite final head")
+                self.head.eval().requires_grad_(False)
+                self.source_hashes[str(head_path)] = sha256_file(head_path)
+            except (OSError, ValueError, RuntimeError, KeyError) as error:
+                self.head = None
+                self.mask_problem = f"MASK_STATE_UNAVAILABLE: {error}"
         self.scene_scale = float(self.parser.scene_scale * 1.1 * self.cfg.global_scale)
         self.optimizer_problem = None
         try:
@@ -240,6 +246,7 @@ class FinalStateRuntime:
 
     def data(self, name):
         require(name in self.local_ids and name not in self.identity["test_basenames"], "TEST_IMAGE_ACCESS_REJECTED")
+        require(name in getattr(self, "readable_views", self.local_ids), "view outside frozen diagnostic roles")
         if name not in self.cpu_data:
             self.cpu_data[name] = self.trainset[self.local_ids[name]]
             self.opened_training_images.add(name)
