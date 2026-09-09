@@ -41,6 +41,9 @@ EFFICIENCY_AUDIT_PATCH_PATH = (
 )
 ONTOGO_PATCH_PATH = PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_ontogo.patch"
 RU_PART_PATCH_PATH = PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_ru_part.patch"
+RU_PART_DIAGNOSTIC_PATCH_PATH = (
+    PROJECT_ROOT / "patches" / "gsplat_v1.5.3_ru_part_mechanism_diagnostic.patch"
+)
 EXPECTED_GSPLAT_COMMIT = "937e29912570c372bed6747a5c9bf85fed877bae"
 
 
@@ -91,12 +94,13 @@ def _verify_gsplat(
         raise RuntimeError("GSPLAT_DIR is not the pinned v1.5.3 checkout")
     source = (gsplat_dir / "examples" / "simple_trainer.py").read_text(encoding="utf-8")
     if require_ru_part:
-        _verify_applied_patch(gsplat_dir, RU_PART_PATCH_PATH, unidiff_zero=True)
+        _verify_applied_patch(gsplat_dir, RU_PART_DIAGNOSTIC_PATCH_PATH)
         required = (
             "puri_gs_ru_part_enabled",
             "ru_part_mode",
             "ru_part_track_cache",
             "ru_part_replay_ckpt",
+            "ru_part_diagnostic_stop_after_step",
             "RUPARTStrategy",
         )
         if any(marker not in source for marker in required):
@@ -454,6 +458,20 @@ def _build_command(
             replay_checkpoint = getattr(args, "replay_checkpoint", None)
             if replay_checkpoint is not None:
                 command.extend(["--ru_part_replay_ckpt", str(replay_checkpoint.resolve())])
+            if args.diagnostic_stage is not None:
+                command.extend(["--ru_part_diagnostic_stage", args.diagnostic_stage])
+                if args.diagnostic_stop_after_step is not None:
+                    command.extend([
+                        "--ru_part_diagnostic_stop_after_step",
+                        str(args.diagnostic_stop_after_step),
+                    ])
+                if args.diagnostic_roi_dir is not None:
+                    command.extend([
+                        "--ru_part_diagnostic_roi_dir",
+                        str(args.diagnostic_roi_dir.resolve()),
+                    ])
+                if args.diagnostic_roi_confirmed:
+                    command.append("--ru_part_diagnostic_roi_confirmed")
         factors = causal_factors(config)
         uses_mask = factors is not None and factors[0]
         if uses_mask:
@@ -521,6 +539,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--feature-cache-dir", type=Path)
     parser.add_argument("--track-cache", type=Path)
     parser.add_argument("--replay-checkpoint", type=Path)
+    parser.add_argument(
+        "--diagnostic-stage", choices=("SMOKE", "U", "R1", "R2", "VJP", "P1", "P2", "O")
+    )
+    parser.add_argument("--diagnostic-stop-after-step", type=int)
+    parser.add_argument("--diagnostic-roi-dir", type=Path)
+    parser.add_argument("--diagnostic-roi-confirmed", action="store_true")
     parser.add_argument(
         "--non-scientific-smoke",
         action="store_true",
@@ -595,10 +619,60 @@ def main() -> int:
                 raise RuntimeError(
                     f"RU-PART replay checkpoint is missing: {args.replay_checkpoint}"
                 )
+        if args.diagnostic_stage is not None:
+            if args.checkpoint is not None or args.non_scientific_smoke:
+                raise ValueError("mechanism diagnostic cannot evaluate or use legacy smoke")
+            if args.diagnostic_stage == "VJP":
+                if args.diagnostic_stop_after_step is not None:
+                    raise ValueError("VJP does not execute training updates")
+                if args.replay_checkpoint is None or args.diagnostic_roi_dir is None:
+                    raise ValueError("VJP requires step9999 replay and a fixed ROI directory")
+                args.diagnostic_roi_dir = args.diagnostic_roi_dir.expanduser().resolve()
+                if not (args.diagnostic_roi_dir / "roi_evidence.json").is_file():
+                    raise RuntimeError("VJP ROI directory is incomplete")
+            elif args.diagnostic_stage in {"P1", "P2", "O"}:
+                if args.diagnostic_stop_after_step != 10_399:
+                    raise ValueError("P1/P2/O terminal boundary is fixed at step10399")
+                if args.replay_checkpoint is None or args.diagnostic_roi_dir is None:
+                    raise ValueError("P1/P2/O require step9999 replay and fixed ROI directory")
+                args.diagnostic_roi_dir = args.diagnostic_roi_dir.expanduser().resolve()
+                if not (args.diagnostic_roi_dir / "static_confirmation.json").is_file():
+                    raise RuntimeError("P1/P2/O require explicit static ROI confirmation")
+                decision_path = args.diagnostic_roi_dir / "vjp_decision.json"
+                if not decision_path.is_file() or json.loads(
+                    decision_path.read_text(encoding="utf-8")
+                ).get("status") != "LOCAL_CONTROLLABILITY_PRESENT":
+                    raise RuntimeError("P1/P2/O require the positive formal VJP gate")
+                if not args.diagnostic_roi_confirmed:
+                    raise ValueError("P1/P2/O require the explicit confirmation flag")
+            elif args.diagnostic_stage == "SMOKE":
+                if args.replay_checkpoint is not None or args.diagnostic_stop_after_step not in range(100):
+                    raise ValueError("trainer smoke must start at step0 and stop within 100 updates")
+                if args.diagnostic_roi_dir is not None or args.diagnostic_roi_confirmed:
+                    raise ValueError("trainer smoke cannot receive ROI arguments")
+            else:
+                if args.diagnostic_stop_after_step != 10_199:
+                    raise ValueError("U/R terminal boundary is fixed at step10199")
+                if args.diagnostic_stage == "U" and args.replay_checkpoint is not None:
+                    raise ValueError("U must be uninterrupted and cannot restore a replay checkpoint")
+                if args.diagnostic_stage in {"R1", "R2"} and args.replay_checkpoint is None:
+                    raise ValueError("R1/R2 require the registered step9999 replay checkpoint")
+                if args.diagnostic_roi_dir is not None or args.diagnostic_roi_confirmed:
+                    raise ValueError("ROI arguments are valid only for VJP")
+        elif (
+            args.diagnostic_stop_after_step is not None
+            or args.diagnostic_roi_dir is not None
+            or args.diagnostic_roi_confirmed
+        ):
+            raise ValueError("diagnostic options require --diagnostic-stage")
     elif (
         args.track_cache is not None
         or args.replay_checkpoint is not None
         or args.non_scientific_smoke
+        or args.diagnostic_stage is not None
+        or args.diagnostic_stop_after_step is not None
+        or args.diagnostic_roi_dir is not None
+        or args.diagnostic_roi_confirmed
     ):
         raise ValueError("RU-PART-only arguments were supplied to another profile")
     if is_paper_control:

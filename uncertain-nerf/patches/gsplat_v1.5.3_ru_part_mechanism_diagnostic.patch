@@ -1,0 +1,278 @@
+diff --git a/examples/simple_trainer.py b/examples/simple_trainer.py
+--- a/examples/simple_trainer.py
++++ b/examples/simple_trainer.py
+@@ -111,6 +111,11 @@ class Config:
+     ru_part_track_cache: Optional[str] = None
+     ru_part_replay_ckpt: Optional[str] = None
+     ru_part_non_scientific_smoke: bool = False
++    ru_part_diagnostic_stage: Optional[Literal["SMOKE", "U", "R1", "R2", "VJP", "P1", "P2", "O"]] = None
++    # Post-update terminal step; max_steps deliberately remains 30000.
++    ru_part_diagnostic_stop_after_step: Optional[int] = None
++    ru_part_diagnostic_roi_dir: Optional[str] = None
++    ru_part_diagnostic_roi_confirmed: bool = False
+     dino_repo_dir: Optional[str] = None
+     dino_weight_path: Optional[str] = None
+     feature_cache_dir: Optional[str] = None
+@@ -824,6 +829,17 @@ class Runner:
+-        scheduled_trainset = (
+-            torch.utils.data.Subset(self.trainset, camera_sequence[init_step:].tolist())
+-            if camera_sequence is not None
+-            else self.trainset
+-        )
++        diagnostic_fixed_branch = None
++        if cfg.ru_part_diagnostic_stage in {"P1", "P2", "O"}:
++            from puri_gs.mechanism_diagnostic import prepare_fixed_branch
++            diagnostic_fixed_branch = prepare_fixed_branch(
++                self.ru_training, camera_sequence,
++                Path(cfg.ru_part_diagnostic_roi_dir),
++                stage=cfg.ru_part_diagnostic_stage,
++            )
++            scheduled_trainset = torch.utils.data.Subset(
++                self.trainset, diagnostic_fixed_branch["scheduled_ids"].tolist()
++            )
++        else:
++            scheduled_trainset = (
++                torch.utils.data.Subset(self.trainset, camera_sequence[init_step:].tolist())
++                if camera_sequence is not None else self.trainset
++            )
+         trainloader = torch.utils.data.DataLoader(
+@@ -836,6 +852,51 @@ class Runner:
+         if replay_payload is not None:
+             restore_rng_state(replay_payload["rng"])
+ 
++        diagnostic_progress = None
++        diagnostic_stop = cfg.ru_part_diagnostic_stop_after_step
++        if cfg.ru_part_diagnostic_stage is not None:
++            if not cfg.puri_gs_ru_part_enabled or cfg.ru_part_mode != "parent":
++                raise ValueError("mechanism diagnostic requires RU-PART parent mode")
++            if max_steps != 30_000:
++                raise ValueError("mechanism diagnostic must retain max_steps=30000")
++            if cfg.ru_part_diagnostic_stage == "VJP":
++                if init_step != 10_000 or diagnostic_stop is not None:
++                    raise ValueError("VJP must restore step9999 without training updates")
++                if cfg.ru_part_diagnostic_roi_dir is None:
++                    raise ValueError("VJP requires a fixed ROI directory")
++                from puri_gs.mechanism_diagnostic import run_vjp_probes
++                result = run_vjp_probes(
++                    self, Path(cfg.ru_part_diagnostic_roi_dir),
++                    confirmed=cfg.ru_part_diagnostic_roi_confirmed,
++                )
++                print(result["status"], flush=True)
++                return
++            if diagnostic_stop is None or not init_step <= diagnostic_stop < max_steps:
++                raise ValueError("invalid diagnostic post-update stop boundary")
++            if cfg.ru_part_diagnostic_stage == "U":
++                if init_step != 0 or diagnostic_stop != 10_199:
++                    raise ValueError("U must run uninterrupted from step0 through step10199")
++            elif cfg.ru_part_diagnostic_stage == "SMOKE":
++                if init_step != 0 or not 0 <= diagnostic_stop <= 99:
++                    raise ValueError("trainer smoke must stop within its first 100 updates")
++            elif cfg.ru_part_diagnostic_stage in {"P1", "P2", "O"}:
++                if (
++                    init_step != 10_000 or diagnostic_stop != 10_399
++                    or diagnostic_fixed_branch is None
++                    or cfg.ru_part_diagnostic_roi_dir is None
++                ):
++                    raise ValueError("P1/P2/O must restore step9999 and run 400 updates")
++                from puri_gs.mechanism_diagnostic import export_branch_readouts
++                export_branch_readouts(self, diagnostic_fixed_branch, step=9_999)
++            elif init_step != 10_000 or diagnostic_stop != 10_199:
++                raise ValueError("R1/R2 must restore step9999 and run 200 updates")
++            from puri_gs.mechanism_diagnostic import Progress
++            diagnostic_progress = Progress(
++                Path(cfg.result_dir, "diagnostic_progress.jsonl"),
++                cfg.ru_part_diagnostic_stage,
++                diagnostic_stop - init_step + 1,
++            )
++
+         # Training loop.
+         global_tic = time.time()
+         pbar = tqdm.tqdm(range(init_step, max_steps))
+@@ -917,31 +973,35 @@ class Runner:
+ 
+             ru_state = None
+             if self.ru_training is not None:
+-                if step < cfg.bootstrap_switch_step:
+-                    from puri_gs.ru_training import scale_intrinsics
++                if diagnostic_fixed_branch is not None:
++                    from puri_gs.mechanism_diagnostic import fixed_branch_mask
++                    ru_state = fixed_branch_mask(self.ru_training, image_ids, pixels)
++                else:
++                    if step < cfg.bootstrap_switch_step:
++                        from puri_gs.ru_training import scale_intrinsics
+ 
+-                    coarse_Ks = scale_intrinsics(
+-                        Ks, width=width, height=height, target=cfg.dino_coarse_input
+-                    )
+-                    coarse_renders, _, _ = self.rasterize_splats(
+-                        camtoworlds=camtoworlds,
+-                        Ks=coarse_Ks,
+-                        width=cfg.dino_coarse_input,
+-                        height=cfg.dino_coarse_input,
+-                        sh_degree=sh_degree_to_use,
+-                        near_plane=cfg.near_plane,
+-                        far_plane=cfg.far_plane,
+-                        image_ids=image_ids,
+-                        render_mode="RGB",
++                        coarse_Ks = scale_intrinsics(
++                            Ks, width=width, height=height, target=cfg.dino_coarse_input
++                        )
++                        coarse_renders, _, _ = self.rasterize_splats(
++                            camtoworlds=camtoworlds,
++                            Ks=coarse_Ks,
++                            width=cfg.dino_coarse_input,
++                            height=cfg.dino_coarse_input,
++                            sh_degree=sh_degree_to_use,
++                            near_plane=cfg.near_plane,
++                            far_plane=cfg.far_plane,
++                            image_ids=image_ids,
++                            render_mode="RGB",
++                        )
++                        render_for_mask = coarse_renders[..., :3].detach()
++                    else:
++                        render_for_mask = colors.detach()
++                    ru_state = self.ru_training.prepare_photo_mask(
++                        step=step,
++                        image_id=image_ids,
++                        pixels=pixels,
+                     )
+-                    render_for_mask = coarse_renders[..., :3].detach()
+-                else:
+-                    render_for_mask = colors.detach()
+-                ru_state = self.ru_training.prepare_photo_mask(
+-                    step=step,
+-                    image_id=image_ids,
+-                    pixels=pixels,
+-                )
+ 
+             if ru_state is None:
+                 self.cfg.strategy.step_pre_backward(
+@@ -963,6 +1023,20 @@ class Runner:
+                         fused_ssim_fn=fused_ssim,
+                         ssim_lambda=cfg.ssim_lambda,
+                     )
++                    if (
++                        diagnostic_fixed_branch is not None
++                        and cfg.ru_part_diagnostic_stage == "O"
++                    ):
++                        from puri_gs.mechanism_diagnostic import oracle_for_image, static_unmask_l1
++                        extra = static_unmask_l1(
++                            colors, pixels, ru_state.safe_mask,
++                            oracle_for_image(diagnostic_fixed_branch, image_ids, pixels),
++                            ssim_lambda=cfg.ssim_lambda,
++                        )
++                        if extra is not None:
++                            loss = loss + extra
++                            diagnostic_fixed_branch["effective_oracle_exposures"] += 1
++                            diagnostic_fixed_branch["extra_l1_sum"] += float(extra.detach())
+                     if self.ru_training.ru_part is not None and cfg.ru_part_mode == "current":
+                         rescue_loss = self.ru_training.ru_part_rescue_loss(
+                             render=colors,
+@@ -1026,7 +1098,7 @@ class Runner:
+             if cfg.scale_reg > 0.0:
+                 loss += cfg.scale_reg * torch.exp(self.splats["scales"]).mean()
+ 
+-            if ru_state is not None:
++            if ru_state is not None and diagnostic_fixed_branch is None:
+                 self.cfg.strategy.step_pre_backward(
+                     params=self.splats,
+                     optimizers=self.optimizers,
+@@ -1037,7 +1109,7 @@ class Runner:
+             loss.backward()
+             if self.ru_training is not None and self.ru_training.ru_part is not None:
+                 self.ru_training.ru_part.note_gaussian_backward()
+-            if ru_state is not None:
++            if ru_state is not None and diagnostic_fixed_branch is None:
+                 self.ru_training.assert_photo_gradient_isolation()
+                 self.ru_training.complete_mask_supervision(
+                     step=step,
+@@ -1204,7 +1276,7 @@ class Runner:
+ 
+             # T=1 follows RU ordering: strategy post-backward first, then the
+             # Gaussian optimizer. T=0 preserves the pinned B1 order.
+-            if self.puri_gs_delayed_topology_enabled:
++            if self.puri_gs_delayed_topology_enabled and diagnostic_fixed_branch is None:
+                 if cfg.puri_gs_ru_part_enabled and cfg.ru_part_mode != "parent" and self.cfg.strategy.schedule.should_refine(step):
+                     fixed_probe_started = time.perf_counter()
+                     with torch.no_grad():
+@@ -1292,7 +1364,7 @@ class Runner:
+             else:
+                 assert_never(self.cfg.strategy)
+ 
+-            if self.puri_gs_mask_enabled:
++            if self.puri_gs_mask_enabled and diagnostic_fixed_branch is None:
+                 assert ru_state is not None
+                 self.ru_training.record(
+                     step=step,
+@@ -1302,4 +1376,7 @@ class Runner:
+                     gaussian_count=len(self.splats["means"]),
+                 )
+ 
++            if diagnostic_fixed_branch is not None:
++                diagnostic_fixed_branch["updates_completed"] += 1
++
+             save_now = step in [i - 1 for i in cfg.save_steps] or step == max_steps - 1
+@@ -1341,6 +1420,17 @@ class Runner:
+                 if world_rank == 0:
+                     self.ru_training.save_visuals(colors)
+ 
++            if diagnostic_fixed_branch is not None and step == 10_199:
++                from puri_gs.mechanism_diagnostic import export_branch_readouts
++                export_branch_readouts(self, diagnostic_fixed_branch, step=step)
++
++            if (
++                diagnostic_progress is not None
++                and step in (9_599, 9_799, 9_999, 10_199)
++            ):
++                from puri_gs.mechanism_diagnostic import export_source_probes
++                export_source_probes(self, step=step)
++
+             if cfg.puri_gs_ru_part_enabled:
+                 from puri_gs.replay import REPLAY_SAVE_STEPS, save_replay_checkpoint
+ 
+@@ -1357,6 +1447,45 @@ class Runner:
+                         ru_training_state=self.ru_training.replay_state_dict(),
+                     )
+ 
++            if diagnostic_progress is not None:
++                completed = step - init_step + 1
++                if step == diagnostic_stop:
++                    try:
++                        if diagnostic_fixed_branch is not None:
++                            from puri_gs.mechanism_diagnostic import export_branch_readouts
++                            export_branch_readouts(
++                                self, diagnostic_fixed_branch, step=step
++                            )
++                        if cfg.ru_part_diagnostic_stage != "SMOKE":
++                            from puri_gs.mechanism_diagnostic import save_training_snapshot
++                            save_training_snapshot(
++                                Path(cfg.result_dir, f"diagnostic_terminal_step{step}.pt"),
++                                step=step,
++                                stage=cfg.ru_part_diagnostic_stage,
++                                splats=self.splats,
++                                optimizers=self.optimizers,
++                                schedulers=schedulers,
++                                strategy_state=self.strategy_state,
++                                camera_sequence=camera_sequence,
++                                intervention_mode=cfg.ru_part_mode,
++                                ru_training_state=self.ru_training.replay_state_dict(),
++                            )
++                        diagnostic_progress.update(completed, status="complete")
++                        print(
++                            "RU_PART_DIAGNOSTIC_COMPLETE "
++                            f"stage={cfg.ru_part_diagnostic_stage} step={step}",
++                            flush=True,
++                        )
++                    except Exception as error:
++                        diagnostic_progress.update(
++                            completed, status="failed", error=repr(error)
++                        )
++                        raise
++                    finally:
++                        diagnostic_progress.close()
++                    break
++                diagnostic_progress.update(completed)
++
+             # eval the full set
+             if step in [i - 1 for i in cfg.eval_steps]:
+                 self.eval(step)
