@@ -1,8 +1,48 @@
 # RU-PART-V3 逐步操作说明
 
-当前进度：优化后的V3短测开销比值1.0634138514755154，通过1.08检查线。历史标准RU检查点已在GPU 0完成重评，exitcode=0，24张测试图匹配，PSNR差为0，标准独立评测检查通过。下一步同步历史Parent复用接入代码，登记后从头启动唯一一次V3 30k。下面旧重评、短测及故障处理流程保留供追溯，已执行步骤不要重复。服务器结果来自用户记录，本机未直接登录。
+2026-09-09 新增覆盖率与局部可恢复性诊断的入口和步骤见 [新诊断操作说明](COVERAGE_RECOVERABILITY_RUNBOOK_CN.md)。下文为已经完成的原 V3 筛选留档；其停止范围不替代用户最新授权的独立诊断。
 
-## 当前操作：登记历史Parent，再启动V3 30k
+当前进度：**本轮已结束，最终状态QUALITY_RECOVERY_FAIL / NO_GO。** GPU 0上的V3完整训练和独立评测均以exit_code=0完成，四项固定质量恢复门全部失败，Parent三项质量保护门通过。V3相对Parent的PSNR/SSIM/LPIPS变化为+0.158186/+0.000916/−0.000147，DSC07988 PSNR提高0.664741 dB。固定ROI误差下降13.38%，低alpha面积下降12.6073个百分点，仍不足以达到恢复目标。
+
+本轮不再需要执行服务器命令。Gaussian数量、单次推理raster和FPS门通过；同口径完整训练时间门仍为NOT_ASSESSABLE。新增监督实际激活2265步，最终诊断图覆盖有限；不把早期Q=0沿用到完整训练。最终说明见[筛选报告](E:/6-Project/1-UncertainNerf/uncertain-nerf/reports/ru_part_v3/RU_PART_V3_SCREENING_REPORT.md)，用户回读及复算结果见[本地证据归档](E:/7-DataSet/ru_part_v3/server_readback_20260909.json)。
+
+保留服务器现有配置、manifest、日志、标准checkpoint、证据图、逐图评测和报告。本次只更新本地报告，没有改训练代码，也没有启动额外训练/评测。下面命令均为已完成步骤的留档，不应再次执行。
+
+## 已完成留档：回读筛选结果
+
+以下命令用于此前读取现有输出，摘要已收到并分析完成：
+
+```bash
+cd /home/chenglong/Uncertain-Nerf/uncertain-nerf
+.venv-gsplat153/bin/python - <<'PY'
+import json
+from pathlib import Path
+r = Path("logs-puri/ru_part_v3_screening")
+def read(path):
+    return json.loads(path.read_text())
+def show(name, value):
+    print(name + ": " + json.dumps(value, ensure_ascii=False))
+s = read(r / "eval-v3.status.json")
+show("eval_state", {k: s.get(k) for k in ("status", "exit_code", "error")})
+d = read(r / "screening_result.json")
+for k in ("status", "metrics", "quality_gates", "parent_protection_gates", "resource_gates",
+          "delta_vs_parent", "ratios", "fixed_roi", "roi_provenance", "cache_cost_accounting", "missing", "invalid"):
+    show(k, d.get(k))
+for mode, cost in d.get("costs", {}).items():
+    show(mode + "_cost", {k: cost.get(k) for k in ("training", "inference")})
+c = read(r / "v3/v3_training_checks.json")
+show("training_checks", {k: c.get(k) for k in (
+    "implementation_revision", "last_step", "activation_status", "active_samples", "added_loss_sum",
+    "actual_gaussian_backward_count", "actual_training_rasterization_count", "disabled_call_counts",
+    "parameter_gradient_checks", "mask_update_count")})
+e = read(r / "v3/evidence_check/evidence_check.json")
+show("final_evidence", {k: e.get(k) for k in ("status", "scope", "images")})
+PY
+```
+
+该摘要已用于最终报告：四项质量恢复门均失败，相对Parent有小幅改善，真实监督激活但诊断覆盖有限。训练子进程1244.831186秒包含初始化、加载和证据导出；训练段为1212.198883秒，同口径比较仍受历史Parent训练GPU和记录方式不同的限制。
+
+## 已执行步骤留档：登记历史Parent，再启动V3 30k
 
 1. 在本地Git图形界面提交并同步本次代码与报告改动；服务器仍使用`ru-part`分支同步。此次新增`puri_gs/v3_parent_reference.py`和对应测试，更新启动器及报告，使其直接引用旧训练目录和已完成的重评目录。没有训练公式、trainer补丁或缓存变动，不重做两组smoke。
 

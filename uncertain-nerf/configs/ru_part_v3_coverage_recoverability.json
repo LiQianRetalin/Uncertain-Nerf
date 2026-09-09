@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "protocol": "V3_COVERAGE_AND_LOCAL_RECOVERABILITY_DIAGNOSTIC",
+  "source_run": "logs-puri/ru_part_v3_screening/v3",
+  "source_step": 29999,
+  "source_checkpoint_sha256": "14563fbbcfbb722879929be31fd19ad5e6a02939e8d2409e6a6855ce909d417c",
+  "gaussian_count": 2266597,
+  "optimization_views": ["DSC07987.JPG", "DSC07989.JPG"],
+  "groups": ["Va", "Vb", "O"],
+  "updates_per_group": 400,
+  "evaluation_updates": [0, 100, 200, 400],
+  "progress_every": 50,
+  "neighbor_preview_count": 8,
+  "seed": 42,
+  "sh_degree": 3,
+  "preferred_gpu": 0,
+  "criteria": {
+    "local_fraction": 0.05,
+    "check_fraction": 0.02,
+    "protection_fraction": 0.01,
+    "repeat_margin_multiplier": 3.0,
+    "absolute_floor": 0.0001,
+    "low_alpha_threshold": 0.3
+  }
+}
