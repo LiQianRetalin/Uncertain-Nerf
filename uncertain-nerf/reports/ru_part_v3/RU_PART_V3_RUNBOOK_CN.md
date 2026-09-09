@@ -1,8 +1,160 @@
 # RU-PART-V3 逐步操作说明
 
-当前进度：两组GPU 0 smoke均完成且输入/相机序列一致，但V3耗时比值1.105733超过1.08检查线。C非零、早期Mask全部接受，Q未激活；固定张量功能检查通过。已修复重复Q计算和阻塞网格拷贝，51项CPU检查通过；按下节保留原记录并仅做一次优化后的V3 smoke复测，尚不启动30k训练。后面的启动参数故障流程仅供追溯，不再执行。服务器结果来自用户记录，本机未直接登录。
+当前进度：优化后的V3短测开销比值1.0634138514755154，通过1.08检查线。历史标准RU检查点已在GPU 0完成重评，exitcode=0，24张测试图匹配，PSNR差为0，标准独立评测检查通过。下一步同步历史Parent复用接入代码，登记后从头启动唯一一次V3 30k。下面旧重评、短测及故障处理流程保留供追溯，已执行步骤不要重复。服务器结果来自用户记录，本机未直接登录。
 
-## 当前操作：逐步开销修复后的单次V3复测
+## 当前操作：登记历史Parent，再启动V3 30k
+
+1. 在本地Git图形界面提交并同步本次代码与报告改动；服务器仍使用`ru-part`分支同步。此次新增`puri_gs/v3_parent_reference.py`和对应测试，更新启动器及报告，使其直接引用旧训练目录和已完成的重评目录。没有训练公式、trainer补丁或缓存变动，不重做两组smoke。
+
+2. 服务器终端更新预检记录并登记。这两项成功后才启动训练；`&&`保证前一项失败时不执行后一项。
+
+```bash
+cd /home/chenglong/Uncertain-Nerf/uncertain-nerf
+.venv-gsplat153/bin/python tools/ru_part_v3_screen.py preflight --gpu 0 && \
+.venv-gsplat153/bin/python tools/ru_part_v3_screen.py register-parent
+```
+
+成功标志为`PREFLIGHT_READY`和`PARENT_REFERENCE_READY`。登记只读取配置、实际`cfg.yml`策略与调度、split、当前训练图/SfM哈希、标准29999检查点、退出码及重评指标，写入独立`parent_reference.json`。不会创建`parent.status.json`或把旧训练冒充本轮新训练；也不会再次评测Parent。若出现配置差异或文件缺失，保留错误并发回，不能手动改状态跳过。
+
+质量复用依据是原标准RU配置/路径/split、实际运行策略、同名检查点复现和当前数据与配对短测一致。历史训练时未记录逐文件图像/SfM哈希和30k相机序列，登记会明确写`NOT_RECORDED`，不会用当前哈希声称证明历史字节身份。历史训练来自GPU 1，完整训练时间门保留`NOT_ASSESSABLE`；本轮GPU 0重评的143.3705007690993 FPS用于后续同设备、同软件、同warmup推理比较。
+
+3. 看到`PARENT_REFERENCE_READY`后，在服务器启动一次完整V3：
+
+```bash
+cd /home/chenglong/Uncertain-Nerf/uncertain-nerf
+.venv-gsplat153/bin/python tools/ru_part_v3_screen.py launch v3
+```
+
+GPU固定为0；占用时停止并报错，不抢占其他进程。训练从step0初始化，终点29999，不从smoke或历史Parent续训。背景包装器打印PID、日志与状态命令。已有同名输出时拒绝覆盖。
+
+```bash
+tail -n 40 -f /home/chenglong/Uncertain-Nerf/uncertain-nerf/logs-puri/ru_part_v3_screening/v3.log
+```
+
+`Ctrl+C`仅退出日志查看。另一个终端或退出查看后读取状态：
+
+```bash
+cd /home/chenglong/Uncertain-Nerf/uncertain-nerf
+.venv-gsplat153/bin/python tools/ru_part_v3_screen.py status v3
+```
+
+成功应为`TRAIN_COMPLETE / exit_code=0 / last_step=29999`且标准检查点可加载。失败时只发回状态和`tail -n 80 logs-puri/ru_part_v3_screening/v3.log`，不重跑、不删除目录。
+
+4. 完整训练成功后，仅评测V3，已登记的历史Parent重评会直接复用：
+
+```bash
+cd /home/chenglong/Uncertain-Nerf/uncertain-nerf
+.venv-gsplat153/bin/python tools/ru_part_v3_screen.py launch eval-v3
+```
+
+```bash
+tail -n 40 -f /home/chenglong/Uncertain-Nerf/uncertain-nerf/logs-puri/ru_part_v3_screening/eval-v3.log
+```
+
+```bash
+cd /home/chenglong/Uncertain-Nerf/uncertain-nerf
+.venv-gsplat153/bin/python tools/ru_part_v3_screen.py status eval-v3
+```
+
+5. 看到`EVAL_COMPLETE / exit_code=0`后生成报告并停止：
+
+```bash
+cd /home/chenglong/Uncertain-Nerf/uncertain-nerf
+.venv-gsplat153/bin/python tools/ru_part_v3_screen.py report
+cat logs-puri/ru_part_v3_screening/RU_PART_V3_SCREENING_REPORT.md
+```
+
+报告直接使用`eval-existing-parent`指标及ROI数组，推理口径与历史训练耗时分开判断。缺少可比完整训练计时时不得整体晋级，不会因此自动增加一次Parent训练。
+
+## 已完成留档：历史标准Parent固定checkpoint重评
+
+在服务器终端使用现有`run_puri_gs.py --checkpoint`，直接读取`logs-puri/ru-generalization-rerun-9e292309/garden_ru_30k/ckpts/ckpt_29999_rank0.pt`。独立输出目录为`logs-puri/ru_part_v3_screening/eval-existing-parent`，旁边记录同名`.log`、`.pid`、`.exitcode`，不能覆盖已有结果。保持GPU 0、warmup=10，结果用于历史复现与未来同口径推理比较。
+
+### 启动（服务器终端）
+
+```bash
+(
+set -e
+cd /home/chenglong/Uncertain-Nerf/uncertain-nerf
+BASE=logs-puri/ru_part_v3_screening/eval-existing-parent
+for path in "$BASE" "$BASE.log" "$BASE.pid" "$BASE.exitcode"
+do
+    if [ -e "$path" ]; then
+        echo "Output already exists; stop: $path"
+        exit 1
+    fi
+done
+.venv-gsplat153/bin/python -c 'from tools.ru_part_v3_screen import require_complete; from puri_gs.v3_gpu import gpu_inventory, select_gpu; require_complete("smoke-parent", "SMOKE_COMPLETE"); require_complete("smoke-v3", "SMOKE_COMPLETE"); print(select_gpu(gpu_inventory(), pinned=0))'
+nohup bash -c '
+set +e
+export CUDA_VISIBLE_DEVICES=0
+.venv-gsplat153/bin/python run_puri_gs.py \
+  --config configs/puri_gs_ru_part_v3_parent_garden30k.yaml \
+  --gsplat-dir external/gsplat-v1.5.3-ru-part-v3 \
+  --data-dir data/mipnerf360/360_v2/garden \
+  --result-dir logs-puri/ru_part_v3_screening/eval-existing-parent \
+  --gpu 0 \
+  --checkpoint logs-puri/ru-generalization-rerun-9e292309/garden_ru_30k/ckpts/ckpt_29999_rank0.pt \
+  --eval-warmup-renders 10
+rc=$?
+printf "%s\n" "$rc" > logs-puri/ru_part_v3_screening/eval-existing-parent.exitcode
+exit "$rc"
+' > "$BASE.log" 2>&1 < /dev/null &
+printf "%s\n" "$!" > "$BASE.pid"
+printf "Started evaluator PID=%s\n" "$!"
+)
+```
+
+包装器先确认两个smoke最终完成及0号空闲；任何已有结果、阶段未完成或GPU占用都会停止启动。前台准备若报错就发回报错；没有出现`Started evaluator`不能当作已启动。
+
+### 监控和验收（服务器终端）
+
+```bash
+tail -n 40 -f logs-puri/ru_part_v3_screening/eval-existing-parent.log
+```
+
+Ctrl+C仅退出日志查看。随后读取`.exitcode`：文件不存在时任务尚未记录完成，不能判定成功；非0时保留失败目录，发回最近80行日志，不直接覆盖重试。
+
+```bash
+cat logs-puri/ru_part_v3_screening/eval-existing-parent.exitcode
+tail -n 80 logs-puri/ru_part_v3_screening/eval-existing-parent.log
+```
+
+只有exitcode=0后读取下面的摘要。这是质量复现检查，不是最终Parent复用批准，更不是新训练完成标记。成功应为24张视图名单相同、指标有限、PSNR差≤0.001dB、标准checkpoint加载、DINO/head关闭、single-raster ratio=1、warmup=10。最终数据/算法审计和复用登记仍待完成。
+
+```bash
+.venv-gsplat153/bin/python - <<'PY'
+import csv
+import json
+import math
+from pathlib import Path
+r = Path("logs-puri/ru_part_v3_screening")
+e = r / "eval-existing-parent"
+assert int((r / "eval-existing-parent.exitcode").read_text()) == 0
+old = json.loads(Path("logs-puri/ru-generalization-rerun-9e292309/garden_ru_30k/independent_eval/test_metrics.json").read_text())
+new = json.loads((e / "test_metrics.json").read_text())
+validation = json.loads((e / "ru_validation.json").read_text())
+efficiency = json.loads((e / "efficiency_metrics.json").read_text())
+with (e / "per_image_metrics.csv").open() as f:
+    rows = list(csv.DictReader(f))
+identity = json.loads((r / "smoke-parent/v3_input_manifest.json").read_text())
+names_match = len(rows) == 24 and sorted(x["image_name"] for x in rows) == sorted(identity["test_basenames"])
+finite = all(math.isfinite(float(x[k])) for x in rows for k in ("psnr", "ssim", "lpips"))
+delta = abs(new["psnr"] - old["psnr"])
+summary_matches = len(rows) == 24 and all(abs(sum(float(x[k]) for x in rows)/24 - new[k]) <= 1e-5 for k in ("psnr", "ssim", "lpips"))
+print("view_count:", len(rows), "test_names_match:", names_match)
+print("finite:", finite, "summary_matches_csv:", summary_matches)
+print("old_PSNR:", old["psnr"], "new_PSNR:", new["psnr"], "abs_difference:", delta)
+print("PSNR_reproduction_pass:", math.isfinite(delta) and delta <= .001)
+print("new_metrics:", new)
+print("DSC07988:", next((x for x in rows if x["image_name"] == "DSC07988.JPG"), None))
+print("validation:", validation)
+print("efficiency:", efficiency)
+print("ROI_arrays_exist:", (e / "DSC07988_alpha.npy").is_file(), (e / "DSC07988_abs_error.npy").is_file())
+PY
+```
+
+## 已完成：逐步开销修复后的单次V3复测
 
 1. **图形界面：**主项目保持`ru-part`，提交本次代码、测试与说明，建议备注：**消除V3重复Q计算并异步传输当前视图缓存**。本地上传、服务器下拉，确认相同commit。未改trainer补丁、Mask/head参数和训练算法；原Parent smoke无需重跑。同步失败就停止并发回报错。
 2. **服务器终端：**仅归档已完成但超限的原V3 smoke，包含checkpoint、原日志/状态和旧预检快照。脚本拒绝活动任务、正式训练目录以及已优化后的重复尝试。看到`ARCHIVED`才继续；报错即停止。

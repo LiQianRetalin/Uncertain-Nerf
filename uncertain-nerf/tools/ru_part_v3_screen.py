@@ -137,7 +137,8 @@ def preflight(args):
     else:
         env = os.environ.copy()
     subprocess.run(["bash", str(ROOT / "scripts/prepare_puri_gs_ru_part_v3.sh"), paths["gsplat"]], env=env, check=True)
-    subprocess.run([sys.executable, "-m", "pytest", "tests/test_ru_part_v3.py", "tests/test_v3_gpu.py", "-q"], cwd=ROOT, check=True)
+    subprocess.run([sys.executable, "-m", "pytest", "tests/test_ru_part_v3.py", "tests/test_v3_gpu.py",
+                    "tests/test_v3_parent_reference.py", "-q"], cwd=ROOT, check=True)
     # Trainer help is checked in the exact Python environment before any launch.
     subprocess.run([sys.executable, "simple_trainer.py", "default", "--help"],
                    cwd=Path(paths["gsplat"]) / "examples", env={**env, "PYTHONPATH": str(ROOT)},
@@ -207,6 +208,35 @@ def require_complete(stage, expected):
         raise ValueError(f"{stage} has not completed: {state}")
 
 
+def require_parent_ready():
+    from puri_gs.v3_parent_reference import load_reference
+    reference = load_reference(output_root(), verify=True)
+    if reference is None:
+        require_complete("parent", "TRAIN_COMPLETE")
+    return reference
+
+
+def register_parent(args):
+    from puri_gs.v3_parent_reference import register_reference
+    env = environment()
+    current_commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+    if current_commit != env["commit"]:
+        raise ValueError("code commit changed; rerun preflight before registration")
+    if sha256_file(Path(env["gsplat"], "examples/simple_trainer.py")) != env["trainer_sha256"]:
+        raise ValueError("trainer source changed since preflight")
+    for stage in STAGES:
+        path = stage_paths(stage)[2]
+        if path.is_file() and read(path).get("status") in ("STARTING", "RUNNING"):
+            raise RuntimeError(f"{stage} is active; finish it before registering a Parent")
+    reference = register_reference(output_root(), ROOT, args.run, args.eval_dir, env, validate_checkpoint)
+    print("PARENT_REFERENCE_READY", output_root() / "parent_reference.json")
+    print(json.dumps({key: reference[key] for key in (
+        "decision", "source_run", "evaluation_dir", "gaussian_count", "psnr_reproduction_abs_difference",
+        "quality_comparability", "historical_training_gpu", "reevaluation_gpu", "training_time_comparability",
+        "historical_input_hashes", "historical_camera_sequence", "limitations")}, indent=2, ensure_ascii=False))
+    return 0
+
+
 def launch(args):
     env = environment()
     run, log, status_path = stage_paths(args.stage)
@@ -232,6 +262,8 @@ def launch(args):
         require_complete("smoke-parent", "SMOKE_COMPLETE")
         require_complete("smoke-v3", "SMOKE_COMPLETE")
         if args.stage == "parent":
+            if (output_root() / "parent_reference.json").exists():
+                raise RuntimeError("Historical Parent already registered; no additional Parent training is needed")
             audit = read(output_root() / "preflight.json")
             if audit["existing_standard_ru_candidates"] and not (output_root() / "parent_comparability_audit.json").is_file():
                 raise RuntimeError("Historical Parent candidates exist. Complete their comparability audit before adding a full Parent run; send preflight.json for review.")
@@ -244,11 +276,13 @@ def launch(args):
         if ratio > 1.08:
             raise RuntimeError(f"smoke step time ratio {ratio:.4f} > 1.08; inspect implementation overhead first")
         if args.stage == "v3":
-            require_complete("parent", "TRAIN_COMPLETE")
+            require_parent_ready()
             evidence = read(stage_paths("smoke-v3")[0] / "evidence_check/evidence_check.json")
             if evidence["status"] == "EVIDENCE_INACTIVE":
                 raise RuntimeError("EVIDENCE_INACTIVE")
     elif args.stage.startswith("eval-"):
+        if args.stage == "eval-parent" and (output_root() / "parent_reference.json").exists():
+            raise RuntimeError("Registered Parent re-evaluation is already complete; use launch eval-v3 after V3 training")
         require_complete(args.stage[5:], "TRAIN_COMPLETE")
         source_mode = args.stage[5:]
         if sha256_file(stage_paths(source_mode)[0] / "ckpts/ckpt_29999_rank0.pt") != read(stage_paths(source_mode)[2])["checkpoint_sha256"]:
@@ -314,6 +348,8 @@ def worker(args):
             if (not validation["standard_checkpoint_load_pass"] or validation["evaluation_loaded_mask_head"]
                     or validation["evaluation_imported_dino"] or validation["evaluation_rasterization_count_ratio"] != 1):
                 raise ValueError("invalid independent evaluator path")
+            from puri_gs.v3_parent_reference import evaluation_fingerprint
+            state["evaluation_fingerprint"] = evaluation_fingerprint(run, env)
             state["status"] = "EVAL_COMPLETE"
         else:
             final_step = 599 if args.stage.startswith("smoke-") else 29999
@@ -369,13 +405,16 @@ def main():
     p = sub.add_parser("preflight")
     p.add_argument("--gpu", default="auto", help="auto selects an idle GPU in order 6,7,0,1,2,3,4,5; an index pins a device")
     p.add_argument("--track-cache", type=Path)
+    p = sub.add_parser("register-parent", help="validate and reference the audited existing standard RU Parent")
+    p.add_argument("--run", type=Path, default=ROOT / "logs-puri/ru-generalization-rerun-9e292309/garden_ru_30k")
+    p.add_argument("--eval-dir", type=Path, default=output_root() / "eval-existing-parent")
     for action in ("launch", "worker", "status"):
         p = sub.add_parser(action)
         p.add_argument("stage", choices=STAGES)
     p = sub.add_parser("report")
     p.add_argument("--roi", type=Path)
     args = parser.parse_args()
-    return globals()[args.action](args)
+    return globals()[args.action.replace("-", "_")](args)
 
 
 if __name__ == "__main__":

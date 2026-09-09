@@ -187,3 +187,31 @@ runbook提供仅适用于本次step=-1启动失败的归档流程，保留原错
 新增实现版本`v3-single-q-pinned-transfer-v1`写入运行manifest和training_checks。Parent热路径、trainer补丁、上采样、完整RGB分母、0.8系数、所有Mask/head参数与调度均未改。新增4项实际hook梯度/统计与当前视图映射检查，合计51项相关CPU测试通过（11.92秒）。这证明数学和CPU集成检查通过，不证明CUDA提速比例已经达标，也未证明这两处开销解释了全部1.72毫秒差值。
 
 按runbook保留旧完整V3 smoke为`measurements/smoke-v3-before-transfer-fix`，不篡改原FAILED或SMOKE_COMPLETE状态。同步优化后仅做一次V3 600步复测，保留已完成Parent；不进行重复计时直到碰巧通过，不放宽1.08，也不重训完整Parent。若仍超限，读取有限profile明细进一步归因，不自动追加更多前缀训练。
+
+## 14. 优化后的配对计时通过，进入历史Parent固定checkpoint重评
+
+用户提供实现版本`v3-single-q-pinned-transfer-v1`的复测摘要：Parent中位数16.28751354292035毫秒，V3中位数17.320367507636547毫秒，比值1.0634138514755154（增加6.3414%），低于1.08检查线。Gaussian backward/raster计数仍为600/1200；所有禁用项为0，step500和599的参数梯度有限且存在非零梯度。仍为`NO_Q_SAMPLED`，不能宣称新增监督已在真实样本上激活。用户本次仅贴训练检查摘要，阶段最终状态/checkpoint及新的证据导出应在下一命令的完成条件中复核。
+
+原1.105733超限结果保持原结论；优化后的单次复测通过只解除短测实现开销检查，不代表完整30k训练时间门已通过。至此不再重复smoke。
+
+历史标准RU继续选定`logs-puri/ru-generalization-rerun-9e292309/garden_ru_30k/ckpts/ckpt_29999_rank0.pt`作为待核对对象。新评测使用现有`run_puri_gs.py --checkpoint`入口，GPU 0、warmup=10、24张固定test图，独立输出到`logs-puri/ru_part_v3_screening/eval-existing-parent`。launcher的checkpoint分支只传标准checkpoint和评测选项，不传RU/DINO/head/静态缓存训练选项。现有V3 trainer补丁会同时保存DSC07988 alpha与绝对误差用于后续固定ROI报告。此步骤无需修改或同步代码。
+
+将核对进程exit_code=0、24张图的名单/逐图指标、标准checkpoint加载、DINO/head不加载、single-raster及warmup=10，并对原同名checkpoint的平均PSNR使用0.001dB复现阈值。新增评测结果不冒充新Parent训练，旧训练1350秒量级记录不直接作为GPU 0成本。历史Parent的登记和报告适配仍须基于重评及数据/算法审计结果完成，不能伪造其未记录的历史输入哈希或相机序列。
+
+本地进一步阅读了`9e292309`到当前的源码差异：`semantic_mask.py`新增恢复接口，原光度/Mask公式未改；`ru_training.py`增加受开关保护的控制/重放和拓扑记录，标准RU不启用PART；`delayed_absgrad.py`增加可选refine_windows和记录器，本轮refine_windows为空。该阅读支持标准路径审计，但不替代服务器旧运行实际cfg、数据内容与重评验证。
+
+## 15. 历史检查点重评通过，补齐复用登记与报告接入
+
+用户提供`eval-existing-parent.exitcode=0`。24张测试图与固定名单完全匹配；新旧平均PSNR均为26.650571823120117，差为0，满足0.001dB固定检查点复现检查。SSIM0.8573052287101746、LPIPS0.09050631523132324也与原记录相同。DSC07988为14.080384254455566 / 0.7426926493644714 / 0.18715116381645203；Parent低于B1恢复目标不构成历史回退。
+
+独立评测标准检查点加载成功、未导入DINO/加载head、rasterization ratio=1、warmup=10、raw samples=24。GPU 0的FPS143.3705007690993，p50/p95为6.898403167724609/7.451009750366211毫秒，推理显存1.85420560836792GiB；N2274197。DSC07988两份ROI输入数组均已保存。日志中的M=0/T=0对应独立推理；外层launcher打印的M=1/T=1为配置描述。`Downscaling`进度循环对已存在PNG执行跳过，不能仅凭该行断言重新生成了图像；登记仍逐张核对当前训练PNG和SfM与smoke的哈希。
+
+新增窄范围`register-parent`命令与`puri_gs/v3_parent_reference.py`，只接入已审计的历史源commit9e292309和本次重评commit3058fbb。服务器登记核对原JSON配置、实际YAML策略类/所有有效训练字段、split、fresh30k标准checkpoint、当前输入哈希、评测命令中的checkpoint/GPU、退出码、24图/均值、PSNR复现及推理验证。YAML只解析节点，不构造Python对象；仅允许已审计的空记录器/空refine_windows、新增默认关闭字段和V3短测停止元数据差异。未知有效配置差异会拒绝登记，不放宽算法配置。
+
+登记写独立`parent_reference.json`，引用原目录及本次重评目录，记录文件SHA-256并在正式启动和报告时复核。没有创建虚假的Parent训练/评测状态，没有复制当前manifest或相机序列到历史训练目录，没有从旧检查点启动V3。已有登记的Parent会阻止额外Parent训练/重评。V3仍从头训练至29999；报告引用该重评的指标和ROI数组。
+
+质量复用标记为`RECORD_BASED_STANDARD_RU_REUSE`，依据原配置/路径/split、标准策略及固定检查点复现；历史图像/SfM字节哈希和30k相机序列未记录，显式保留`NOT_RECORDED`，当前哈希不能反向证明旧训练时的字节身份。报告检验V3当前输入和600步相机前缀，没有伪称核对了旧Parent的完整相机轨迹。历史训练GPU1及其1347.4549956321716秒另行保留，完整训练时间门始终`NOT_ASSESSABLE`，不会自动追加完整Parent来补计时。
+
+FPS改为独立比较当前评测的GPU编号、软件环境、trainer哈希、数据/SH参数、warmup和图像保存设置。重评命令记录GPU0，但没有保存评测当时UUID，因此登记明确记录此限制；不把登记时的UUID伪装成重评时直接测得的UUID。只有评测口径匹配时计算FPS比，历史训练设备差异不影响这一独立判断。
+
+本地52项CPU检查通过（9.90秒）：V3公式/CLI/调用路径、GPU选择，加上14项历史登记、变更拒绝与报告接入检查。测试验证了不同设备、配置/策略/步数/split、错误检查点、图像变动、质量复现失败、DINO误加载、失败退出和登记后文件变化均不能被当作有效历史复用；同样的软件环境也不能把历史训练时间门变为通过。WSL虚拟环境缺少PyYAML，验证进程只读取已有系统PyYAML路径，未安装或升级依赖。本机未执行CUDA正式训练，服务器实际登记和V3 30k仍待执行。

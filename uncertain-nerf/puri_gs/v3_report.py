@@ -70,29 +70,49 @@ def build_report(root, *, roi_path=None):
     root.mkdir(parents=True, exist_ok=True)
     missing, invalid = [], []
     evaluations, per_view, costs, states, identities = {}, {}, {}, {}, {}
+    from puri_gs.v3_parent_reference import load_reference
+    reference = None
+    try:
+        reference = load_reference(root, verify=True)
+    except (ValueError, OSError, KeyError) as error:
+        invalid.append(f"historical Parent reference: {error}")
+    eval_dirs = {mode: root / f"eval-{mode}" for mode in ("parent", "v3")}
+    if reference:
+        eval_dirs["parent"] = Path(reference["evaluation_dir"])
     for mode in ("parent", "v3"):
-        states[mode] = read_optional(root / f"{mode}.status.json")
-        eval_state = read_optional(root / f"eval-{mode}.status.json")
-        if not states[mode] or states[mode].get("status") != "TRAIN_COMPLETE":
-            missing.append(f"{mode}: TRAIN_COMPLETE")
-        if not eval_state or eval_state.get("status") != "EVAL_COMPLETE":
-            missing.append(f"{mode}: EVAL_COMPLETE")
-            continue
-        evaluations[mode] = read_optional(root / f"eval-{mode}/test_metrics.json")
-        with (root / f"eval-{mode}/per_image_metrics.csv").open() as stream:
+        reused = mode == "parent" and reference is not None
+        run_dir = Path(reference["source_run"]) if reused else root / mode
+        eval_dir = eval_dirs[mode]
+        if reused:
+            # This is an external reference, never a fabricated TRAIN_COMPLETE state.
+            states[mode] = {"origin": reference["origin"], "checkpoint_sha256": reference["checkpoint_sha256"]}
+            eval_fingerprint = reference["evaluation_fingerprint"]
+        else:
+            states[mode] = read_optional(root / f"{mode}.status.json")
+            eval_state = read_optional(root / f"eval-{mode}.status.json")
+            if not states[mode] or states[mode].get("status") != "TRAIN_COMPLETE":
+                missing.append(f"{mode}: TRAIN_COMPLETE")
+            if not eval_state or eval_state.get("status") != "EVAL_COMPLETE":
+                missing.append(f"{mode}: EVAL_COMPLETE")
+                continue
+            eval_fingerprint = eval_state.get("evaluation_fingerprint")
+        evaluations[mode] = read_optional(eval_dir / "test_metrics.json")
+        with (eval_dir / "per_image_metrics.csv").open() as stream:
             rows = list(csv.DictReader(stream))
         per_view[mode] = {r["image_name"]: {k: float(r[k]) for k in ("psnr", "ssim", "lpips")} for r in rows}
-        identities[mode] = read_optional(root / mode / "v3_input_manifest.json")
+        identity_path = Path(reference["current_input_manifest"]) if reused else run_dir / "v3_input_manifest.json"
+        identities[mode] = read_optional(identity_path)
         if not identities[mode] or len(rows) != 24 or set(per_view[mode]) != set(identities[mode]["test_basenames"]):
             invalid.append(f"{mode}: evaluation manifest mismatch")
         if not all(math.isfinite(v) for row in per_view[mode].values() for v in row.values()):
             invalid.append(f"{mode}: non-finite metrics")
         evaluations[mode]["DSC07988_psnr"] = per_view[mode].get("DSC07988.JPG", {}).get("psnr")
         costs[mode] = {
-            "training": read_optional(root / mode / "train_metrics.json"),
-            "inference": read_optional(root / f"eval-{mode}/efficiency_metrics.json"),
-            "environment": read_optional(root / mode / "environment.json"),
-            "manifest": read_optional(root / mode / "v3_run_manifest.json"),
+            "training": read_optional(run_dir / "train_metrics.json"),
+            "inference": read_optional(eval_dir / "efficiency_metrics.json"),
+            "environment": read_optional(run_dir / "environment.json"),
+            "manifest": read_optional(run_dir / "v3_run_manifest.json"),
+            "evaluation_fingerprint": eval_fingerprint,
             "checkpoint_sha256": states[mode].get("checkpoint_sha256") if states[mode] else None,
         }
     quality = {k: None for k in QUALITY}
@@ -108,7 +128,11 @@ def build_report(root, *, roi_path=None):
             invalid.append("Parent/V3 data, cameras, initialization identity differs")
         p_seq = read_optional(root / "parent/v3_camera_sequence.json")
         v_seq = read_optional(root / "v3/v3_camera_sequence.json")
-        if p_seq is None or v_seq is None or p_seq != v_seq or len(v_seq) != 30000:
+        if reference:
+            smoke_seq = read_optional(root / "smoke-parent/v3_camera_sequence.json")
+            if v_seq is None or len(v_seq) != 30000 or smoke_seq is None or v_seq[:len(smoke_seq)] != smoke_seq:
+                invalid.append("V3 full camera sequence missing or smoke prefix changed")
+        elif p_seq is None or v_seq is None or p_seq != v_seq or len(v_seq) != 30000:
             invalid.append("Parent/V3 camera sequence differs or missing")
     protection = {k: None for k in ("psnr", "ssim", "lpips")}
     delta = {}
@@ -128,12 +152,13 @@ def build_report(root, *, roi_path=None):
         p, v = costs["parent"], costs["v3"]
         # Both runs were launched by this one-device serial wrapper. Also require
         # the recorded software/hardware environments to match exactly.
-        same_env = p["environment"] is not None and p["environment"] == v["environment"]
+        same_env = reference is None and p["environment"] is not None and p["environment"] == v["environment"]
         if same_env and p["training"] and v["training"]:
             ratios["training_time"] = v["training"]["training_time_seconds"] / p["training"]["training_time_seconds"]
             resources["training_time_ratio"] = ratios["training_time"] < 1.10
-        if same_env and p["inference"] and v["inference"]:
-            if p["inference"]["warmup_render_count"] == v["inference"]["warmup_render_count"]:
+        same_eval = p["evaluation_fingerprint"] is not None and p["evaluation_fingerprint"] == v["evaluation_fingerprint"]
+        if same_eval and p["inference"] and v["inference"]:
+            if p["inference"]["warmup_render_count"] == v["inference"]["warmup_render_count"] == 10:
                 ratios["fps"] = v["inference"]["render_fps"] / p["inference"]["render_fps"]
                 resources["fps_ratio"] = ratios["fps"] >= .95
     roi_results = {}
@@ -141,8 +166,8 @@ def build_report(root, *, roi_path=None):
         roi, roi_provenance = fixed_roi(root, roi_path)
         if roi is not None:
             for mode in evaluations:
-                alpha = np.load(root / f"eval-{mode}/DSC07988_alpha.npy")
-                error = np.load(root / f"eval-{mode}/DSC07988_abs_error.npy")
+                alpha = np.load(eval_dirs[mode] / "DSC07988_alpha.npy")
+                error = np.load(eval_dirs[mode] / "DSC07988_abs_error.npy")
                 if alpha.shape != roi.shape or error.shape != roi.shape:
                     raise ValueError("fixed historical ROI resolution differs")
                 roi_results[mode] = {"roi_pixels": int(roi.sum()), "absolute_rgb_error_mean": float(error[roi].mean()),
@@ -166,6 +191,7 @@ def build_report(root, *, roi_path=None):
         "quality_gates": quality, "parent_protection_gates": protection, "resource_gates": resources,
         "thresholds": QUALITY, "B1_historical_reference": B1,
         "metrics": evaluations, "delta_vs_parent": delta, "ratios": ratios, "costs": costs,
+        "parent_reference": reference,
         "cache_cost_accounting": accounting, "evidence": evidence,
         "fixed_roi": roi_results, "roi_provenance": roi_provenance,
         "missing": missing, "invalid": invalid,
@@ -188,6 +214,10 @@ def build_report(root, *, roi_path=None):
         lines.append(f"| {key} | " + " | ".join("未测" if v is None else f"{v:.6f}" for v in vals) + " |")
     for title, group in (("固定恢复门", quality), ("Parent 质量保护", protection), ("资源门", resources)):
         lines += ["", title + "：" + "；".join(f"{k}={'NOT_ASSESSABLE' if v is None else ('PASS' if v else 'FAIL')}" for k,v in group.items())]
+    if reference:
+        lines += ["", "Parent来源：历史标准RU检查点及本轮独立重评；质量比较基于原配置/数据路径/split和复现审计。",
+                  "历史图像/SfM字节哈希和30k相机序列未记录，当前输入哈希不冒充历史记录。完整训练时间门为NOT_ASSESSABLE。",
+                  "推理比较使用本轮GPU与软件/预热/渲染配置记录，单独判断，不受历史训练GPU差异影响。"]
     lines += ["", "证据激活：" + (evidence["status"] if evidence else "未测"),
               "", "孔洞 ROI：" + json.dumps(roi_results or roi_provenance, ensure_ascii=False),
               "", "成本：" + json.dumps(accounting, ensure_ascii=False),
