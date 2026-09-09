@@ -158,6 +158,18 @@ def load_experiment_config(path: str | Path) -> dict[str, Any]:
 
 
 def validate_experiment_config(config: dict[str, Any]) -> None:
+    if "v3_screening" in config:
+        mode = config["v3_screening"]
+        expected = {
+            **RU_FIXED_FIELDS, "schema_version": 1, "profile": "ru",
+            "base_profile": "b1", "gsplat_version": "1.5.3",
+            "delayed_densification": True,
+            "training": {"data_factor": 4, "test_every": 8},
+            "v3_screening": mode,
+        }
+        if mode not in ("parent", "v3") or config != expected:
+            raise ValueError("V3 screening requires the exact standard RU configuration")
+        return
     control = config.get("paper_control")
     if "paper_control" in config and control not in PAPER_CONTROLS:
         raise ValueError("paper_control must be ru_align or ru_tar")
@@ -418,6 +430,8 @@ def trainer_method_args(config: dict[str, Any]) -> list[str]:
         if config["profile"] == RU_PART_PROFILE:
             args.append("--puri_gs_ru_part_enabled")
             args.extend(["--ru_part_mode", config["intervention_mode"]])
+        if config.get("v3_screening"):
+            args.extend(["--ru_v3_mode", config["v3_screening"]])
         if config.get("paper_control"):
             args.extend(["--puri_gs_paper_control", config["paper_control"]])
             if "refine_windows" in config:

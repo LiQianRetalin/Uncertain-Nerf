@@ -1,0 +1,196 @@
+diff --git a/examples/simple_trainer.py b/examples/simple_trainer.py
+--- a/examples/simple_trainer.py
++++ b/examples/simple_trainer.py
+@@ -133,6 +133,9 @@
+     responsibility_epsilon: float = 1e-6
+ 
+     # PURI-GS-RU is training-only and opt-in. Evaluation leaves every field unused.
++    ru_v3_mode: Optional[Literal["parent", "v3"]] = None
++    ru_v3_track_cache: Optional[str] = None
++    ru_v3_stop_step: int = 29999
+     puri_gs_ru_enabled: bool = False
+     # Orthogonal Garden causal capabilities. The legacy RU flag resolves to both.
+     puri_gs_mask_enabled: bool = False
+@@ -404,6 +407,7 @@
+             data_dir=cfg.data_dir,
+             factor=cfg.data_factor,
+             normalize=cfg.normalize_world_space,
++            calibration_index=1 if cfg.ru_v3_mode is not None else 0,
+             test_every=cfg.test_every,
+         )
+         self.trainset = Dataset(
+@@ -638,6 +642,8 @@
+         scales = torch.exp(self.splats["scales"])  # [N, 3]
+         opacities = torch.sigmoid(self.splats["opacities"])  # [N,]
+ 
++        if getattr(self, "v3_screening", None) is not None:
++            self.v3_screening.rasterizations += 1
+         image_ids = kwargs.pop("image_ids", None)
+         if self.cfg.app_opt:
+             colors = self.app_module(
+@@ -737,10 +743,17 @@
+         )
+         trainloader_iter = iter(trainloader)
+ 
++        screening = None
++        if cfg.ru_v3_mode is not None:
++            from puri_gs.ru_part_v3 import ScreeningRun
++            screening = ScreeningRun(self)
++            self.v3_screening = screening
+         # Training loop.
+         global_tic = time.time()
+         pbar = tqdm.tqdm(range(init_step, max_steps))
+         for step in pbar:
++            if screening is not None:
++                screening.begin_step(step)
+             if not cfg.disable_viewer:
+                 while self.viewer.state == "paused":
+                     time.sleep(0.01)
+@@ -759,6 +772,7 @@
+             num_train_rays_per_step = (
+                 pixels.shape[0] * pixels.shape[1] * pixels.shape[2]
+             )
++            v3_local_image_id = int(data["image_id"][0]) if screening is not None else None
+             image_ids = data["image_id"].to(device)
+             masks = data["mask"].to(device) if "mask" in data else None  # [1, H, W]
+             if cfg.depth_loss:
+@@ -914,6 +928,11 @@
+             if cfg.scale_reg > 0.0:
+                 loss += cfg.scale_reg * torch.exp(self.splats["scales"]).mean()
+ 
++            if screening is not None:
++                parent_base_loss = loss.detach()
++                loss = loss + screening.add_loss(
++                    step, v3_local_image_id, colors, pixels, ru_state.safe_mask,
++                )
+             if ru_state is not None:
+                 self.cfg.strategy.step_pre_backward(
+                     params=self.splats,
+@@ -923,6 +942,8 @@
+                     info=info,
+                 )
+             loss.backward()
++            if screening is not None:
++                screening.note_backward(step)
+             if ru_state is not None:
+                 self.ru_training.assert_photo_gradient_isolation()
+                 self.ru_training.complete_mask_supervision(
+@@ -947,7 +968,10 @@
+                     responsibility_image,
+                 )
+ 
+-            desc = f"loss={loss.item():.3f}| " f"sh degree={sh_degree_to_use}| "
++            loss_value = loss.item()
++            if screening is not None and not math.isfinite(loss_value):
++                raise FloatingPointError("V3 non-finite loss; stop without resume")
++            desc = f"loss={loss_value:.3f}| " f"sh degree={sh_degree_to_use}| "
+             if cfg.depth_loss:
+                 desc += f"depth loss={depthloss.item():.6f}| "
+             if cfg.pose_opt and cfg.pose_noise:
+@@ -1152,7 +1176,12 @@
+                     gaussian_count=len(self.splats["means"]),
+                 )
+ 
++            if screening is not None:
++                screening.post_step(step, parent_base_loss, loss, ru_state.safe_mask,
++                                    alphas, time.time() - global_tic)
+             save_now = step in [i - 1 for i in cfg.save_steps] or step == max_steps - 1
++            if screening is not None and step == screening.stop:
++                save_now = True
+             if self.puri_gs_delayed_topology_enabled and save_now:
+                 mem = torch.cuda.max_memory_allocated() / 1024**3
+                 stats = {
+@@ -1192,6 +1221,12 @@
+                 if world_rank == 0:
+                     self.ru_training.save_visuals(colors)
+ 
++            if screening is not None and step == screening.stop:
++                from puri_gs.ru_part_v3 import export_training_evidence
++                export_training_evidence(self, screening, step=step)
++                print("V3_UPDATES_FINISHED", step, flush=True)
++                break
++
+             # eval the full set
+             if step in [i - 1 for i in cfg.eval_steps]:
+                 self.eval(step)
+@@ -1264,7 +1299,7 @@
+ 
+             torch.cuda.synchronize()
+             tic = time.time()
+-            colors, _, _ = self.rasterize_splats(
++            colors, eval_alpha, _ = self.rasterize_splats(
+                 camtoworlds=camtoworlds,
+                 Ks=Ks,
+                 width=width,
+@@ -1285,6 +1320,9 @@
+             if world_rank == 0:
+                 parser_index = int(self.valset.indices[i])
+                 image_name = self.parser.image_names[parser_index]
++                if image_name == "DSC07988.JPG":
++                    np.save(f"{cfg.result_dir}/DSC07988_alpha.npy", eval_alpha[0, ..., 0].detach().cpu().numpy())
++                    np.save(f"{cfg.result_dir}/DSC07988_abs_error.npy", (colors - pixels).abs().mean(-1)[0].detach().cpu().numpy())
+                 latency_rows.append(
+                     {
+                         "image_index": i,
+diff --git a/examples/datasets/colmap.py b/examples/datasets/colmap.py
+--- a/examples/datasets/colmap.py
++++ b/examples/datasets/colmap.py
+@@ -68,6 +68,7 @@
+         factor: int = 1,
+         normalize: bool = False,
+         test_every: int = 8,
++        calibration_index: int = 0,
+     ):
+         self.data_dir = data_dir
+         self.factor = factor
+@@ -196,16 +197,34 @@
+         # so we need to map between the two sorted lists of files.
+         colmap_files = sorted(_get_rel_paths(colmap_image_dir))
+         image_files = sorted(_get_rel_paths(image_dir))
+-        first_image_path = os.path.join(image_dir, image_files[0])
++        if not 0 <= calibration_index < len(image_files):
++            raise ValueError("calibration_index is outside the registered image list")
++        calibration_file = image_files[calibration_index]
++        calibration_path = os.path.join(image_dir, calibration_file)
+         if (
+             factor > 1
+-            and os.path.splitext(image_files[0])[1].lower() in {".jpg", ".jpeg"}
+-            and not _is_png_file(first_image_path)
++            and os.path.splitext(calibration_file)[1].lower() in {".jpg", ".jpeg"}
++            and not _is_png_file(calibration_path)
+         ):
+-            image_dir = _resize_image_folder(
+-                colmap_image_dir, image_dir + "_png", factor=factor
+-            )
+-            image_files = sorted(_get_rel_paths(image_dir))
++            if calibration_index != 0:
++                prepared_dir = image_dir + "_png"
++                prepared_files = [
++                    os.path.splitext(path)[0] + ".png" for path in colmap_files
++                ]
++                if not os.path.isdir(prepared_dir) or set(prepared_files) != set(
++                    _get_rel_paths(prepared_dir)
++                ):
++                    raise RuntimeError(
++                        "RU-PART requires a complete pre-generated PNG image directory "
++                        "because dataset-wide resizing would open test images"
++                    )
++                image_dir = prepared_dir
++                image_files = prepared_files
++            else:
++                image_dir = _resize_image_folder(
++                    colmap_image_dir, image_dir + "_png", factor=factor
++                )
++                image_files = sorted(_get_rel_paths(image_dir))
+         colmap_to_image = dict(zip(colmap_files, image_files))
+         image_paths = [os.path.join(image_dir, colmap_to_image[f]) for f in image_names]
+ 
+@@ -272,7 +291,7 @@
+ 
+         # load one image to check the size. In the case of tanksandtemples dataset, the
+         # intrinsics stored in COLMAP corresponds to 2x upsampled images.
+-        actual_image = imageio.imread(self.image_paths[0])[..., :3]
++        actual_image = imageio.imread(self.image_paths[calibration_index])[..., :3]
+         actual_height, actual_width = actual_image.shape[:2]
+         colmap_width, colmap_height = self.imsize_dict[self.camera_ids[0]]
+         s_height, s_width = actual_height / colmap_height, actual_width / colmap_width

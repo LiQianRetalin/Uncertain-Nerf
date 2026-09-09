@@ -93,6 +93,9 @@ def _verify_gsplat(
     if _git("rev-parse", "HEAD", cwd=gsplat_dir) != EXPECTED_GSPLAT_COMMIT:
         raise RuntimeError("GSPLAT_DIR is not the pinned v1.5.3 checkout")
     source = (gsplat_dir / "examples" / "simple_trainer.py").read_text(encoding="utf-8")
+    if "ru_v3_mode:" in source and not require_ru_part:
+        _verify_applied_patch(gsplat_dir, PROJECT_ROOT / "patches/gsplat_v1.5.3_ru_part_v3.patch")
+        return
     if require_ru_part:
         _verify_applied_patch(gsplat_dir, RU_PART_DIAGNOSTIC_PATCH_PATH)
         required = (
@@ -448,6 +451,12 @@ def _build_command(
             ]
         )
         command.extend(trainer_method_args(config))
+        if config.get("v3_screening"):
+            if config["v3_screening"] == "v3":
+                if args.track_cache is None:
+                    raise ValueError("V3 requires --track-cache")
+                command.extend(["--ru_v3_track_cache", str(args.track_cache.resolve())])
+            command.extend(["--ru_v3_stop_step", str(args.v3_stop_step)])
         if config["profile"] == RU_PART_PROFILE:
             if config["intervention_mode"] != "parent":
                 if args.track_cache is None:
@@ -538,6 +547,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dino-weight-path", type=Path)
     parser.add_argument("--feature-cache-dir", type=Path)
     parser.add_argument("--track-cache", type=Path)
+    parser.add_argument("--v3-stop-step", type=int, choices=(599, 29999), default=29999)
     parser.add_argument("--replay-checkpoint", type=Path)
     parser.add_argument(
         "--diagnostic-stage", choices=("SMOKE", "U", "R1", "R2", "VJP", "P1", "P2", "O")
@@ -585,6 +595,24 @@ def main() -> int:
     factors = causal_factors(config)
     uses_mask = factors is not None and factors[0]
     is_paper_control = bool(config.get("paper_control"))
+    if config.get("v3_screening"):
+        if _git("branch", "--show-current", cwd=REPOSITORY_ROOT) != "ru-part":
+            raise RuntimeError("V3 screening must run on ru-part")
+        if result_dir.exists():
+            raise FileExistsError(f"V3 refuses to overwrite output: {result_dir}")
+        if (args.resume_checkpoint or args.replay_checkpoint or args.diagnostic_stage
+                or args.non_scientific_smoke or args.max_steps not in (None, 30000)):
+            raise ValueError("V3 starts fresh with the full 30000-step schedule")
+        if (data_dir.name.casefold() != "garden" or args.data_factor not in (None, 4)
+                or args.train_keyword or args.test_keyword or args.dataset_format != "colmap"):
+            raise ValueError("V3 is fixed to Garden factor4/every-eighth split")
+        if args.checkpoint is None:
+            if config["v3_screening"] == "parent" and args.track_cache:
+                raise ValueError("standard Parent does not load static support")
+            if config["v3_screening"] == "v3" and (not args.track_cache or not args.track_cache.is_file()):
+                raise FileNotFoundError("V3 static-track cache is missing")
+        if "ru_v3_mode:" not in (gsplat_dir / "examples/simple_trainer.py").read_text(encoding="utf-8"):
+            raise RuntimeError("V3 trainer patch has not been prepared")
     if is_ru_part:
         if _git("branch", "--show-current", cwd=REPOSITORY_ROOT) != "ru-part":
             raise RuntimeError("RU-PART must run from the approved ru-part branch")
