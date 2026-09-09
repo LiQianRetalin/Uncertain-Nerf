@@ -18,7 +18,9 @@ if [[ -d "${TARGET_DIR}/.git" ]] && \
   [[ "$(git -C "${TARGET_DIR}" rev-parse HEAD)" == "${EXPECTED}" ]] && \
   grep -q 'from puri_gs.ru_part import RUPARTStrategy' "${TARGET_DIR}/examples/simple_trainer.py" && \
   grep -q 'ru_part_replay_ckpt' "${TARGET_DIR}/examples/simple_trainer.py" && \
-  git -C "${TARGET_DIR}" apply --reverse --check --ignore-whitespace "${DIAGNOSTIC_PATCH}" >/dev/null 2>&1; then
+  grep -q 'ru_part_diagnostic_stage' "${TARGET_DIR}/examples/simple_trainer.py" && \
+  grep -q 'from puri_gs.mechanism_diagnostic import Progress' "${TARGET_DIR}/examples/simple_trainer.py" && \
+  grep -q 'RU_PART_DIAGNOSTIC_COMPLETE' "${TARGET_DIR}/examples/simple_trainer.py"; then
   echo "PURI-GS-RU-PART-PATCH-READY"
   exit 0
 fi

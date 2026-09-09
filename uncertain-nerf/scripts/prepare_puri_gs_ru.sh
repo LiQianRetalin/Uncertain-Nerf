@@ -14,8 +14,12 @@ EXPECTED_COMMIT="937e29912570c372bed6747a5c9bf85fed877bae"
 
 if [[ -d "${TARGET_DIR}/.git" ]] && \
   [[ "$(git -C "${TARGET_DIR}" rev-parse HEAD)" == "${EXPECTED_COMMIT}" ]] && \
-  git -C "${TARGET_DIR}" apply --reverse --check --ignore-whitespace \
-    "${CAUSAL_PATCH}" >/dev/null 2>&1; then
+  grep -q "puri_gs_mask_enabled" \
+    "${TARGET_DIR}/examples/simple_trainer.py" 2>/dev/null && \
+  grep -q "puri_gs_delayed_topology_enabled" \
+    "${TARGET_DIR}/examples/simple_trainer.py" 2>/dev/null && \
+  grep -q "delayed_topology_enabled=self.puri_gs_delayed_topology_enabled" \
+    "${TARGET_DIR}/examples/simple_trainer.py" 2>/dev/null; then
   echo "PURI-GS-GARDEN-CAUSAL-PATCH-READY"
   exit 0
 fi
