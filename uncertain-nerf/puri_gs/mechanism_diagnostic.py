@@ -246,8 +246,15 @@ def snapshot_tree(value):
 
 def optimizer_references_current(params, optimizers):
     """Fail on stale row-changing Parameter references or unexpected groups."""
-    if list(params) != list(optimizers):
-        raise ValueError("Gaussian parameter/optimizer order differs")
+    parameter_keys = set(params)
+    optimizer_keys = set(optimizers)
+    if parameter_keys != optimizer_keys:
+        missing = sorted(parameter_keys - optimizer_keys)
+        unexpected = sorted(optimizer_keys - parameter_keys)
+        raise ValueError(
+            "Gaussian parameter/optimizer keys differ: "
+            f"missing={missing}, unexpected={unexpected}"
+        )
     for name, parameter in params.items():
         groups = optimizers[name].param_groups
         if len(groups) != 1 or len(groups[0]["params"]) != 1:

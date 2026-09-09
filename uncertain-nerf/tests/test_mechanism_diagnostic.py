@@ -225,6 +225,23 @@ class TensorContractTests(unittest.TestCase):
                 **{key: value for key, value in base.items() if key != "splats"},
             )
 
+    def test_optimizer_reference_check_is_keyed_not_positional(self):
+        means = torch.nn.Parameter(torch.ones(2, 3))
+        scales = torch.nn.Parameter(torch.zeros(2, 3))
+        means_optimizer = torch.optim.Adam([means])
+        scales_optimizer = torch.optim.Adam([scales])
+        params = {"means": means, "scales": scales}
+        reversed_optimizers = {
+            "scales": scales_optimizer,
+            "means": means_optimizer,
+        }
+
+        optimizer_references_current(params, reversed_optimizers)
+        with self.assertRaisesRegex(ValueError, "keys differ"):
+            optimizer_references_current(
+                params, {"means": means_optimizer}
+            )
+
     def test_source_probe_uses_only_registered_training_views_and_restores_rng(self):
         class Trainset:
             indices = [0, 1]
