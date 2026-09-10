@@ -241,9 +241,12 @@ class OnTheGoPatioHighParser:
         factor: int = EXPECTED_FACTOR,
         normalize: bool = False,
         test_every: int = 8,
+        calibration_index: int = 0,
     ) -> None:
         del test_every  # The official split.json is mandatory for this protocol.
         contract = validate_prepared_patio_high(data_dir, factor=factor)
+        if not 0 <= calibration_index < len(contract["image_paths"]):
+            raise ValueError("calibration_index is outside the Patio-High image list")
         transforms = contract["transforms"]
         frames = contract["frames"]
 

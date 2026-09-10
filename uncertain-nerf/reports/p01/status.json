@@ -1,0 +1,30 @@
+{
+  "schema": "puri-gs-work-package-status-v1",
+  "work_package": "P01",
+  "engineering_status": "COMPLETE_VALID",
+  "scientific_status": "COMPLETE_VALID",
+  "exit_code": 0,
+  "new_training_planned": 0,
+  "new_training_completed": 0,
+  "historical_checkpoint_rows_audited": 10,
+  "paired_models_reevaluated_or_reused": 8,
+  "per_image_metric_rows": 254,
+  "p02_external_training_identities_planned": 4,
+  "p02_external_training_identities_completed": 0,
+  "completed": [
+    "branch/code/environment/entry-point audit",
+    "local dataset and frozen archive identity audit",
+    "Android/Patio-High/Room anchor freeze and Garden registration",
+    "factor4 historical versus Room factor2 formal protocol separation",
+    "Android and Patio-High common COLMAP conversions with image/hash/camera/pose/point/projection readback validation",
+    "existing-model summary and complete per-image metric consolidation",
+    "four-row P02 external run plan"
+  ],
+  "unresolved": [
+    "live server paths and Room checkpoint hashes could not be refreshed because SSH authentication was unavailable",
+    "Room absolute training seconds are absent from local evidence; only the archived RU/B1 ratio 1.025487 is known",
+    "external method code/environments/checkpoints/features are intentionally not installed in P01",
+    "the full legacy test suite is not locally green because PyYAML is absent and one pre-existing dry-run test requires branch dev; all P01-specific tests pass"
+  ],
+  "automatic_next_package_started": false
+}

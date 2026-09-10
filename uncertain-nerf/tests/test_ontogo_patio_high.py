@@ -112,7 +112,9 @@ def test_prepared_contract_preserves_official_split_and_parser_convention(tmp_pa
     assert contract["image_names"][45].startswith("clutter_0045_")
     assert contract["image_names"][266].startswith("excluded_0266_")
 
-    parser = OnTheGoPatioHighParser(str(tmp_path), factor=4, normalize=False)
+    parser = OnTheGoPatioHighParser(
+        str(tmp_path), factor=4, normalize=False, calibration_index=1
+    )
     assert parser.camtoworlds.shape == (267, 4, 4)
     assert np.allclose(parser.camtoworlds[0], np.diag([1.0, -1.0, -1.0, 1.0]))
     assert parser.Ks_dict[1][0, 0] == pytest.approx(6.0)

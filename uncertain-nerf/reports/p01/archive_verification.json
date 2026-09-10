@@ -1,0 +1,23 @@
+{
+  "schema": "puri-gs-p01-archive-verification-v1",
+  "server_artifacts": {
+    "path": "E:\\6-Project\\1-UncertainNerf\\PURI-GS-RU\\server-artifacts\\puri_gs_ru_artifacts_749d584b.tar",
+    "bytes": 3355443200,
+    "sha256": "ac7376ef0dc89df871635ec2ffe1867a7e721b5979cd84c44029cfe793ed51e3",
+    "expected_sha256": "ac7376ef0dc89df871635ec2ffe1867a7e721b5979cd84c44029cfe793ed51e3",
+    "verified": true
+  },
+  "room_visuals": {
+    "path": "E:\\6-Project\\1-UncertainNerf\\PURI-GS-RU\\server-artifacts\\puri_gs_ru_room_visuals.tar",
+    "bytes": 75427840,
+    "sha256": "360ef84c11c62fd55f5ea4f7179274ee955bfb46b768e7ef6f4896a7aaeac465",
+    "expected_sha256": "360ef84c11c62fd55f5ea4f7179274ee955bfb46b768e7ef6f4896a7aaeac465",
+    "verified": true
+  },
+  "server_live_check": {
+    "attempted": true,
+    "host": "172.16.55.2",
+    "result": "AUTHENTICATION_UNAVAILABLE",
+    "effect": "no live path/hash refresh; frozen local archives remain verified"
+  }
+}
