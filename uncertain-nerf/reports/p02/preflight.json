@@ -1,0 +1,63 @@
+{
+  "schema": "puri-gs-p02-preflight-v1",
+  "status": "BLOCKED_BEFORE_SERVER_SYNC",
+  "generated_at": "2026-09-10T12:14:46+08:00",
+  "repository": {
+    "branch": "ru-part",
+    "local_head": "df2b28093d9f946fcc6f66f2abb6ac058824449c",
+    "origin_ru_part": "df2b28093d9f946fcc6f66f2abb6ac058824449c",
+    "p01_commit_subject": "P01: 冻结GS-RU资产与外部比较共同协议",
+    "p01_manifest_embedded_parent": "4b5489990cd515fb4ef3458673f51c03baf46e26",
+    "p01_actual_commit_verified": true
+  },
+  "local_common_validation": {
+    "status": "PASS",
+    "evidence": "local_common_preflight.json",
+    "android": {
+      "root": "E:\\7-DataSet\\PURI-GS-derived\\robustnerf\\android_colmap_common_factor4_v1",
+      "images_hashed": 263,
+      "train": 122,
+      "test": 19,
+      "excluded": 122,
+      "resolution": [1007, 755],
+      "initial_points": 112790
+    },
+    "patio_high": {
+      "root": "E:\\7-DataSet\\PURI-GS-derived\\ontogo\\patio_high_colmap_common_v1",
+      "images_hashed": 267,
+      "train": 221,
+      "test": 45,
+      "excluded": 1,
+      "resolution": [1007, 755],
+      "initial_points": 36922
+    }
+  },
+  "fixed_sources": {
+    "RobustSplat": "a130281d6d0c004032a9a57e8d6a14962d9836d3",
+    "SpotLessSplats": "0caae3cc45bb1fddf86bd47e4a521888f5c49889",
+    "static_contracts": "PASS",
+    "adapter_patch_checks": "PASS",
+    "robustsplat_patch_sha256": "81c9e18994aff073b5243c9e8f248b6ad06089fb7be9ed6fb3be91a730f945a2",
+    "spotless_patch_sha256": "c689488aa1f4ddd3d98251081b080c927070e2337fa5963664f5796ac6d29160"
+  },
+  "server": {
+    "target": "chenglong@172.16.55.2",
+    "ssh_exit_code": 1,
+    "error": "Permission denied (publickey,password).",
+    "remote_command_started": false,
+    "repository_sync": "NOT_RUN",
+    "dataset_transfer_or_validation": "NOT_RUN",
+    "gpu_inventory": "NOT_RUN",
+    "isolated_environments": "NOT_CREATED",
+    "smoke_updates_used": 0,
+    "formal_training_attempts": 0,
+    "independent_evaluation": "NOT_RUN",
+    "timing": "NOT_RUN"
+  },
+  "protected_scope": {
+    "ru_part_branch_changed": false,
+    "historical_b1_or_ru_assets_changed": false,
+    "common_dataset_files_changed": false,
+    "out_of_scope_work_started": false
+  }
+}

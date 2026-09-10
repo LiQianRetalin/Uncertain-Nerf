@@ -1,0 +1,5 @@
+run_id,scene,method,variant,seed,official_updates,attempts_used,status,reason
+P02-android-robustsplat,android,RobustSplat,RobustSplat,42,30000,0,BLOCKED_PRE_EXECUTION,SSH authentication rejected before server sync
+P02-android-sls-mlp,android,SLS-mlp,SLS-mlp-no-UBP,42,30000,0,BLOCKED_PRE_EXECUTION,SSH authentication rejected before server sync
+P02-patio_high-robustsplat,patio_high,RobustSplat,RobustSplat,42,30000,0,BLOCKED_PRE_EXECUTION,SSH authentication rejected before server sync
+P02-patio_high-sls-mlp,patio_high,SLS-mlp,SLS-mlp-no-UBP,42,30000,0,BLOCKED_PRE_EXECUTION,SSH authentication rejected before server sync

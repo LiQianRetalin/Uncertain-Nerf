@@ -1,0 +1,8 @@
+stage,scope,wall_seconds,gpu_seconds,status,note
+local_p01_commit_verification,local,,,,PASS,HEAD and origin/ru-part both df2b2809
+local_common_input_validation,local,,,,PASS,530 images plus sparse COLMAP files hashed
+fixed_source_and_adapter_static_check,local,,,,PASS,Two fixed commits and reverse patch checks passed
+server_sync,server,0,0,BLOCKED,SSH authentication rejected before remote command
+isolated_environment_setup,server,0,0,NOT_RUN,Blocked upstream
+bounded_smoke,server,0,0,NOT_RUN,0 of 800 update budget used
+formal_training_evaluation_timing,server,0,0,NOT_RUN,0 formal attempts used

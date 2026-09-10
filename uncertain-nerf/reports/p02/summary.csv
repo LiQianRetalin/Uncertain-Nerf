@@ -1,0 +1,5 @@
+run_id,scene,method,seed,test_image_count,psnr,ssim,lpips,checkpoint_sha256,protocol_sha256,evaluator_id,source,status
+P02-android-robustsplat,android,RobustSplat,42,19,,,,,,,Reproduced/common-input,BLOCKED_NOT_RUN
+P02-android-sls-mlp,android,SLS-mlp,42,19,,,,,,,Reproduced/common-input,BLOCKED_NOT_RUN
+P02-patio_high-robustsplat,patio_high,RobustSplat,42,45,,,,,,,Reproduced/common-input,BLOCKED_NOT_RUN
+P02-patio_high-sls-mlp,patio_high,SLS-mlp,42,45,,,,,,,Reproduced/common-input,BLOCKED_NOT_RUN

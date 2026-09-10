@@ -1,0 +1,124 @@
+diff --git a/utils/general_utils.py b/utils/general_utils.py
+index bb86528..1ff3f7e 100644
+--- a/utils/general_utils.py
++++ b/utils/general_utils.py
+@@ -110,5 +110,5 @@ def build_scaling_rotation(s, r):
+     return L
+ 
+-def safe_state(silent):
++def safe_state(silent, seed=0):
+     old_f = sys.stdout
+     class F:
+@@ -128,6 +128,6 @@ def safe_state(silent):
+     sys.stdout = F(silent)
+ 
+-    random.seed(0)
+-    np.random.seed(0)
+-    torch.manual_seed(0)
++    random.seed(seed)
++    np.random.seed(seed)
++    torch.manual_seed(seed)
+     torch.cuda.set_device(torch.device("cuda:0"))
+diff --git a/train.py b/train.py
+index 163c2c1..82899ab 100644
+--- a/train.py
++++ b/train.py
+@@ -328,6 +328,7 @@ if __name__ == "__main__":
+     parser.add_argument('--detect_anomaly', action='store_true', default=False)
+     parser.add_argument("--test_iterations", nargs="+", type=int, default=[7_000, 30_000])
+     parser.add_argument("--save_iterations", nargs="+", type=int, default=[7_000, 30_000])
++    parser.add_argument("--seed", type=int, default=0)
+     parser.add_argument("--quiet", action="store_true")
+     parser.add_argument('--disable_viewer', action='store_true', default=False)
+     parser.add_argument("--checkpoint_iterations", nargs="+", type=int, default=[30_000])
+@@ -340,7 +341,7 @@ if __name__ == "__main__":
+     print("Optimizing " + args.model_path)
+ 
+     # Initialize system state (RNG)
+-    safe_state(args.quiet)
++    safe_state(args.quiet, args.seed)
+ 
+     # Start GUI server, configure and run training
+     if not args.disable_viewer:
+diff --git a/render.py b/render.py
+index 903e164..cc40df2 100644
+--- a/render.py
++++ b/render.py
+@@ -9,6 +9,9 @@
+ #
+ 
++import json
++import numpy as np
+ import torch
++import time
+ from scene import Scene
+ import os
+ from tqdm import tqdm
+@@ -26,25 +29,51 @@ except:
+     SPARSE_ADAM_AVAILABLE = False
+ 
+ 
+-def render_set(model_path, name, iteration, views, gaussians, pipeline, background, train_test_exp, separate_sh):
++def render_set(model_path, name, iteration, views, gaussians, pipeline, background, train_test_exp, separate_sh, export_float, timing_warmup, timing_repeats):
+     render_path = os.path.join(model_path, name, "ours_{}".format(iteration), "renders")
+     gts_path = os.path.join(model_path, name, "ours_{}".format(iteration), "gt")
++    float_path = os.path.join(model_path, name, "ours_{}".format(iteration), "float_predictions")
+ 
+     makedirs(render_path, exist_ok=True)
+     makedirs(gts_path, exist_ok=True)
++    if export_float:
++        makedirs(float_path, exist_ok=True)
+ 
+     for idx, view in enumerate(tqdm(views, desc="Rendering progress")):
+         rendering = render(view, gaussians, pipeline, background, use_trained_exp=train_test_exp, separate_sh=separate_sh)["render"]
+         gt = view.original_image[0:3, :, :]
+ 
+-        if args.train_test_exp:
++        if train_test_exp:
+             rendering = rendering[..., rendering.shape[-1] // 2:]
+             gt = gt[..., gt.shape[-1] // 2:]
+ 
++        if export_float:
++            prediction = rendering.clamp(0.0, 1.0).permute(1, 2, 0).contiguous().cpu().numpy().astype(np.float32)
++            prediction_name = os.path.splitext(os.path.basename(view.image_name))[0] + ".npy"
++            np.save(os.path.join(float_path, prediction_name), prediction)
+         torchvision.utils.save_image(rendering, os.path.join(render_path, '{0:05d}'.format(idx) + ".png"))
+         torchvision.utils.save_image(gt, os.path.join(gts_path, '{0:05d}'.format(idx) + ".png"))
+ 
+-def render_sets(dataset : ModelParams, iteration : int, pipeline : PipelineParams, skip_train : bool, skip_test : bool, separate_sh: bool):
++    if timing_repeats > 0 and views:
++        with torch.no_grad():
++            for index in range(timing_warmup):
++                render(views[index % len(views)], gaussians, pipeline, background, use_trained_exp=train_test_exp, separate_sh=separate_sh)["render"]
++            torch.cuda.synchronize()
++            records = []
++            for repeat in range(timing_repeats):
++                started = time.perf_counter()
++                for view in views:
++                    render(view, gaussians, pipeline, background, use_trained_exp=train_test_exp, separate_sh=separate_sh)["render"]
++                torch.cuda.synchronize()
++                elapsed = time.perf_counter() - started
++                records.append({"repeat": repeat + 1, "frames": len(views), "seconds": elapsed, "fps": len(views) / elapsed})
++        with open(os.path.join(model_path, name, "ours_{}".format(iteration), "p02_timing.json"), "w") as stream:
++            json.dump({"boundary": "native render call; no image write or metrics", "warmup": timing_warmup, "records": records}, stream, indent=2)
++
++def render_sets(dataset : ModelParams, iteration : int, pipeline : PipelineParams, skip_train : bool, skip_test : bool, separate_sh: bool):
++    export_float = os.environ.get("P02_FLOAT_PREDICTIONS", "0") == "1"
++    timing_warmup = int(os.environ.get("P02_TIMING_WARMUP", "10"))
++    timing_repeats = int(os.environ.get("P02_TIMING_REPEATS", "0"))
+     with torch.no_grad():
+         gaussians = GaussianModel(dataset.sh_degree)
+         scene = Scene(dataset, gaussians, load_iteration=iteration, shuffle=False)
+@@ -54,10 +83,10 @@ def render_sets(dataset : ModelParams, iteration : int, pipeline : PipelinePara
+         background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
+ 
+         if not skip_train:
+-             render_set(dataset.model_path, "train", scene.loaded_iter, scene.getTrainCameras(), gaussians, pipeline, background, dataset.train_test_exp, separate_sh)
++             render_set(dataset.model_path, "train", scene.loaded_iter, scene.getTrainCameras(), gaussians, pipeline, background, dataset.train_test_exp, separate_sh, export_float, timing_warmup, timing_repeats)
+ 
+         if not skip_test:
+-             render_set(dataset.model_path, "test", scene.loaded_iter, scene.getTestCameras(), gaussians, pipeline, background, dataset.train_test_exp, separate_sh)
++             render_set(dataset.model_path, "test", scene.loaded_iter, scene.getTestCameras(), gaussians, pipeline, background, dataset.train_test_exp, separate_sh, export_float, timing_warmup, timing_repeats)
+ 
+ if __name__ == "__main__":
+     # Set up command line argument parser

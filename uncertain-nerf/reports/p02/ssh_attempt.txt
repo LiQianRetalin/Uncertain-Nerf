@@ -1,0 +1,7 @@
+timestamp=2026-09-10T12:14:46+08:00
+target=chenglong@172.16.55.2
+mode=BatchMode=yes
+connect_timeout_seconds=10
+exit_code=1
+stderr=Permission denied (publickey,password).
+remote_command_started=false

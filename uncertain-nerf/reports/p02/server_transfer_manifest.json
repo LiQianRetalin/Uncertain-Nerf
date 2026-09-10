@@ -1,0 +1,28 @@
+{
+  "schema": "puri-gs-p02-server-transfer-manifest-v1",
+  "status": "READY_LOCALLY_NOT_TRANSFERRED",
+  "datasets": [
+    {
+      "scene": "android",
+      "local_root": "E:\\7-DataSet\\PURI-GS-derived\\robustnerf\\android_colmap_common_factor4_v1",
+      "file_count": 268,
+      "total_bytes": 276774547,
+      "validated_image_count": 263,
+      "transfer_whole_root": true
+    },
+    {
+      "scene": "patio_high",
+      "local_root": "E:\\7-DataSet\\PURI-GS-derived\\ontogo\\patio_high_colmap_common_v1",
+      "file_count": 273,
+      "total_bytes": 311303400,
+      "validated_image_count": 267,
+      "transfer_whole_root": true
+    }
+  ],
+  "code_sync": {
+    "branch": "ru-part",
+    "verified_p01_commit": "df2b28093d9f946fcc6f66f2abb6ac058824449c",
+    "p02_preparation_requires_one_new_commit_before_server_pull": true
+  },
+  "remote_paths": "UNRESOLVED_BECAUSE_NO_AUTHENTICATED_SERVER_ACCESS"
+}

@@ -1,0 +1,19 @@
+{
+  "schema": "puri-gs-p02-budget-v1",
+  "status": "UNUSED_DUE_TO_SERVER_AUTH_BLOCK",
+  "smoke": {
+    "per_attempt_update_limit": 100,
+    "global_update_limit": 800,
+    "attempted_updates": 0,
+    "attempt_count": 0
+  },
+  "formal": {
+    "identities": 4,
+    "official_updates_per_identity": 30000,
+    "max_attempts_per_identity": 2,
+    "attempted_runs": 0,
+    "automatic_retry": false,
+    "hyperparameter_tuning": false,
+    "extra_seeds": false
+  }
+}

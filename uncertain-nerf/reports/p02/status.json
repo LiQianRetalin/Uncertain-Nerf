@@ -1,0 +1,14 @@
+{
+  "schema": "puri-gs-p02-status-v1",
+  "status": "BLOCKED_SERVER_SSH_AUTHENTICATION",
+  "completed_local_preparation": true,
+  "server_execution_started": false,
+  "run_count_expected": 4,
+  "run_count_started": 0,
+  "run_count_evaluated": 0,
+  "smoke_updates_used": 0,
+  "formal_attempts_used": 0,
+  "blocker": "chenglong@172.16.55.2 rejected all locally available SSH identities; no private key was available and ssh-agent was stopped/disabled",
+  "next_work_package_started": false,
+  "out_of_scope_started": false
+}

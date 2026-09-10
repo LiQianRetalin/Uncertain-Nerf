@@ -1,0 +1,106 @@
+diff --git a/examples/spotless_trainer.py b/examples/spotless_trainer.py
+index 0151a82..4ed92cd 100644
+--- a/examples/spotless_trainer.py
++++ b/examples/spotless_trainer.py
+@@ -38,6 +38,8 @@ from gsplat.rendering import rasterization
+ class Config:
+     # Disable viewer
+     disable_viewer: bool = False
++    # Explicit P02 seed; the pinned source previously hard-coded the same value.
++    seed: int = 42
+     # Path to the .pt file. If provide, it will skip training and render a video
+     ckpt: Optional[str] = None
+ 
+@@ -259,7 +261,7 @@ class Runner:
+     """Engine for training and testing."""
+ 
+     def __init__(self, cfg: Config) -> None:
+-        set_random_seed(42)
++        set_random_seed(cfg.seed)
+ 
+         self.cfg = cfg
+         self.device = "cuda"
+@@ -1104,6 +1106,13 @@ class Runner:
+         valloader = torch.utils.data.DataLoader(
+             self.valset, batch_size=1, shuffle=False, num_workers=1
+         )
++        p02_export = os.environ.get("P02_FLOAT_PREDICTIONS", "0") == "1"
++        p02_timing_warmup = int(os.environ.get("P02_TIMING_WARMUP", "10"))
++        p02_timing_repeats = int(os.environ.get("P02_TIMING_REPEATS", "0"))
++        float_dir = f"{self.render_dir}/float_step{step:04d}"
++        if p02_export:
++            os.makedirs(float_dir, exist_ok=True)
++        timing_inputs = []
+         ellipse_time = 0
+         metrics = {"psnr": [], "ssim": [], "lpips": []}
+         for i, data in enumerate(valloader):
+@@ -1126,6 +1135,16 @@ class Runner:
+             colors = torch.clamp(colors, 0.0, 1.0)
+             torch.cuda.synchronize()
+             ellipse_time += time.time() - tic
++            timing_inputs.append((camtoworlds, Ks, width, height))
++
++            if p02_export:
++                image_index = self.valset.indices[i]
++                image_name = self.parser.image_names[image_index]
++                prediction_name = os.path.splitext(os.path.basename(image_name))[0] + ".npy"
++                np.save(
++                    os.path.join(float_dir, prediction_name),
++                    colors.squeeze(0).cpu().numpy().astype(np.float32),
++                )
+ 
+             # write images
+             canvas = torch.cat([pixels, colors], dim=2).squeeze(0).cpu().numpy()
+@@ -1144,6 +1163,52 @@ class Runner:
+         psnr = torch.stack(metrics["psnr"]).mean()
+         ssim = torch.stack(metrics["ssim"]).mean()
+         lpips = torch.stack(metrics["lpips"]).mean()
++        if p02_timing_repeats > 0:
++            for index in range(p02_timing_warmup):
++                camtoworlds, Ks, width, height = timing_inputs[index % len(timing_inputs)]
++                self.rasterize_splats(
++                    camtoworlds=camtoworlds,
++                    Ks=Ks,
++                    width=width,
++                    height=height,
++                    sh_degree=cfg.sh_degree,
++                    near_plane=cfg.near_plane,
++                    far_plane=cfg.far_plane,
++                )
++            torch.cuda.synchronize()
++            timing_records = []
++            for repeat in range(p02_timing_repeats):
++                tic = time.perf_counter()
++                for camtoworlds, Ks, width, height in timing_inputs:
++                    self.rasterize_splats(
++                        camtoworlds=camtoworlds,
++                        Ks=Ks,
++                        width=width,
++                        height=height,
++                        sh_degree=cfg.sh_degree,
++                        near_plane=cfg.near_plane,
++                        far_plane=cfg.far_plane,
++                    )
++                torch.cuda.synchronize()
++                seconds = time.perf_counter() - tic
++                timing_records.append(
++                    {
++                        "repeat": repeat + 1,
++                        "frames": len(timing_inputs),
++                        "seconds": seconds,
++                        "fps": len(timing_inputs) / seconds,
++                    }
++                )
++            with open(f"{self.stats_dir}/p02_timing_step{step:04d}.json", "w") as f:
++                json.dump(
++                    {
++                        "boundary": "native rasterize_splats call; no image write or metrics",
++                        "warmup": p02_timing_warmup,
++                        "records": timing_records,
++                    },
++                    f,
++                    indent=2,
++                )
+         print(
+             f"PSNR: {psnr.item():.3f}, SSIM: {ssim.item():.4f}, LPIPS: {lpips.item():.3f} "
+             f"Time: {ellipse_time:.3f}s/image "
