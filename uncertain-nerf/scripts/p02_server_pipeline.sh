@@ -162,7 +162,7 @@ if [[ ! -x "$spotless_env/bin/python" ]]; then
 fi
 
 run_logged "verify_robust_env" conda run --prefix "$robust_env" python -c \
-  "import torch; import diff_gaussian_rasterization; assert torch.cuda.is_available(); print(torch.__version__, torch.version.cuda)"
+  "import io, torch; from PIL import Image; import diff_gaussian_rasterization; image=Image.new('RGB',(2,2)); buffer=io.BytesIO(); image.save(buffer,format='TIFF'); buffer.seek(0); Image.open(buffer).load(); assert torch.cuda.is_available(); print(torch.__version__, torch.version.cuda); print('P02_ROBUST_PIL_TIFF_PASS')"
 run_logged "verify_spotless_env" conda run --prefix "$spotless_env" python -c \
   "import torch, gsplat, diffusers, transformers; assert torch.cuda.is_available(); print(torch.__version__, torch.version.cuda)"
 run_logged "verify_eval_env" "$eval_env/bin/python" -c \
@@ -279,10 +279,24 @@ run_spotless_train() {
       --disable_viewer "${bounds[@]}"
 }
 
-smoke_updates=0
+smoke_updates="$(awk -F, 'NR > 1 {total += $3} END {print total + 0}' "$state_dir/smoke_ledger.csv")"
 smoke_failed=0
-write_state "smoke" "RUNNING" "4 项各 100 更新，总预算 400/800；失败不自动扩展预算"
+write_state "smoke" "RUNNING" "按 smoke 总账续跑，累计更新硬上限 800；既有 PASS 不重复运行"
 for run_id in "${run_ids[@]}"; do
+  if awk -F, -v run_id="$run_id" \
+    'NR > 1 && $1 == run_id && $2 == "PASS" {found=1} END {exit !found}' \
+    "$state_dir/smoke_ledger.csv"; then
+    echo "P02_SMOKE_REUSE_PASS=$run_id"
+    continue
+  fi
+  attempts="$(awk -F, -v run_id="$run_id" \
+    'NR > 1 && $1 == run_id {count++} END {print count + 0}' \
+    "$state_dir/smoke_ledger.csv")"
+  if [[ "$attempts" -ge 2 ]]; then
+    echo "P02_SMOKE_ATTEMPT_LIMIT=$run_id" >&2
+    smoke_failed=1
+    continue
+  fi
   dataset="$(dataset_for "$run_id")"
   method="$(method_for "$run_id")"
   destination="$smoke_dir/$run_id"

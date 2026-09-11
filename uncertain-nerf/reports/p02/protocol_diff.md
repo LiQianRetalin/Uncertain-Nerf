@@ -12,6 +12,7 @@
 - 固定源提交：`a130281d6d0c004032a9a57e8d6a14962d9836d3`。
 - 保留作者 30k 优化、mask、bootstrap、reset、densification 和 DINO 两级特征配方。Scene 内部的 `[1.0, 4.0]` 多尺度是方法原生特征分支，不是更换共同输入或再次物理降采样。
 - 仅加显式 seed42、测试集浮点预测导出、原生 `render()` 边界计时。未改变损失、数据选择或优化超参数。
+- 隔离环境将 `defaults` 的 Pillow 9.4.0 与同频道 `libtiff` 4.5.0 构建配对，并在 smoke 前执行实际 TIFF 编解码检查；该修复仅解决动态库 ABI，不改变训练代码或输入。
 
 ## SpotLessSplats / SLS-mlp
 

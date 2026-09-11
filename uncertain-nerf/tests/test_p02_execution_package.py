@@ -32,6 +32,9 @@ def test_p02_server_pipeline_preserves_scope_and_protocol() -> None:
     assert 'run_ids=(' in script
     assert "smoke_updates=$((smoke_updates + 100))" in script
     assert 'if [[ "$smoke_updates" -gt 800 ]]' in script
+    assert "P02_SMOKE_REUSE_PASS" in script
+    assert "P02_SMOKE_ATTEMPT_LIMIT" in script
+    assert "P02_ROBUST_PIL_TIFF_PASS" in script
     assert '--iterations "$steps" --seed 42 --resolution 1 --eval' in script
     assert "--loss_type robust --semantics --no-cluster" in script
     assert "--ubp" not in script
