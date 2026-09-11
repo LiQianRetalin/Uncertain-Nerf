@@ -74,6 +74,11 @@ def test_p02_sls_notebook_hash_matches_pinned_spotless_commit() -> None:
         'MODEL_REVISION = "bb2154823665391b4fb29b0b9cf82a198964ee05"'
         in extractor
     )
+    assert "MODEL_DOWNLOAD_ATTEMPTS = 30" in extractor
+    assert '"unet/diffusion_pytorch_model.bin"' in extractor
+    assert '"text_encoder/pytorch_model.bin"' in extractor
+    assert '"vae/diffusion_pytorch_model.bin"' in extractor
+    assert "_prefetch_model_files()" in extractor
     assert "revision_count != 3" in extractor
 
 

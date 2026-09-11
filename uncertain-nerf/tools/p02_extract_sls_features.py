@@ -20,6 +20,22 @@ SPOTLESS_COMMIT = "0caae3cc45bb1fddf86bd47e4a521888f5c49889"
 NOTEBOOK_SHA256 = "a19857e7c659a82341fee76dfb61d595f82e50fca310e5bbab6c8783bdc546e9"
 MODEL_ID = "sd2-community/stable-diffusion-2-1"
 MODEL_REVISION = "bb2154823665391b4fb29b0b9cf82a198964ee05"
+MODEL_DOWNLOAD_ATTEMPTS = 30
+MODEL_FILES = (
+    "model_index.json",
+    "feature_extractor/preprocessor_config.json",
+    "scheduler/scheduler_config.json",
+    "text_encoder/config.json",
+    "text_encoder/pytorch_model.bin",
+    "tokenizer/merges.txt",
+    "tokenizer/special_tokens_map.json",
+    "tokenizer/tokenizer_config.json",
+    "tokenizer/vocab.json",
+    "unet/config.json",
+    "unet/diffusion_pytorch_model.bin",
+    "vae/config.json",
+    "vae/diffusion_pytorch_model.bin",
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -69,6 +85,31 @@ def _load_official_featurizer(source: Path):
     namespace: dict[str, object] = {}
     exec(compile(source_code, str(notebook_path), "exec"), namespace)
     return namespace["SDFeaturizer"]
+
+
+def _prefetch_model_files() -> None:
+    from huggingface_hub import hf_hub_download
+
+    for filename in MODEL_FILES:
+        for attempt in range(1, MODEL_DOWNLOAD_ATTEMPTS + 1):
+            try:
+                hf_hub_download(
+                    repo_id=MODEL_ID,
+                    filename=filename,
+                    revision=MODEL_REVISION,
+                )
+            except OSError as error:
+                if attempt == MODEL_DOWNLOAD_ATTEMPTS:
+                    raise
+                print(
+                    f"P02_SD21_DOWNLOAD_RETRY={filename}:{attempt}/"
+                    f"{MODEL_DOWNLOAD_ATTEMPTS}:{type(error).__name__}",
+                    flush=True,
+                )
+                time.sleep(5)
+            else:
+                print(f"P02_SD21_FILE=PASS:{filename}", flush=True)
+                break
 
 
 def _validate_feature(path: Path) -> dict[str, object]:
@@ -122,6 +163,7 @@ def main() -> int:
     if args.validate_only and missing:
         raise RuntimeError(f"missing {len(missing)} SLS feature files")
     if missing:
+        _prefetch_model_files()
         import torch
 
         random.seed(args.seed)
