@@ -69,6 +69,12 @@ def test_p02_sls_notebook_hash_matches_pinned_spotless_commit() -> None:
         'NOTEBOOK_SHA256 = "a19857e7c659a82341fee76dfb61d595f82e50fca310e5bbab6c8783bdc546e9"'
         in extractor
     )
+    assert 'MODEL_ID = "sd2-community/stable-diffusion-2-1"' in extractor
+    assert (
+        'MODEL_REVISION = "bb2154823665391b4fb29b0b9cf82a198964ee05"'
+        in extractor
+    )
+    assert "revision_count != 3" in extractor
 
 
 def test_blocked_report_does_not_claim_results() -> None:

@@ -18,7 +18,8 @@ from PIL import Image
 
 SPOTLESS_COMMIT = "0caae3cc45bb1fddf86bd47e4a521888f5c49889"
 NOTEBOOK_SHA256 = "a19857e7c659a82341fee76dfb61d595f82e50fca310e5bbab6c8783bdc546e9"
-MODEL_ID = "stabilityai/stable-diffusion-2-1"
+MODEL_ID = "sd2-community/stable-diffusion-2-1"
+MODEL_REVISION = "bb2154823665391b4fb29b0b9cf82a198964ee05"
 
 
 def parse_args() -> argparse.Namespace:
@@ -58,6 +59,13 @@ def _load_official_featurizer(source: Path):
         raise RuntimeError("cannot identify the pinned SDFeaturizer notebook cell")
     # The plotting import is unused by feature extraction and is not in official requirements.
     source_code = cells[0].replace("import matplotlib.pyplot as plt\n", "")
+    revision_count = source_code.count("use_safetensors=False)")
+    source_code = source_code.replace(
+        "use_safetensors=False)",
+        f'use_safetensors=False, revision="{MODEL_REVISION}")',
+    )
+    if revision_count != 3:
+        raise RuntimeError("cannot pin all SpotLessSplats Stable Diffusion loads")
     namespace: dict[str, object] = {}
     exec(compile(source_code, str(notebook_path), "exec"), namespace)
     return namespace["SDFeaturizer"]
@@ -155,6 +163,7 @@ def main() -> int:
         "source_notebook_sha256": NOTEBOOK_SHA256,
         "protocol_sha256": sha256_file(protocol_path),
         "model_id": MODEL_ID,
+        "model_revision": MODEL_REVISION,
         "seed": args.seed,
         "train_only": True,
         "feature_dir": str(feature_dir),

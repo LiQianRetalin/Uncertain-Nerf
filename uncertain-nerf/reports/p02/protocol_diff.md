@@ -18,6 +18,7 @@
 - 固定源提交：`0caae3cc45bb1fddf86bd47e4a521888f5c49889`。
 - 固定 `--loss_type robust --semantics --no-cluster`，不传 `--ubp`，因此是 SLS-mlp-no-UBP，不是 SLS-agg。
 - Android 的作者边界为 0.5/0.9，Patio-High 的作者 benchmark 边界为 0.3/0.8；只为精确共同训练图像生成 Stable Diffusion 2.1 特征，特征时间单列。
+- 原 `stabilityai/stable-diffusion-2-1` 仓库下线后，仅将下载入口迁移到其完整镜像 `sd2-community/stable-diffusion-2-1`，并固定提交 `bb2154823665391b4fb29b0b9cf82a198964ee05`；SpotLessSplats 特征代码、权重身份与参数不变。
 - 仅加显式 seed42、测试集浮点预测导出、原生 `rasterize_splats()` 边界计时。
 
 ## 独立评测与计时
