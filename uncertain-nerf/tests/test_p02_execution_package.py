@@ -61,6 +61,16 @@ def test_p02_minimal_patches_are_pinned_to_expected_files() -> None:
     assert "P02_FLOAT_PREDICTIONS" in robust and "P02_FLOAT_PREDICTIONS" in spotless
 
 
+def test_p02_sls_notebook_hash_matches_pinned_spotless_commit() -> None:
+    extractor = (ROOT / "tools" / "p02_extract_sls_features.py").read_text(
+        encoding="utf-8"
+    )
+    assert (
+        'NOTEBOOK_SHA256 = "a19857e7c659a82341fee76dfb61d595f82e50fca310e5bbab6c8783bdc546e9"'
+        in extractor
+    )
+
+
 def test_blocked_report_does_not_claim_results() -> None:
     status = json.loads((ROOT / "reports" / "p02" / "status.json").read_text("utf-8"))
     with (ROOT / "reports" / "p02" / "summary.csv").open(

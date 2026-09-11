@@ -17,7 +17,7 @@ from PIL import Image
 
 
 SPOTLESS_COMMIT = "0caae3cc45bb1fddf86bd47e4a521888f5c49889"
-NOTEBOOK_SHA256 = "d868fbd29ba36b8fb836f6b1b15c87ae53d06c9c38b8bc4fb37124bb8d12975b"
+NOTEBOOK_SHA256 = "a19857e7c659a82341fee76dfb61d595f82e50fca310e5bbab6c8783bdc546e9"
 MODEL_ID = "stabilityai/stable-diffusion-2-1"
 
 
