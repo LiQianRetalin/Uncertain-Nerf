@@ -1,0 +1,16 @@
+diff --git a/utils/mask_utils.py b/utils/mask_utils.py
+--- a/utils/mask_utils.py
++++ b/utils/mask_utils.py
+@@ -9,7 +9,11 @@ warnings.filterwarnings("ignore", message=".*xFormers.*")
+ class DINOFeatureExtractor(nn.Module):
+     def __init__(self):
+         super(DINOFeatureExtractor, self).__init__()
+-        self.dinov2_model = torch.hub.load('facebookresearch/dinov2', 'dinov2_vits14_reg')
++        self.dinov2_model = torch.hub.load(
++            'facebookresearch/dinov2:e1277af2ba9496fbadf7aec6eba56e8d882d1e35',
++            'dinov2_vits14_reg',
++            skip_validation=True,
++        )
+         self.dinov2_model = self.dinov2_model.cuda()
+         self.dinov2_model.eval()
+ 

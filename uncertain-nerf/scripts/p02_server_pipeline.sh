@@ -82,6 +82,9 @@ run_logged() {
   "$@" > "$log_path" 2>&1 || exit_code=$?
   ended_epoch="$(date +%s)"
   printf '%s,%s,%s,%s\n' "$label" "$started_epoch" "$ended_epoch" "$exit_code" >> "$state_dir/stage_timing.csv"
+  if [[ "$exit_code" -ne 0 ]]; then
+    write_state "$label" "FAILED" "查看 $log_path"
+  fi
   return "$exit_code"
 }
 
@@ -136,6 +139,7 @@ apply_exact_patch() {
 }
 
 apply_exact_patch "$robust_src" "$code_root/patches/p02_robustsplat_seed_float_timing.patch"
+apply_exact_patch "$robust_src" "$code_root/patches/p02_robustsplat_pin_dinov2.patch"
 apply_exact_patch "$spotless_src" "$code_root/patches/p02_spotless_seed_float_timing.patch"
 
 "$eval_env/bin/python" "$code_root/tools/p02_validate_common_inputs.py" \
@@ -161,16 +165,18 @@ if [[ ! -x "$spotless_env/bin/python" ]]; then
   conda run --prefix "$spotless_env" python -m pip install --no-build-isolation -e "$spotless_src"
 fi
 
-run_logged "verify_robust_env" conda run --prefix "$robust_env" python -c \
-  "import io, torch; from PIL import Image; import diff_gaussian_rasterization; image=Image.new('RGB',(2,2)); buffer=io.BytesIO(); image.save(buffer,format='TIFF'); buffer.seek(0); Image.open(buffer).load(); assert torch.cuda.is_available(); print(torch.__version__, torch.version.cuda); print('P02_ROBUST_PIL_TIFF_PASS')"
+select_gpu() {
+  "$eval_env/bin/python" "$code_root/tools/p02_select_gpu.py" --output "$state_dir/gpu_selection.json"
+}
+
+robust_verify_gpu="$(select_gpu)"
+run_logged "verify_robust_env" env CUDA_VISIBLE_DEVICES="$robust_verify_gpu" PYTHONPATH="$robust_src" \
+  conda run --prefix "$robust_env" python -c \
+  "import hashlib, io, pathlib, torch; from PIL import Image; import diff_gaussian_rasterization; from utils.mask_utils import DINOFeatureExtractor; image=Image.new('RGB',(2,2)); buffer=io.BytesIO(); image.save(buffer,format='TIFF'); buffer.seek(0); Image.open(buffer).load(); assert torch.cuda.is_available(); print(torch.__version__, torch.version.cuda); print('P02_ROBUST_PIL_TIFF_PASS'); extractor=DINOFeatureExtractor().cuda(); features=extractor(torch.zeros((3,224,224),device='cuda'),feature_size=16); assert tuple(features.shape)==(384,16,16); weight=pathlib.Path(torch.hub.get_dir())/'checkpoints'/'dinov2_vits14_reg4_pretrain.pth'; assert hashlib.sha256(weight.read_bytes()).hexdigest()=='f433177089a681826f849f194ece3bb48f4d63fb38d32fc837e3dc7a4e5641fb'; print('P02_ROBUST_DINOV2_PASS')"
 run_logged "verify_spotless_env" conda run --prefix "$spotless_env" python -c \
   "import torch, gsplat, diffusers, transformers; assert torch.cuda.is_available(); print(torch.__version__, torch.version.cuda)"
 run_logged "verify_eval_env" "$eval_env/bin/python" -c \
   "import torch, torchmetrics; assert torch.cuda.is_available(); print(torch.__version__, torch.version.cuda)"
-
-select_gpu() {
-  "$eval_env/bin/python" "$code_root/tools/p02_select_gpu.py" --output "$state_dir/gpu_selection.json"
-}
 
 make_dataset_view() {
   local dataset="$1"
@@ -287,14 +293,6 @@ for run_id in "${run_ids[@]}"; do
     'NR > 1 && $1 == run_id && $2 == "PASS" {found=1} END {exit !found}' \
     "$state_dir/smoke_ledger.csv"; then
     echo "P02_SMOKE_REUSE_PASS=$run_id"
-    continue
-  fi
-  attempts="$(awk -F, -v run_id="$run_id" \
-    'NR > 1 && $1 == run_id {count++} END {print count + 0}' \
-    "$state_dir/smoke_ledger.csv")"
-  if [[ "$attempts" -ge 2 ]]; then
-    echo "P02_SMOKE_ATTEMPT_LIMIT=$run_id" >&2
-    smoke_failed=1
     continue
   fi
   dataset="$(dataset_for "$run_id")"

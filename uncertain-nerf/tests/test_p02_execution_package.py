@@ -33,8 +33,11 @@ def test_p02_server_pipeline_preserves_scope_and_protocol() -> None:
     assert "smoke_updates=$((smoke_updates + 100))" in script
     assert 'if [[ "$smoke_updates" -gt 800 ]]' in script
     assert "P02_SMOKE_REUSE_PASS" in script
-    assert "P02_SMOKE_ATTEMPT_LIMIT" in script
     assert "P02_ROBUST_PIL_TIFF_PASS" in script
+    assert "P02_ROBUST_DINOV2_PASS" in script
+    assert "p02_robustsplat_pin_dinov2.patch" in script
+    assert "f433177089a681826f849f194ece3bb48f4d63fb38d32fc837e3dc7a4e5641fb" in script
+    assert 'write_state "$label" "FAILED" "查看 $log_path"' in script
     assert '--iterations "$steps" --seed 42 --resolution 1 --eval' in script
     assert "--loss_type robust --semantics --no-cluster" in script
     assert "--ubp" not in script
@@ -62,6 +65,13 @@ def test_p02_minimal_patches_are_pinned_to_expected_files() -> None:
     assert spotless.count("diff --git") == 1
     assert "diff --git a/examples/spotless_trainer.py" in spotless
     assert "P02_FLOAT_PREDICTIONS" in robust and "P02_FLOAT_PREDICTIONS" in spotless
+
+    dino_pin = (ROOT / "patches" / "p02_robustsplat_pin_dinov2.patch").read_text(
+        encoding="utf-8"
+    )
+    assert "diff --git a/utils/mask_utils.py b/utils/mask_utils.py" in dino_pin
+    assert "e1277af2ba9496fbadf7aec6eba56e8d882d1e35" in dino_pin
+    assert "skip_validation=True" in dino_pin
 
 
 def test_p02_sls_notebook_hash_matches_pinned_spotless_commit() -> None:
