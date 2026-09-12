@@ -1,0 +1,1985 @@
+{
+  "schema": "puri-gs-p03-input-validation-v1",
+  "status": "PASS",
+  "raw_image_count": 122,
+  "raw_images_verified": true,
+  "prepared_images_verified": true,
+  "native_common_pixels_exact": true,
+  "native_common_max_pixel_abs_diff": 0,
+  "camera_intrinsics_verified": true,
+  "poses_verified": true,
+  "points_verified": true,
+  "projection_matrices_verified": true,
+  "common_validation": {
+    "schema": "puri-gs-corner-colmap-common-validation-v1",
+    "decision": "CORNER_COMMON_COLMAP_VALID",
+    "common_input_protocol_sha256": "5a38b82d0635f4289ab0d85f91c05330d3d4748af6a2eec64890e62de4cc3d49",
+    "frame_count": 122,
+    "initial_point_count": 10490,
+    "ordered_image_name_sha256": "179017fb4d7c7f2edebd0cb945dc34a79f7332e311638b1e95dc9d4928af8e0e",
+    "image_hashes_verified": true,
+    "camera_intrinsics_verified": true,
+    "poses_verified": true,
+    "points_verified": true,
+    "projection_matrices_verified": true,
+    "max_pose_abs_error": 1.0445977416395635e-11,
+    "max_projection_matrix_abs_error": 9.544123713567387e-09,
+    "cameras_bin_sha256": "8e7b12edbacf3683065f6dbd8367934fe051965daf614d66663a120c4d303593",
+    "images_bin_sha256": "8910e835e87646d3d5284c0019cea8fe9f1cac3d7e7f5d97c6a87e2622f4c287",
+    "points3D_bin_sha256": "73dedd23cd05fb008165f3142a28aed2496a7f7f769600af5846c39c1548c99f"
+  },
+  "source_to_common_mapping": [
+    {
+      "frame_index": 0,
+      "source_name": "IMG_7106.JPG",
+      "source_sha256": "e6ce96f794726893dc38a80ce1b95106c56ef8dd0826081b9f929c50d8888441",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "extra_0000_IMG_7106.png",
+      "prepared_sha256": "4674ae27d6c670fc6d900a3008d26b48e8308703b439ec975714c306dc9335cf",
+      "common_sha256": "b52361d2f267e8c3d00bdfd622da6c248cd056eb34c542c2c3fb5d209c011928",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 1,
+      "source_name": "IMG_7107.JPG",
+      "source_sha256": "4ab6bc7947be28cbf247da06aabf69cfa16723f1ac2153f00d47fd9ab6e0e0aa",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "extra_0001_IMG_7107.png",
+      "prepared_sha256": "9353512d4126b45d3db4b98f2704309cb8c662ef7de1bd7de87b5f87b3caf0b9",
+      "common_sha256": "c1d27aa02b65cd87a640edebb429131de665f9492def0e95776a824b4db8412c",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 2,
+      "source_name": "IMG_7108.JPG",
+      "source_sha256": "05e513b02e519f701cc0406c76ac59aa581e437de76a112a517be545576e7fed",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "extra_0002_IMG_7108.png",
+      "prepared_sha256": "ddcc24e54b955a0b0d0589c90b4fbab96dee5862c5cfbb8bc7a6c73f5f492943",
+      "common_sha256": "fe365aee0a57ef20994ab649ca8ae420070ee08f3798075a01937298655888a3",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 3,
+      "source_name": "IMG_7109.JPG",
+      "source_sha256": "3c95861ba48521a566b45b7a07eee7d88367aff917ca40fe41e47eb81db27aa6",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "extra_0003_IMG_7109.png",
+      "prepared_sha256": "b459e8f412eb94b18496ffc10329629265e39cee77be2a0820f8776a5e0b92c2",
+      "common_sha256": "1d9b153bc7cde5b89feb2674be648da64297bbd842cc6b630e6cc64c1c395f01",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 4,
+      "source_name": "IMG_7110.JPG",
+      "source_sha256": "383121c505e4fce631350fb8965bdab1feaec2417e7e3cc581b3e380765521db",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "extra_0004_IMG_7110.png",
+      "prepared_sha256": "ff43c28dc3c265474d6a52c877a2b1cbbd9a5e09a3ca2afd5cb1930f487aef41",
+      "common_sha256": "a61bdfa133b3d004b70b3040e9c4c2b5208312f4429f627331a9c3e2b1d8ab6b",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 5,
+      "source_name": "IMG_7111.JPG",
+      "source_sha256": "29ce15725e060a8ac3d82d16853f0e4c70125974b0f44da321210c97cad06f43",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "extra_0005_IMG_7111.png",
+      "prepared_sha256": "6992e648812d323c45bb2151e298f8aa2c255c042aa44f0cc1651aee1a2ced34",
+      "common_sha256": "fc3f0c996f5a7c213ce790df5921a8eeb5a658b7223872eb933ea3592f025537",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 6,
+      "source_name": "IMG_7112.JPG",
+      "source_sha256": "183019a1010976c219497213490405155dab2afb05b4dbe0feb2f59b981cb1ff",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "extra_0006_IMG_7112.png",
+      "prepared_sha256": "17406ae035f8996aafa129ee3ac5f184de5511cb02e702d080d8fb9a6a043461",
+      "common_sha256": "75d4a64437e2607eadd0c483c10bb4ccf3c134c9826cfac4de9c12c3ded55cee",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 7,
+      "source_name": "IMG_7113.JPG",
+      "source_sha256": "19424ae7f239be5d0e9c744db9182364202500d78e3c58831937681f0cd59558",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "extra_0007_IMG_7113.png",
+      "prepared_sha256": "2657143a507458c045b35fdbae88b14e57c15f08b69502c68aa64fb12d5cc79b",
+      "common_sha256": "fbb6cce8f3d10915ddd592def046fd7f7e690b15313b103fccef763d5c731cdb",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 8,
+      "source_name": "IMG_7114.JPG",
+      "source_sha256": "ba91373210691bfbcc1c728a461d7e6305c4aeb3698f2b44e2970557b1dc4710",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "extra_0008_IMG_7114.png",
+      "prepared_sha256": "de8ec9349e33786af6a8204dfd9721c2a6a7f0aa2c1252f34cb67c17bd19748d",
+      "common_sha256": "790529eb3014b5e1fdf0a33657adf52d983dc60d6132071a834f21d79287c7b8",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 9,
+      "source_name": "IMG_7115.JPG",
+      "source_sha256": "9ed750b4ddcf835dc88145c77cd1d47fbe59ae7e03fb7e043aa26c2c50e2a8eb",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "extra_0009_IMG_7115.png",
+      "prepared_sha256": "722508546a6a65b269bb0557e135f1b7d347938baf9332e245419ed1216fc39d",
+      "common_sha256": "363a20c9e5d0ab5b400d49e6039b36425bce8ab928ae31ac2baf8c913918cbf0",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 10,
+      "source_name": "IMG_7137.JPG",
+      "source_sha256": "6693c035d1733edfd9e49c913a3446e6e7484d9d236ba87a7b09f801196783a6",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "extra_0010_IMG_7137.png",
+      "prepared_sha256": "61b287880987af1be5f00cda735e6e862db3f05e33ea1d7896ccf20d155955c2",
+      "common_sha256": "085607a36b0c89bd181bebc68394b2c35c2ce0592770ceb6bc4955af4300c3ce",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 11,
+      "source_name": "IMG_7138.JPG",
+      "source_sha256": "4678895830a3bef2da0685a8820ae2a69c27828e221729e5f034a98a8ad9f697",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "extra_0011_IMG_7138.png",
+      "prepared_sha256": "40cf9a886ac92b0ed493e2c3e49498415985fa7fe7cdd11af76628e289c5c6ec",
+      "common_sha256": "31962c0c4e668dbd9dbe74f883c9b872fa2fbc63d468863303911cf467b6fbcc",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 12,
+      "source_name": "IMG_7139.JPG",
+      "source_sha256": "ef17471d3900d9953fb111bc14b84d4fb7bf52ec780c916e7732ab82975292e8",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0012_IMG_7139.png",
+      "prepared_sha256": "300442cac64039e09898e1deed15bd3f1771f8c17aee263025845900fe896507",
+      "common_sha256": "508c3051e707d80ffa910cb6069e4d73d2498482632239096aec17f4e157d4b7",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 13,
+      "source_name": "IMG_7140.JPG",
+      "source_sha256": "b2bd2c784f9b94241df66ed82b43f44f38e2bcc3fa709f4dc7968b9ace75c2ab",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0013_IMG_7140.png",
+      "prepared_sha256": "2f55ca2cab8f99b9276f63eac970bb45136449851dd3adf1dc8ac807906316e8",
+      "common_sha256": "25dd953d3b36421c128fb48851884a0d690db7262a413a80a2b85e56511b0ef0",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 14,
+      "source_name": "IMG_7141.JPG",
+      "source_sha256": "144987dcc26588ce020af88cdcf39a66355596b056a78acd171b4c77d6ffe0af",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0014_IMG_7141.png",
+      "prepared_sha256": "e6a47ca5e1f0c1b36c3432a4a7daab97a4ccb978ee7370390db013edf835c2cf",
+      "common_sha256": "be0bc4f937fc44876f602792ad9de4297a58cb04e97e88dae44a3705a74f5b8a",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 15,
+      "source_name": "IMG_7142.JPG",
+      "source_sha256": "4d3aff9409d7428075af05bb4805d69415fd63fc0e4d8d0b92a6f67bebad4dc1",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0015_IMG_7142.png",
+      "prepared_sha256": "5f9f490341be7651e9e4b1970b2be821bb731d0a858d58a472e6a47a877c0df4",
+      "common_sha256": "4d7a9f7292ab87cb1e47b839abcb32ec74cc9ca2fb5a6490a8674d23ef1ebcf1",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 16,
+      "source_name": "IMG_7143.JPG",
+      "source_sha256": "a2c02a2d47b969be0e8a5b6b0117c0920a6da9a400e52185be123769bced6538",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0016_IMG_7143.png",
+      "prepared_sha256": "9fdfc7f44db993c48b47eb7354112a9cc0ac0260180c66ffc08866789bc107eb",
+      "common_sha256": "5b232c060d7c3e74aae9ec0e50347919a942d8376f7e7249d951dc7ff20818a4",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 17,
+      "source_name": "IMG_7146.JPG",
+      "source_sha256": "5c2c6e907ba13078238c9eaf3391fadfdaa679b2c488fc6f0735980d9341a526",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0017_IMG_7146.png",
+      "prepared_sha256": "a63856808f3578a792a0cd83b9f27a9f0468a41d28813eabb91899e9d4cb64b4",
+      "common_sha256": "040fd60d923e0f3f7e88adf1ccc6dcbb4ac21b6251f0be85e24f3407571aa23f",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 18,
+      "source_name": "IMG_7147.JPG",
+      "source_sha256": "b33dbd826beb92a9973731fddb516e24274894e95f8eb1c5aadeaff63dca04a7",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0018_IMG_7147.png",
+      "prepared_sha256": "1ca6cfaefa5516b1b8d1960846063a6b20ca7017412dc162bc9bc923dcc7b31e",
+      "common_sha256": "43d9aaf7a1706d66a7265bf7e08dfdff140bb30bf54f4fcf87364439538240e4",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 19,
+      "source_name": "IMG_7148.JPG",
+      "source_sha256": "ab5ff3b129ad449f0780f63cbedc750204067ccca60177fabe03a076a39059ed",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0019_IMG_7148.png",
+      "prepared_sha256": "f6d634c258fcea9e97d7f0c38be22ecc807f5d26eccb95eafc61237c9f21bb55",
+      "common_sha256": "9719da7b13cc44c21b52f57d363dd03c36e98b5e1af42542c69fe662c3a112a3",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 20,
+      "source_name": "IMG_7149.JPG",
+      "source_sha256": "5f21a56d620252497f6760d738f7c8dfbfd79c5fd15ce3cd20f34fb2c1ec0a5d",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0020_IMG_7149.png",
+      "prepared_sha256": "2a448e3f18f5ad11caf6c0e68180e4a84b0721c4ce198f46d7d542759fe896be",
+      "common_sha256": "1f6f415cdcd8a66058016b6778eb16dff8f9815e2b529edbdae60d94a532b8b1",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 21,
+      "source_name": "IMG_7150.JPG",
+      "source_sha256": "c7945fbfe4bdb24a2ad517ac3f655ac81f915956311fa9f85c6c5a671c559791",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0021_IMG_7150.png",
+      "prepared_sha256": "d1e63dd8c0f5d8e88cf9b7ebd78f95df67d3ee43c2bba67cfdfd818e19f9d1a3",
+      "common_sha256": "7f6e0a1de44cdbe0a12971edb1c9b46a800417ca5b1599968f9627820767b2c0",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 22,
+      "source_name": "IMG_7151.JPG",
+      "source_sha256": "a5780af2f2ae1d3984f39b46732deff35accc05fe8bfeb3de6c7a0eed6ca1acc",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0022_IMG_7151.png",
+      "prepared_sha256": "bf38e427c84412c8c8309c058cf6ddc5ccf788d15061c2a29a2fd7b14c46ca51",
+      "common_sha256": "22295df1287f33e6487bd439ae3248fe8edbd24280a1fc3f1c518c84bfeef4d7",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 23,
+      "source_name": "IMG_7152.JPG",
+      "source_sha256": "42808e5dc7b442f5e6836587de1bfd3feff818d131b0e40be5b72eca5df5fe66",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0023_IMG_7152.png",
+      "prepared_sha256": "bed44904559b369e14b8dd4d69042af9a934e7eb86c7231f67baa9726ccb9a48",
+      "common_sha256": "7e7a54364e0312246ba9d4acce462c26d6d42800ad9d87f7831b8fb09a89cc86",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 24,
+      "source_name": "IMG_7153.JPG",
+      "source_sha256": "55817d26cbd1cba2ed4a80c01cbadb30e0166bb66ad333f189da872fe6a9f57f",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0024_IMG_7153.png",
+      "prepared_sha256": "95ffcf516ebec0dc3cf3874675ac1c2c55fd5339cc2357af55e09789209865e0",
+      "common_sha256": "1888ec358d61b36abe19ca01fb02f3c0272a4fa2e408c6ebc9ed94ace030abed",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 25,
+      "source_name": "IMG_7154.JPG",
+      "source_sha256": "c6bd55cf3bf9c74104bb1ec5f84b7499f35fce12676457998aed24bd8b64cf14",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0025_IMG_7154.png",
+      "prepared_sha256": "49fc4940c14097d6ba53ab61c55da4e04e856e48b0c0e177c0b5ac3f5447f45b",
+      "common_sha256": "eaba11919443ef351b2fb2b962cd227c51a6a15cfaa98273c9ea679aa587f2ad",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 26,
+      "source_name": "IMG_7155.JPG",
+      "source_sha256": "3eb71caa03092c1c5c0c4404982f3255aeb80ab21afc773af62ad28ffbd93168",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0026_IMG_7155.png",
+      "prepared_sha256": "ec1916a9c59b36d8c3085719ba920192549a4e58d737fc11bca685bc517e7087",
+      "common_sha256": "eaf330b685c028fabf671e5a91cb05e53f8ce2b3a5a90b7329810785694ecdc3",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 27,
+      "source_name": "IMG_7156.JPG",
+      "source_sha256": "f81ea3846034c3efdc27eeaf7a10cc16b8214ec8ef8269f25fc6a23e25e6cc76",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0027_IMG_7156.png",
+      "prepared_sha256": "a5f26127aa3c6b9df60ff262b2b9661be87c148e173b6862bcb5ecfa9d512ca6",
+      "common_sha256": "9ac967e0519ac1c8fc411857156c5fc834bcf527dd7a5896c6a0fa5048e368c5",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 28,
+      "source_name": "IMG_7157.JPG",
+      "source_sha256": "aad6bee16f903e2e62089569868f0c06b60582a71d6ac8c1ea6c9e2d1b38bcfd",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0028_IMG_7157.png",
+      "prepared_sha256": "112d392ebad82bc4d97191e6da99c528f33fd8346bee1ebf6b0582b21c45cc84",
+      "common_sha256": "dfccd0e1bdac24a17f25c2b1f96625d576e8e9e068e9b6b573f467cf392c9a92",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 29,
+      "source_name": "IMG_7158.JPG",
+      "source_sha256": "8b7a0b27f2f9f700f7cf9f43481d83225c847cc7757a4d9bb038434c9bfb083e",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0029_IMG_7158.png",
+      "prepared_sha256": "53b52b76443a2c4f9d76620c49ff6955f650e29d04e9a63e9994ed89a4e4cb00",
+      "common_sha256": "4af0f0b9673dc8f5b4f3747aef555eb44d3eb83d64b56c7f89b69e8bf81a78b4",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 30,
+      "source_name": "IMG_7161.JPG",
+      "source_sha256": "3de501dbd589c4da2596e6671b363ced9ae1bbed023d0eeab1e7f574a4fb0be6",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0030_IMG_7161.png",
+      "prepared_sha256": "29c981e097d0d104136bbf90f4109e77ecc6883a7c8597dc9e80e28dd5248248",
+      "common_sha256": "ab5fd83f9d9ef5242c3d44a3ac14ced5ab3daaabe9cf5346a17818e94883a6bb",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 31,
+      "source_name": "IMG_7162.JPG",
+      "source_sha256": "fc2a8b4e973ea1fca00772fee7c983fd8776453b0e4d2bd4a7a94ed211e9d6a8",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0031_IMG_7162.png",
+      "prepared_sha256": "c31c247f1fb046a70b744e6fc20ab7aeb094a88cfd449242ff38622a000f1dcd",
+      "common_sha256": "3e76d3717874268cbabd8542dee81df68aaa4e0d1b8f8d424d49d8fbc8f62491",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 32,
+      "source_name": "IMG_7163.JPG",
+      "source_sha256": "ddaa4afa61b3504b66084ee1133ee6ae37c67d5be95742fbc6e18128d70e5b5e",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0032_IMG_7163.png",
+      "prepared_sha256": "abfe7f0e8db800874efe5d836814bea004eb9d246c912121f91e6b0f296827e2",
+      "common_sha256": "70d0dbef2a90f0c25adf3d84a184c39078f700b8edd8123df1a19af3b581a4fd",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 33,
+      "source_name": "IMG_7164.JPG",
+      "source_sha256": "202d2e681718539c96c014f59b05d6c6109822a8c3d4f4428e0238d80773af7f",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0033_IMG_7164.png",
+      "prepared_sha256": "c3393d39dfb7d6952eef00c4ae04506b8e9682ae222ab0ede60f6591a8a3d35a",
+      "common_sha256": "3fd8791b3860f4756ee49cf154e8c1bb4324a2ecdc4459d0097068623bac013f",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 34,
+      "source_name": "IMG_7165.JPG",
+      "source_sha256": "661ae0406a5d6702d3841889919a80731fc202498d6a1b38c1e3b6eaf86fade2",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0034_IMG_7165.png",
+      "prepared_sha256": "3e7d1d858064177ed66f18a5a1f96ae9b444ee83e6c60ff174426c36cb86a760",
+      "common_sha256": "916d9f899b7a51cb98b88b15c0abd24d0079c0e766bd103e3ababbd131acb260",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 35,
+      "source_name": "IMG_7166.JPG",
+      "source_sha256": "0511d89d0a38b6551bc0f3a4fe2a8adbf53d08ae413f67302972d2e33a6a26c2",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0035_IMG_7166.png",
+      "prepared_sha256": "5245675d3dd6f6831d8e7be471f6e09224ce09586a41cd71d6dc38a8d1357d5e",
+      "common_sha256": "14b0307c8e2711c6ffca4b7ae7ae558f81ffd49838eedc365d7befa5167443c4",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 36,
+      "source_name": "IMG_7168.JPG",
+      "source_sha256": "1cb974480d21e9c646a6a1ec7fb4462da2bcadde713c2bfef072cf396c988395",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0036_IMG_7168.png",
+      "prepared_sha256": "988d0161991f6277bb0f8e872ea96c40b1ea2653190352adfaefa0f1a40073cb",
+      "common_sha256": "51a4be407ca91d608e3ca5cd0e3f9ff84b64368bd1cdb6284c8ac91639f9d3ff",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 37,
+      "source_name": "IMG_7169.JPG",
+      "source_sha256": "803ed388c6501ffde4f22d0c9f7158f8b22272e085b45691ca71142733395864",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0037_IMG_7169.png",
+      "prepared_sha256": "5fce82f2fe233cf9c902b21d6a78337fd8806515badab1622a1dcd9a0b949b0b",
+      "common_sha256": "f07ebc1b9464ec64d760476c94da0402d70453e992156ce12441ea4eb4b8f253",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 38,
+      "source_name": "IMG_7170.JPG",
+      "source_sha256": "09ee6c0716c3ebc03c6e2bd499f7ed0aa33c2c84b59734a8e6138d272ebac9f3",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0038_IMG_7170.png",
+      "prepared_sha256": "2af4e51a6db9a6d3eeaa0eb15194c5aaf8a2686f2043a87b80c4339a1aadcd29",
+      "common_sha256": "9933cc24e6fee909541c2796ec4aeeae75307a8ab836a7edc820574be5c263bf",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 39,
+      "source_name": "IMG_7171.JPG",
+      "source_sha256": "194c9a0b084a1f1abf0f6503f8608c11545fb6ffcd998f4e2eb420bbe071b526",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0039_IMG_7171.png",
+      "prepared_sha256": "987a9571a2f3446e1d2c223c225dc9cf20f590d209bbe423ea073fa15e63bc1a",
+      "common_sha256": "70691cc7cf42cd700fc076bd296cb579494b2a57397a2121e71c3b0502ad57a2",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 40,
+      "source_name": "IMG_7172.JPG",
+      "source_sha256": "d21ea46bcbbf0c5338b06e73ea0bd8c00164c2dc4f63c3329676c4f2f6124546",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0040_IMG_7172.png",
+      "prepared_sha256": "80e975a402c591a4124ef3da271237d9d37d0597bcb9233843a2b6f2cef834fd",
+      "common_sha256": "b8f848413aef26e36cb2bc91a7bdf2ccee9158bfbaba841cbe81174511b5a060",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 41,
+      "source_name": "IMG_7173.JPG",
+      "source_sha256": "7ecf91e0d34e910710110dc7180c30729fc55472d9dd946af5397d23d0880bf5",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0041_IMG_7173.png",
+      "prepared_sha256": "b3dbf15f2cbde1ccf6912606f19317b5ca0172f031cb07fac51beefac7b0f746",
+      "common_sha256": "e243c9330d9ecfc18f1da77bc92226d1e47a1a0fffb2b889356789a7dd704b97",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 42,
+      "source_name": "IMG_7174.JPG",
+      "source_sha256": "6f9a1c324cdd2ade12835f97a9e8187ce383394740c883b866db0786446fe0e0",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0042_IMG_7174.png",
+      "prepared_sha256": "a58c77f33c17e46a0bbab60ecde37b8be75b23aafdf81c77a2871b333f18ab6c",
+      "common_sha256": "94441a042a4a7c2cd11785ec4bc0b7b45c53b34f406c5a9a1c4106365807c052",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 43,
+      "source_name": "IMG_7175.JPG",
+      "source_sha256": "322f95348c7dc8c23268237dc4e09c696ec60140ad2c4d60c376eb6bde264085",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0043_IMG_7175.png",
+      "prepared_sha256": "c6fc7cb8b37e48c802e621a545ca661e1018eb246809671f47626f35e1d0f7f5",
+      "common_sha256": "85934826522190adc7e773a9afe6a461e7d71b4a6a9a6d37c06f7363be9048b1",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 44,
+      "source_name": "IMG_7176.JPG",
+      "source_sha256": "d8a6f82d601008ecf38b1a1a262b2a43de88d452b7ed3b9c5888776d33b36d8c",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0044_IMG_7176.png",
+      "prepared_sha256": "de264db4616adf1eac72596b87b3de01cb9f9c506197dd8bf5e4ae10ef6e40f6",
+      "common_sha256": "19c335213c440d7f5b920600845e0e862bfdfce33df1780f5c435de94afcaac5",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 45,
+      "source_name": "IMG_7177.JPG",
+      "source_sha256": "e55e3d35c779312828ccb1df7b2d5f10ad06ad66cd91d1ba4f4e53c7382f825f",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0045_IMG_7177.png",
+      "prepared_sha256": "e394ff556abe5937afc0c400b53d8657c9c57b5be0dab0627560ef67eb726afb",
+      "common_sha256": "a74409a9fc988483c76774e7e5c9ec9850bfe5fd7c23216102c4abe978286863",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 46,
+      "source_name": "IMG_7178.JPG",
+      "source_sha256": "b1ae3ff588564c23f03feffb54244eece3bbf44c5cd8ae177392a32e970a0c29",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0046_IMG_7178.png",
+      "prepared_sha256": "14cc27a02650fb7c7dc659c214af865b3d6ed93841842d07faf55d4c93653f57",
+      "common_sha256": "4f0b78717c376e1e36db8f37c865a1961055d664d42e90f1290a1d10006e2a32",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 47,
+      "source_name": "IMG_7179.JPG",
+      "source_sha256": "e1ceb400f4189e08bda46cd7af704be2f405d30ee53821227a0b605055bb3e22",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0047_IMG_7179.png",
+      "prepared_sha256": "a3775a1ca774abc7155475e53100976507bfef9d43a9cef29c009959ee17b7b0",
+      "common_sha256": "9e4b86f22549d6c358bfcd09c93962beb4dfc52c3255ec54c6ca065280e424b9",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 48,
+      "source_name": "IMG_7180.JPG",
+      "source_sha256": "726e7ba7f21165dd172a1f4b3ae90ae5a0a72eaf79e0de4b2a26a2cd703075a8",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0048_IMG_7180.png",
+      "prepared_sha256": "b924c4d0df2961f6a3daa87cb0f1f81c48754afb05d041b562149a6abe2d6a39",
+      "common_sha256": "f0bfdceac1665694fca8e81a706ec62a023682a6b7bc0b4ab13bb6b4e1726459",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 49,
+      "source_name": "IMG_7182.JPG",
+      "source_sha256": "42d54d0d78a5a50f03155026776b52fc707280dd85777701ee98bf4616f98a33",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0049_IMG_7182.png",
+      "prepared_sha256": "487dee5bbb0bbc9c41ab25302d0ec8100654759dc984285cc6a69bbef3982acc",
+      "common_sha256": "302928fb7803c81c6c1730ae8217ad6e37d8de345894cf8537b7ea5ad1a7d8dd",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 50,
+      "source_name": "IMG_7183.JPG",
+      "source_sha256": "17eb885313afcc4bc53b4caa904ae2f1fd09ea4f73555e9bcc842af69e116085",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0050_IMG_7183.png",
+      "prepared_sha256": "e977a866f18c005866cfa3b3d1adaca406f0514fdc523a7ff4db97486bc6e130",
+      "common_sha256": "85e3da6d17512950c36203a30fd213e255af645a086270fc2beba89c795dfe87",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 51,
+      "source_name": "IMG_7184.JPG",
+      "source_sha256": "cf16cd0c668566fe9f37cbd468815d56be7a4a27e2f3d9f6ed529ee2836e8d88",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0051_IMG_7184.png",
+      "prepared_sha256": "b5db9c737ee8cf7ae103b46e8f97aa40081debe351ac51db18f5bd3295504fbb",
+      "common_sha256": "762c240efbafdc1bb27aba6341680bf34ef235e4eba6bfb0c0ef65427e492907",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 52,
+      "source_name": "IMG_7185.JPG",
+      "source_sha256": "a1f2648f810105b1ed487d6a0184f4693a8248c073371dd244c24433fabd87df",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0052_IMG_7185.png",
+      "prepared_sha256": "bfd205cbe41de3cf3c2e88e395ffc45c2667c30d2e3c0efd00a0bf17a95ae040",
+      "common_sha256": "efd06df04e98fff6c511d64c864cdb4ce19fc6032064418de2a93db65df4553d",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 53,
+      "source_name": "IMG_7186.JPG",
+      "source_sha256": "5b54ca5a815411ae597543bfd67ff544f10f0c14630bd5a82cee60d59f293029",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0053_IMG_7186.png",
+      "prepared_sha256": "16d332983cd316c80d2de26365e6fadbfddb735365636a6b5fba1ee6d4d5099e",
+      "common_sha256": "12b7b06be6c8cebc2cec697bf9ece69a55211f61692c58df29fbe610322d3f2f",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 54,
+      "source_name": "IMG_7187.JPG",
+      "source_sha256": "57983f80263b4ddfadda0efc61f29198bc53bee5b7f761caf3898a570bfeb589",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0054_IMG_7187.png",
+      "prepared_sha256": "161c18f175e83829dd19545a9098be3fea06b84c45902c75485d8e813600a15b",
+      "common_sha256": "bbdf501f7cc5852c3e0a6724cd00620dac6b3a892baad4b373128b443e6c8d7c",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 55,
+      "source_name": "IMG_7189.JPG",
+      "source_sha256": "4b40d1e9679b72d84867f3b507787c9e3b4da37e373ed018d716c5af3ac83170",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0055_IMG_7189.png",
+      "prepared_sha256": "ff9faacf484da806f0cb7f5e9837fac872234aa382eb9db9a1fed57da24f3811",
+      "common_sha256": "69476c6f10e5f1e398750bbfdaad91adaa7be7161e0e082d3eabd6e9692b4b74",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 56,
+      "source_name": "IMG_7191.JPG",
+      "source_sha256": "4c4e6c21959af69576706c01b7df6c2c9da6d5e63cd0e927e2757a618ea71051",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0056_IMG_7191.png",
+      "prepared_sha256": "19b910673b720d5a4e429282da85919d08af46926f56a9bd6fc69a7b143810f1",
+      "common_sha256": "301aa354f9e1d19ec0b206d888bfdbce45bf51d2e34ecfe8f15a689059675478",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 57,
+      "source_name": "IMG_7192.JPG",
+      "source_sha256": "1c30f95a7405e6489b1d0efc76fb3b88aab9f713e79fc0f71ad732a05f3a4832",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0057_IMG_7192.png",
+      "prepared_sha256": "19eefcacb795eefa75a5f6e51443ad81abdbfc5430614a7b63c16b964c19ef5c",
+      "common_sha256": "5a817e7b98ed344769f0ac1c24a89f474446838298915be2801808dd12c673cb",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 58,
+      "source_name": "IMG_7193.JPG",
+      "source_sha256": "2caaa07d9e1f9df6960d8e50c951062745130eb8ea9ef920bde787f0fe0b3dae",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0058_IMG_7193.png",
+      "prepared_sha256": "cdced4ee72f17dcf1572cc7037428c03fe58633d7b3e5a1b84974542c75bd4d2",
+      "common_sha256": "04beeb9371d083ce988000e2f8144a679e87334fb00edcc7860279cfefe92f4e",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 59,
+      "source_name": "IMG_7194.JPG",
+      "source_sha256": "f310e2b941f783a3ea2c7323a81e7591c1231018be10be3f19ea998bf5356ee1",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0059_IMG_7194.png",
+      "prepared_sha256": "fd748fce8afb340efe802424dd465d74a2e70f8a90426231a95b6afa1fe479fc",
+      "common_sha256": "a98d27aaf6abc0329a3cd49b18960746e27b973a8a175accd99404e711b71f4d",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 60,
+      "source_name": "IMG_7195.JPG",
+      "source_sha256": "028c24a2866cd441c965949d11b3b60ca6fb7e244865e8e6ab836a81c7c45ca9",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0060_IMG_7195.png",
+      "prepared_sha256": "e5576cf8c79492711064b5663185b76264215bfcf398b047aca41a86c9e1529d",
+      "common_sha256": "bde7b3ccb1762555ec1a5d63921798c2be240c940c33770566b7151bdcc8a171",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 61,
+      "source_name": "IMG_7196.JPG",
+      "source_sha256": "4abd8e6b4ed7c56f853199f2168a0163b43cc74e072703c9f87c9e49d407ff25",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0061_IMG_7196.png",
+      "prepared_sha256": "bbf5b89460ad518aa342ee4c1e645aef45334c444653c6590ec64b8a033889e1",
+      "common_sha256": "0d07398cbc30e421dd5072c28652625274fb44aafad248888b3b5c72e6dd8ec2",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 62,
+      "source_name": "IMG_7197.JPG",
+      "source_sha256": "30ba9dd7d0ebba866dd01bce1420831312b34a6dff957ffa688a7628e730fc65",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0062_IMG_7197.png",
+      "prepared_sha256": "3d15165572d95fcd9c892442b6bbd480726598ca8eed91475faf92229474eeb7",
+      "common_sha256": "e38a2740c70315acef24c667add1a314db128ea95be7c45a8d77dd6951edd514",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 63,
+      "source_name": "IMG_7198.JPG",
+      "source_sha256": "6324fbb6422314171908bb9c1dec91c3747f0fc1c79e3b18b264566815c23a15",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0063_IMG_7198.png",
+      "prepared_sha256": "bf903641d06381f3221d1ed39431c749e3deee9c7450cae8bfc7955d81084078",
+      "common_sha256": "f9bd117ce2fba4e6c9bad234d2aee40f16d2e180de9f63ed35fc3615dc7e86d9",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 64,
+      "source_name": "IMG_7199.JPG",
+      "source_sha256": "5091f578579c6c548747e3c6343c4106cc5497a7ad5aa32ccc2f4484b687c4cc",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0064_IMG_7199.png",
+      "prepared_sha256": "32281e0190b0accdfa9dd82113a8ebe96f56e6f5039efea238b852dedf3f070f",
+      "common_sha256": "207aeae2717d2e33499219518257f081f23334435afdf8939fe9598b559edcf7",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 65,
+      "source_name": "IMG_7200.JPG",
+      "source_sha256": "b24dd57141268b8a64b94b98ca4f095693108d1650be7206f70380d0ce27971a",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0065_IMG_7200.png",
+      "prepared_sha256": "6435512726a3b217fab92df71d205b6c2a44fcf2a2063168dfcaf660dba3904c",
+      "common_sha256": "8ffd38035285a53e8acccaae45115e4d91b6a2f1f26816a1e6a0d69ba70cc87b",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 66,
+      "source_name": "IMG_7201.JPG",
+      "source_sha256": "e07478dff0f7dc6fd7b38f37872400730bfc09b1210fa44007a857d596023baa",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0066_IMG_7201.png",
+      "prepared_sha256": "d7ea9c4859a7a3b9b8ae1d832a479ac77d1a20177a1ebe06249e8459cec51b34",
+      "common_sha256": "847c8bb66d9a8c3dafe7d148744b143402f1379fa42b20df40f5c286ee32813c",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 67,
+      "source_name": "IMG_7202.JPG",
+      "source_sha256": "a035ae47bee0321a90d24784f6310feb51b014fb597b10260b23ae33e5d57c3a",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0067_IMG_7202.png",
+      "prepared_sha256": "89493b85bcb4ed2d0e02b84edabf55f114cf2943836136a686309d03a5eaea50",
+      "common_sha256": "ab21f89d74be558f24b241517a4e41f0b6965134c5ba74ef1f3458f6b7d20479",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 68,
+      "source_name": "IMG_7203.JPG",
+      "source_sha256": "41eb75d1dfd12ddbcb3e1ba112fa9eb48c1c87bdce2bbcc9c2fb1d176ba4ac72",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0068_IMG_7203.png",
+      "prepared_sha256": "554af1cc606a3282cb59bb3449539753cf50084dde71434bce99265a913eb15f",
+      "common_sha256": "64f9e428b52bddcad9906b113ff006bf34b6dcad6b739ef2d7f4dfc72dcbf8c1",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 69,
+      "source_name": "IMG_7204.JPG",
+      "source_sha256": "4e70a6fcc477ff050d1edd19e9cf6d2773686dbef6fbd4a2421c1b69aeb22b86",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0069_IMG_7204.png",
+      "prepared_sha256": "788339e76d009c090b100ddb91d91d57436ac4609bb56717c267b259ee499a41",
+      "common_sha256": "76468a3af0c5d769b32d41b5c11ddef0c6bccfa90aec4b88667ad9576e3aa04a",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 70,
+      "source_name": "IMG_7205.JPG",
+      "source_sha256": "00610aa0fc593389e1d1f3c4e89f68267eb72875bc7f97bc0368269dfa58052a",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0070_IMG_7205.png",
+      "prepared_sha256": "52243d59cf962814dd86f60954b2131ae3b382b8b7ad8b2cf9545e98b111b61c",
+      "common_sha256": "02094fdbc21f0600b99a6dabfd0b9547dda6c7ea094a31bc38c57cade3ceab5f",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 71,
+      "source_name": "IMG_7206.JPG",
+      "source_sha256": "2e6c8c2671bb2c00eee2609ff4ecd32e60909efeadb8fe6240bf5bd1201eb162",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0071_IMG_7206.png",
+      "prepared_sha256": "e6a955b7778454be85d61787e992ac8f7f7bcc1dc4288e0d5e58c5f4e0a77adf",
+      "common_sha256": "c2eb02df51be77fa5b6d81ffe94244636d2274c6b47011952f1971d1e0298a91",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 72,
+      "source_name": "IMG_7207.JPG",
+      "source_sha256": "4c429320acafb79055fb2df1667d4a2b06efc6eafffd15f14aa92cebd1e3c1cb",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0072_IMG_7207.png",
+      "prepared_sha256": "5b82317febbd7db468642ac294d52231d702aa061832663ef94ba09d0dbecbfd",
+      "common_sha256": "8bd26f9dab1068467a2515abd4b798e8c7c74c3470de01d41c96dd5f2d7bc288",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 73,
+      "source_name": "IMG_7209.JPG",
+      "source_sha256": "7f72914749df844be06b18d16ccf9142bd8df3e109706a9d6105f1b9a0032e67",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0073_IMG_7209.png",
+      "prepared_sha256": "e890ef6b43c5b12c3d9346bfee04bf7f34c5c0f239b37e1d59cbe0b87f37bc40",
+      "common_sha256": "94cb225d7ce4e17af04e43789ffe4a062c470711642ff661642bd29bf1a6371e",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 74,
+      "source_name": "IMG_7210.JPG",
+      "source_sha256": "21bdf7a28b18d7768b0df638668309173b90e3314f34d31b5ddd6cdf80f8f94d",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0074_IMG_7210.png",
+      "prepared_sha256": "b9310185c295e3f8b48e4b15d6cb071dadb9cf93e74f9d9be8c8b30919138355",
+      "common_sha256": "34e34cdea3203d0ee90bea7c8ee14f82c16e2c449aa437397204948747436cbd",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 75,
+      "source_name": "IMG_7211.JPG",
+      "source_sha256": "c7aece61cba93327ec773e4929d332c03d116b7ab4321f8948cda5c9f711883d",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0075_IMG_7211.png",
+      "prepared_sha256": "dfb2f1e2ab15fe99c1bbebcfffc63fc76fca08dffeca2e5804a74cc9749e3acc",
+      "common_sha256": "464b84cb6ff26172cb420fa1cfc16fc470ca9adadc2635881685d130caee716e",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 76,
+      "source_name": "IMG_7212.JPG",
+      "source_sha256": "b1cdb7feba456dc208e5c3cbdb44c58c30b66cc8bd148a6eeca3373fdc8043f2",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0076_IMG_7212.png",
+      "prepared_sha256": "58fabde3634a1cf2ef0c4e895cdd964014d1f38c46b4bac2b4d3b4354720970a",
+      "common_sha256": "ad19af1bdd83f943b5361689d85a227e5a11d86776009dc445163c2437b3e4de",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 77,
+      "source_name": "IMG_7213.JPG",
+      "source_sha256": "f6866b7d2fd0a750f533a9975d14b3b28507d406840b5c78792f350314d5f7ca",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0077_IMG_7213.png",
+      "prepared_sha256": "f9a37ba90edf04263896c997a7b2413b77186c5e93e3d5e393acf5829163375f",
+      "common_sha256": "deb0dcfffb4c64c234eb8623bba87ee63349882f6e8716b2673989565c139265",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 78,
+      "source_name": "IMG_7214.JPG",
+      "source_sha256": "0d3c12d0e6ca1c2ae57d07aa90412a44ada0268d7648772b46e2252daec33711",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0078_IMG_7214.png",
+      "prepared_sha256": "759b573b93c4413ebbf403deab775d91cbcc04c614485ce30084927d61a0ae58",
+      "common_sha256": "b4a6303ccc6b6864d61f55e6e60f1adc7b32757af65bc30ab42d2f17b9fdaffd",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 79,
+      "source_name": "IMG_7215.JPG",
+      "source_sha256": "76cdb8eba87249f9032e1a25699a82ce77a74ee91efba242b263d4218160f530",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0079_IMG_7215.png",
+      "prepared_sha256": "d4e48ef3c201f3594485ee084a5f20834024fe1c095bcc8bd2331c5d88a6602d",
+      "common_sha256": "b666885d3f8fc249d04d2d67b3c3804ac9ed947f126fc724d7c98ed54e5bd4fa",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 80,
+      "source_name": "IMG_7216.JPG",
+      "source_sha256": "39978e4a8906b9b38a0e05cbc4cf6c67f0c2838780427fe4fc693eae17e931b0",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0080_IMG_7216.png",
+      "prepared_sha256": "d8f62aaed89f0b93af2df13c1a1e41e16acf1a08a9246e59b3f622f62126ccff",
+      "common_sha256": "f487184c3c97fb8134e43a0e5be25703ce79d798cf18ed800190e5b06b6aa820",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 81,
+      "source_name": "IMG_7218.JPG",
+      "source_sha256": "2db88aa60718e0452c78012330275c0e2b2bf71713218e0190501807f483d981",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0081_IMG_7218.png",
+      "prepared_sha256": "2e53201c5d8d1c2226296c6b34a6aa0939b1ba6cf86997f28a6823b44d38a142",
+      "common_sha256": "3e07b4362953e4a833866bbd67f2818bce501d34aba110943555b0bb50141b8a",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 82,
+      "source_name": "IMG_7219.JPG",
+      "source_sha256": "439507640d28684e671b0dee9eb51541a5136ed39ba7abd0a075d547a7628acc",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0082_IMG_7219.png",
+      "prepared_sha256": "9f487c3008e3c738749b81f796383a8d0993a88812853940acec9bca80656e7f",
+      "common_sha256": "2c585aa3beea50d4c16b1ee3781498411f9ad3b80eb62057c3adfb2f0d74b009",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 83,
+      "source_name": "IMG_7220.JPG",
+      "source_sha256": "5285624585715d0cc31bf0fd740e5aac46627bd4aaf5d03a089ddb00552dadd1",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0083_IMG_7220.png",
+      "prepared_sha256": "503f7e32f9f203f651da0f5277820fcc7c5afe9341cb1ab43941b9e24f8c0a18",
+      "common_sha256": "d0e007bc2ab5c3e4f2bc12770083583d14dda62bb680bb6cfcd98f0ee82f304f",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 84,
+      "source_name": "IMG_7222.JPG",
+      "source_sha256": "b345926847811bb0517098392b78489dba96767918eac37f5356ce243248a401",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0084_IMG_7222.png",
+      "prepared_sha256": "6154be006c204ecf4d7c3582c4ce8b160c18544aea99b1535adf1e2b0728e304",
+      "common_sha256": "538200ce5cbcb87e99d1e628e8a248bed5b098426974c1ad6cb37a5324825978",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 85,
+      "source_name": "IMG_7223.JPG",
+      "source_sha256": "1dab695759eea37af129b0a62cf20fbe6e0f19a57cbcfc310769b7ad6c483461",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0085_IMG_7223.png",
+      "prepared_sha256": "03b06fc3d36ebdad8087eb69d4d2a4185f20c1691e85eed211485e137c2bc587",
+      "common_sha256": "ddff128abae48a54c9085fcb3fb4a67be9f54e9a025c54f5bdc8ce1c50cc9584",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 86,
+      "source_name": "IMG_7224.JPG",
+      "source_sha256": "dd5af070d9d93b381c9662e9baaa8ffdf92f76d3067aac84ff9a03fddb909ccb",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0086_IMG_7224.png",
+      "prepared_sha256": "cd8804335a26c1bc7f5ae0882595b782e2eba7ac24f6aa1837d8758a5ec1f278",
+      "common_sha256": "4d5fdbca68f53e6c99e7e0f452b547e2bdf6f81c5afe7b6421028cac4d679b7c",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 87,
+      "source_name": "IMG_7225.JPG",
+      "source_sha256": "404d6279ba80e16544399dafbf50d4056de18c6702a3eba0f57e008ef6b9773d",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0087_IMG_7225.png",
+      "prepared_sha256": "48536894e6055ed07660a12c34c98a1d5d74151e00e04de15a5d85934078a2ac",
+      "common_sha256": "113857163e332f782db08b51d689728d96aa0dace3e54efb0353ba036364502b",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 88,
+      "source_name": "IMG_7226.JPG",
+      "source_sha256": "93e15f67921361b61634179e4d77550a15c155635a5e52e323c283ef418cc2cd",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0088_IMG_7226.png",
+      "prepared_sha256": "ace833dfdb44203eb3e77b1ce7faca99a8546081ee6934a57c4b8b734081f01d",
+      "common_sha256": "b4ae8e25df59074eb9d37b1b7fe26f8b6e307ae4c51145a32983411bae716433",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 89,
+      "source_name": "IMG_7227.JPG",
+      "source_sha256": "49abefbf8f0d86fb5e1e5310f21c5afc8f9e6affc15cfad5dce569633d7cf5a1",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0089_IMG_7227.png",
+      "prepared_sha256": "12f1e9d3d217f34897705c053b2fea6c4347e3f2f9efa11f9a2e9eda6b6cade4",
+      "common_sha256": "8ac4bed7a2a35c9db3e515a3ada3dcea0e0329fc3807a5fc065c61590ab6f2e6",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 90,
+      "source_name": "IMG_7229.JPG",
+      "source_sha256": "52de60c8cc511715ec09a36e3403a22da8d4207e599fa4220307867c3528a2ba",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0090_IMG_7229.png",
+      "prepared_sha256": "6c197bf443880dbc7104ebeb9cfc40244e5a5e31b8dd92dbea729614083a6292",
+      "common_sha256": "024b95da4c7efaa1990543a14d774e85e8d9731d742966d42938c34fe3531719",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 91,
+      "source_name": "IMG_7230.JPG",
+      "source_sha256": "06436fc294137348a49352fb525b8bca194e4d6810126037ed82283d09524f4a",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0091_IMG_7230.png",
+      "prepared_sha256": "3395b803ec51dce568787b6adcbf10e2f3f0b72f1e8ab46eb54612e3f2e3376a",
+      "common_sha256": "b9ac3ec2d8743c406f98846bb03f45b5f3bac2cbd60a1017fd13f9dd0003d8bb",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 92,
+      "source_name": "IMG_7231.JPG",
+      "source_sha256": "aef8b3ab3e5dc9fb3cfa4223540349d3dbbd24fbed87a48f9ca011c976693007",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0092_IMG_7231.png",
+      "prepared_sha256": "86c48bf943c40c38059b089d2e7413ef8d89b16cc5a3f1032665cda51cab3fa6",
+      "common_sha256": "b127ad453d59973095210e3421ec544c192d2e1f83c09c631e7775ae3ba95f4d",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 93,
+      "source_name": "IMG_7232.JPG",
+      "source_sha256": "1e7b3e315d1a584c8333bc10f11ddcb2bfbdde41e3d895a3e61c76edf0716468",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0093_IMG_7232.png",
+      "prepared_sha256": "d6b164d68220be2deb82ce737ffa706d89542c34d594fb2ef5ab12529d1c69eb",
+      "common_sha256": "a24449a23144b4d5fae96abdac221ea9ea112f2a73b5bfdce902088d1bdd24cc",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 94,
+      "source_name": "IMG_7233.JPG",
+      "source_sha256": "8d5322fdbf15e26e8e63c49c4a6710fb2f0f0d6b43262573329762e5be040920",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0094_IMG_7233.png",
+      "prepared_sha256": "6d6c3f001b9516a20ffa2d23727a69e44a44f2dea4dd96636e62a67df4fe1fec",
+      "common_sha256": "349a4b0dd886386a34a438718405da758e905bcdead893ab374c73387087e103",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 95,
+      "source_name": "IMG_7234.JPG",
+      "source_sha256": "114610d420e64f8c7830586ff86049b1b56653d195cb46a337cab3d97a6296d2",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0095_IMG_7234.png",
+      "prepared_sha256": "57edeaeb850f6eedcee194149a2d782a9e189f0afac14873a1a4e273a57b6b07",
+      "common_sha256": "bb512dc0451ddb1234d683112bf3abd9e7b6c551b212a0d2913c5016aa2b727b",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 96,
+      "source_name": "IMG_7235.JPG",
+      "source_sha256": "7f3ed020a531f6c362d685d76aa28764539c604e9dc13fcbdc0bbce438b7a2b3",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0096_IMG_7235.png",
+      "prepared_sha256": "39f38460e2333227331ef9f63a179720cfe90a1a9548c5ad924ab5a3874cd378",
+      "common_sha256": "6649a31bb10811717cf478357316ef359a2f3d38a4e1d242156575e5d7a4943a",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 97,
+      "source_name": "IMG_7236.JPG",
+      "source_sha256": "901e7a7405074d060c1dc65fcf22718bf2b7ec550c871ab5ca0e464ef1fcbce8",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0097_IMG_7236.png",
+      "prepared_sha256": "06abc37c679630071ba7ac30e33337978434c3a18cd27794a50332fef9b7a7a8",
+      "common_sha256": "bc69890f17429e3b809ed948a1b01738eee0152efbe42eab6389f2a64a4250e2",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 98,
+      "source_name": "IMG_7237.JPG",
+      "source_sha256": "f0dffbbda1fa01c1c3bbf45033f77764eb530c479fc041e6c94dc2aa15039fe7",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0098_IMG_7237.png",
+      "prepared_sha256": "83b6cd3861536b302a73280911482256a8324dc18d7d4b2bdf2212a26d8f2d37",
+      "common_sha256": "87dd38c16ee9eb8019ae3a74cb01b19d01c65ceeda7befccade74d70936c6970",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 99,
+      "source_name": "IMG_7238.JPG",
+      "source_sha256": "65f147da6706de4def5030bcc41f2df1a5426b0b2522d12286fd15d04ad6863c",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0099_IMG_7238.png",
+      "prepared_sha256": "ce41cb5b0397e293c35ad06d4146a0f198a8c102baa1c6b7a5bd32f1a87591be",
+      "common_sha256": "857b85ad35bfb6971deef42685d464fd8ebea3ad02ed61d17baf10b4f063cf80",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 100,
+      "source_name": "IMG_7239.JPG",
+      "source_sha256": "7ccf691c62b7cecd5ce9b51ddd3ede7508cadb3380eb3580b7386c7a750b849a",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0100_IMG_7239.png",
+      "prepared_sha256": "6fb9a4591c8852375a9745e356f02f2aed574c227635ded0de09c6d839f17912",
+      "common_sha256": "9d1f4315dbdff21b376f8c396036761ea2b3db2ca2fbbceaa741eaac6ec9e145",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 101,
+      "source_name": "IMG_7240.JPG",
+      "source_sha256": "27870d6c6603230f816e9b8c68912915dd40f2e3f3a9060ab5133b524e623d4b",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0101_IMG_7240.png",
+      "prepared_sha256": "001da3396eb96a2086e1894dc6d00d307ff81c02701e7cc2ad481c39bac0f9df",
+      "common_sha256": "bfe6488b03158d55632dbf614648d3633a60f96e10ed8df3e8c29c5c831cded6",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 102,
+      "source_name": "IMG_7241.JPG",
+      "source_sha256": "3a3dbf59eb1681a47d20d84006532cdb71982faf12aa60a9e4e89620b7ec3908",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0102_IMG_7241.png",
+      "prepared_sha256": "eb471ff7ed0f5e64a54a210e195346bae49dd8a02b1dace2ccf2a0510eb7bbb2",
+      "common_sha256": "2fa467e91d86285eab3fc89d9791ee919141589533714d9ab8fca34026100a46",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 103,
+      "source_name": "IMG_7245.JPG",
+      "source_sha256": "38e835a2e2b94d1d429975d39f0e5e832d478f8927104407879ddcd392120510",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0103_IMG_7245.png",
+      "prepared_sha256": "b0c76b7b26ef22f5c04f01b43a29f45b5445fb798952a846d9297690651c842e",
+      "common_sha256": "05435c9c612608209130d96c1e2e3fdbc9a2da604927171fc56d27b446361bd0",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 104,
+      "source_name": "IMG_7246.JPG",
+      "source_sha256": "e069277894bde07c2ef8c088fe649d5d7f4a280f69bfe86f939b7155e08eee98",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0104_IMG_7246.png",
+      "prepared_sha256": "6cfb1d13fe8813254ccb8be126ee0cbbe40f0225eede078d52e203af8d4273fc",
+      "common_sha256": "e6cd3a53eae6fb3a3f3d74aef283a8f638f2f27388673eb8da18535717b7b916",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 105,
+      "source_name": "IMG_7247.JPG",
+      "source_sha256": "24a2c26966b5a161d201de4c71051de336f30793ef49e660aa54ef4560ce0935",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0105_IMG_7247.png",
+      "prepared_sha256": "7c8d6b1f6245d52ee990d44009c855046bbfbed07a5fdee63c005760bd2db501",
+      "common_sha256": "2b64c663816ed02ec27fd6ec4613c0fb30bdda49b968d33bbf57b24eb9e1435f",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 106,
+      "source_name": "IMG_7248.JPG",
+      "source_sha256": "414d2019e0d61ff2e511dde1aee5fda4f46b02f4a6da0960ad383bb20b2b67d2",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0106_IMG_7248.png",
+      "prepared_sha256": "b2b2f2a7def266a1b3e066e255bdc767062e463169a267f664ae0f030c9ad565",
+      "common_sha256": "9cbf539424f2335691dcff70020de12911572289bc849333ae730fa7b794f098",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 107,
+      "source_name": "IMG_7249.JPG",
+      "source_sha256": "3c49642bc0ee9704cecc69900f32b74c04c545706ee2fa8255eff69622fb0c51",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0107_IMG_7249.png",
+      "prepared_sha256": "4cf64633773a41096ced50a343e1aa0b148ee0e1983f0720014c2f05a9edaf81",
+      "common_sha256": "e555daa93949b24268dcff92e53ec5fb1bb4fe1204b3d0669d13dabb592de148",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 108,
+      "source_name": "IMG_7250.JPG",
+      "source_sha256": "963ef3827032856bcda6bcc9731bc30bbeed106a6fe6b76a9ccd4797014450d8",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0108_IMG_7250.png",
+      "prepared_sha256": "472586da7f8736674db23228b2b40e9f70a61999130d66b74c005c093ad914d2",
+      "common_sha256": "8814fe8f07e6d11d2c4b703816de9de134eba7843aed15b9d55fba202c973814",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 109,
+      "source_name": "IMG_7251.JPG",
+      "source_sha256": "af37e1aa0a494e9b720c5fac4f21fd7844bd18ec2ce442dd9c222a92373881af",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0109_IMG_7251.png",
+      "prepared_sha256": "317cd9da1bf5f6b2564fccc08a63c039b8dc74499800fd9a51d23c390f9a9e78",
+      "common_sha256": "d31829cdec1c37d56936fbe0f57166a294e1f75104ebad973180c389c338f5da",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 110,
+      "source_name": "IMG_7252.JPG",
+      "source_sha256": "0cedd189450b9b7600a9c3dfb64e67002ebac4e11b6e31e5670044cdabca5871",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0110_IMG_7252.png",
+      "prepared_sha256": "835b503f46f99d404985326e7185fab73c3a8f03895abe8677454c30dec1478f",
+      "common_sha256": "9e74c26862dcc70bba274ec7259b58b096cea23fe45426b057d3969bbf15dbad",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 111,
+      "source_name": "IMG_7253.JPG",
+      "source_sha256": "0daa86d1744d2687bfeb342559943964e6ae4878a7d69e41e581d2ddc8d29fee",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0111_IMG_7253.png",
+      "prepared_sha256": "5c73675c377cc19a29e0238eb8d49a3414f08145022dc542d3e9085d6a4f82a6",
+      "common_sha256": "4190071a24d75f533688e8b60e4889f8a0184b03f60366e8bbc6e62d2cf9f8d1",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 112,
+      "source_name": "IMG_7254.JPG",
+      "source_sha256": "d5c57cfe36409f02d18706e9a725abecb6c52216b3616ca22ec86170373a150c",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "clutter_0112_IMG_7254.png",
+      "prepared_sha256": "d19bec6d2992c3b34ff8de0c9070bbc517401419d39e214c55b176c872fbc42f",
+      "common_sha256": "b52ac004b72dd0e4afcbac5b298c753f036a981d5a5cda0c260ea3dff2df9911",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 113,
+      "source_name": "IMG_7255.JPG",
+      "source_sha256": "4cfcbeaf513b09790a44c76da1f04b37773731801ae10ba5e294c44a9a4afe91",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "extra_0113_IMG_7255.png",
+      "prepared_sha256": "aed18a7f6d6d75ce20f2921e7c406d4698f0d9f08d32e1405ab3f82fcd7fe544",
+      "common_sha256": "bcc07661106d184965e36824289ea41383e4e2a1085882f88ea524ba2b2f7a05",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 114,
+      "source_name": "IMG_7256.JPG",
+      "source_sha256": "181875dadf08809887a4aa1d1e96a3dbc3f647733bcebfbbe2b3582f7a6e1baa",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "extra_0114_IMG_7256.png",
+      "prepared_sha256": "fe86b4989444bd45a982a898d5bae6173ccde101893f031a5770d3c5ea3c7547",
+      "common_sha256": "9736a63b5b963495ec57efe01915f75e65137ba19e65a172aaf873f9ad35dd20",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 115,
+      "source_name": "IMG_7257.JPG",
+      "source_sha256": "99fdfc1d10b84e89a4c241876b62d80169b4a772da5e5da1eb9bcd49cfa92fee",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "extra_0115_IMG_7257.png",
+      "prepared_sha256": "0a4e04dbc02b562a7e456868070cd9774e597e67e7d05d2c759fae4ad7585ceb",
+      "common_sha256": "8f24ef7917afd81f5bc21bd37e50c70a472e62533b6126d28152588cb12492fc",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 116,
+      "source_name": "IMG_7258.JPG",
+      "source_sha256": "b31a188e10ef8146c192339bb210322a91c23ba99ad6d1e6c8ee35f143a89877",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "extra_0116_IMG_7258.png",
+      "prepared_sha256": "315e9b8efcdbf4f201e97a18065222b4c3888a4db5b469b7a204f54f55c1dc29",
+      "common_sha256": "597199782be65051d5c11cf64883f523d6c5ebb5ab034214fd6acff3fb79bdec",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 117,
+      "source_name": "IMG_7259.JPG",
+      "source_sha256": "aa80e0366ac44684ab38c9fd49c81c48e330222444458e2adbb2dc84069b3708",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "extra_0117_IMG_7259.png",
+      "prepared_sha256": "ed8a6e7b5d1a088657333ad60ba121d4aeff3a672063b7ce14c213d47ddb415d",
+      "common_sha256": "8eb88db69ad2afda997a491b6a361121c59df15f6037a8efad492e1bd56fb3d6",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 118,
+      "source_name": "IMG_7260.JPG",
+      "source_sha256": "72d1c951a17963adeae218a4f6f505cb3964159edb41040bde3fcd381195d712",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "extra_0118_IMG_7260.png",
+      "prepared_sha256": "c6b836b3d92b8e5cc728226e2690cd08783d2180cfa8fad1a3dddee4517723f3",
+      "common_sha256": "7d6810d4cb2464038c834b9984dd372b0e2536fcb6e3cc9693481effdd01664c",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 119,
+      "source_name": "IMG_7261.JPG",
+      "source_sha256": "063ea81f9e4c8e74a0c6eb8ee03e01a46af8bbdd363501c77e54621aa8333ae6",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "extra_0119_IMG_7261.png",
+      "prepared_sha256": "2c710456683bcb61717eeb7580fed802d50de38c4cd0e2bf0b96785572feba41",
+      "common_sha256": "618fa3ef79176eb4b0e511e1d47791c0f4b8cb0ec10a8d5d73075ecf83a512bf",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 120,
+      "source_name": "IMG_7262.JPG",
+      "source_sha256": "f7f4408e9358e0ca7355d870cae358051eb798c5fa6f1907b3d7af6137c2da20",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "extra_0120_IMG_7262.png",
+      "prepared_sha256": "5acf26fa44b411986ca1b524d3e779432ba55511d5d416c6d2764dccc90ac499",
+      "common_sha256": "01646c2b5f8cc263e9086a1a74009a75fcdbadb2b50dc07976459df0bef7999b",
+      "common_size": [
+        1007,
+        755
+      ]
+    },
+    {
+      "frame_index": 121,
+      "source_name": "IMG_7263.JPG",
+      "source_sha256": "d062f5867692511db8f4099212a10c91563900f2519b618b930477391da9ef8e",
+      "source_size": [
+        4032,
+        3024
+      ],
+      "prepared_name": "excluded_0121_IMG_7263.png",
+      "prepared_sha256": "197a0f493148a06be9907b91aaf432e5ab01e39841f484d29d6f98cb675f4b63",
+      "common_sha256": "cca36643b13a66ea1eb495f559a799c9580a5a04541d7e098415f7ecf4abeb63",
+      "common_size": [
+        1007,
+        755
+      ]
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "schema": "puri-gs-p03-budget-v1",
+  "status": "FROZEN_BEFORE_TRAINING",
+  "identities": 3,
+  "smoke": {
+    "max_attempts_per_identity": 2,
+    "max_updates_per_attempt": 100,
+    "global_update_limit": 600
+  },
+  "formal": {
+    "official_updates_per_run": 30000,
+    "max_attempts_per_identity": 2,
+    "restart_condition": "one diagnosed technical failure only",
+    "automatic_retry": false
+  },
+  "gpu": {
+    "hard_cap_seconds": 43200,
+    "priority": [6, 7, 0, 1, 2, 3, 4, 5],
+    "first_attempt_stage_timeouts_seconds": {
+      "cuda_precheck_all_environments": 600,
+      "ru_corner_features": 1200,
+      "sls_corner_features": 3600,
+      "smoke_training_each": 600,
+      "smoke_native_render_each": 300,
+      "formal_ru": 1800,
+      "formal_robustsplat": 1800,
+      "formal_sls_mlp": 2700,
+      "timing_each": 300,
+      "quality_render_each": 600,
+      "independent_evaluation_each": 600,
+      "ru_inference_memory": 300
+    },
+    "timeout_basis": "P01/P02 observed L20 runtimes plus bounded setup margin; real elapsed GPU time is debited after every stage and no stage may cross the remaining 12-hour cap",
+    "accounted_stages": [
+      "feature extraction",
+      "smoke",
+      "formal training",
+      "native timing",
+      "quality rendering",
+      "independent evaluation",
+      "inference memory measurement",
+      "failed GPU stages"
+    ]
+  },
+  "adaptive_tuning_from_test_results": false
+}

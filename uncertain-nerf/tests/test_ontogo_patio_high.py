@@ -182,8 +182,8 @@ def test_ontogo_patch_is_small_and_keeps_the_ru_algorithm_untouched():
     assert "prepare_puri_gs_efficiency_audit.sh" in prepare
     assert "937e29912570c372bed6747a5c9bf85fed877bae" in prepare
     launcher = (ROOT / "run_puri_gs.py").read_text(encoding="utf-8")
-    assert 'choices=("colmap", "ontogo-patio-high")' in launcher
-    assert "Patio-High requires --train-keyword clutter --test-keyword extra" in launcher
+    assert 'choices=("colmap", "ontogo-patio-high", "ontogo-corner")' in launcher
+    assert "On-the-go prepared data requires --train-keyword clutter --test-keyword extra" in launcher
     assert "dataset_protocol.json" in launcher
     audit = (ROOT / "tools" / "audit_ontogo_patio_high.py").read_text(
         encoding="utf-8"

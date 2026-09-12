@@ -138,7 +138,9 @@ def main():
         "test_names_exact": result["test_names"] == expected_test,
         "excluded_names_exact": result["excluded_names"] == expected_excluded,
         "feature_fit_names_exact": result["feature_fit_names"] == expected_train,
-        "image_size_exact": result["image_sizes"] == [[1007, 755]],
+        "image_size_exact": result["image_sizes"] == [[
+            int(protocol["image_width"]), int(protocol["image_height"])
+        ]],
         "initial_point_count_exact": result["initial_point_count"] == int(protocol["initial_point_count"]),
         "feature_count_exact": (
             len(result["feature_files"]) == len(expected_train)

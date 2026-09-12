@@ -1,0 +1,4 @@
+run_id,scene,method,source_identity,seed,updates,data_factor,loader_factor,train_keyword,test_keyword,loss_type,semantics,cluster,ubp,lower_bound,upper_bound,status
+P03-corner-ru,corner,puri-gs-ru,repository HEAD on ru-part,42,30000,4,4,clutter,extra,ru,true,false,false,,,FROZEN_BEFORE_TRAINING
+P03-corner-robustsplat,corner,robustsplat,a130281d6d0c004032a9a57e8d6a14962d9836d3,42,30000,4,1,clutter,extra,robustsplat,false,false,false,,,FROZEN_BEFORE_TRAINING
+P03-corner-sls-mlp,corner,sls-mlp,0caae3cc45bb1fddf86bd47e4a521888f5c49889,42,30000,4,1,clutter,extra,robust,true,false,false,0.5,0.9,FROZEN_BEFORE_TRAINING

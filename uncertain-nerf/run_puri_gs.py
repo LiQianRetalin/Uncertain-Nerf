@@ -40,6 +40,7 @@ EFFICIENCY_AUDIT_PATCH_PATH = (
     PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_efficiency_audit.patch"
 )
 ONTOGO_PATCH_PATH = PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_ontogo.patch"
+CORNER_PATCH_PATH = PROJECT_ROOT / "patches" / "gsplat_v1.5.3_p03_corner.patch"
 RU_PART_PATCH_PATH = PROJECT_ROOT / "patches" / "gsplat_v1.5.3_puri_gs_ru_part.patch"
 RU_PART_DIAGNOSTIC_PATCH_PATH = (
     PROJECT_ROOT / "patches" / "gsplat_v1.5.3_ru_part_mechanism_diagnostic.patch"
@@ -87,12 +88,24 @@ def _verify_gsplat(
     require_causal: bool = False,
     require_efficiency_audit: bool = False,
     require_ontogo: bool = False,
+    require_corner: bool = False,
     require_paper_control: bool = False,
     require_ru_part: bool = False,
 ) -> None:
     if _git("rev-parse", "HEAD", cwd=gsplat_dir) != EXPECTED_GSPLAT_COMMIT:
         raise RuntimeError("GSPLAT_DIR is not the pinned v1.5.3 checkout")
     source = (gsplat_dir / "examples" / "simple_trainer.py").read_text(encoding="utf-8")
+    if require_corner:
+        _verify_applied_patch(gsplat_dir, CORNER_PATCH_PATH)
+        required_markers = (
+            "puri_gs_ru_enabled",
+            "eval_warmup_renders",
+            "ontogo-corner",
+            "OnTheGoCornerParser",
+        )
+        if any(marker not in source for marker in required_markers):
+            raise RuntimeError("Corner trainer data-adapter patch is incomplete")
+        return
     if "ru_v3_mode:" in source and not require_ru_part:
         _verify_applied_patch(gsplat_dir, PROJECT_ROOT / "patches/gsplat_v1.5.3_ru_part_v3.patch")
         return
@@ -229,14 +242,19 @@ def _verify_dataset(
 ) -> None:
     if (train_keyword is None) != (test_keyword is None):
         raise ValueError("train_keyword and test_keyword must be supplied together")
-    if dataset_format == "ontogo-patio-high":
+    if dataset_format in {"ontogo-patio-high", "ontogo-corner"}:
         if train_keyword != "clutter" or test_keyword != "extra":
             raise ValueError(
-                "Patio-High requires --train-keyword clutter --test-keyword extra"
+                "On-the-go prepared data requires --train-keyword clutter --test-keyword extra"
             )
-        from puri_gs.ontogo import validate_prepared_patio_high
+        if dataset_format == "ontogo-patio-high":
+            from puri_gs.ontogo import validate_prepared_patio_high
 
-        validate_prepared_patio_high(data_dir, factor=data_factor, load_points=False)
+            validate_prepared_patio_high(data_dir, factor=data_factor, load_points=False)
+        else:
+            from puri_gs.ontogo_corner import validate_prepared_corner
+
+            validate_prepared_corner(data_dir, factor=data_factor, load_points=False)
         return
     if dataset_format != "colmap":
         raise ValueError(f"unsupported dataset format: {dataset_format}")
@@ -524,7 +542,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--data-factor", type=int)
     parser.add_argument(
         "--dataset-format",
-        choices=("colmap", "ontogo-patio-high"),
+        choices=("colmap", "ontogo-patio-high", "ontogo-corner"),
         default="colmap",
     )
     parser.add_argument("--train-keyword")
@@ -720,6 +738,7 @@ def main() -> int:
         require_causal=is_causal,
         require_efficiency_audit=bool(args.eval_warmup_renders),
         require_ontogo=args.dataset_format == "ontogo-patio-high",
+        require_corner=args.dataset_format == "ontogo-corner",
         require_paper_control=is_paper_control,
         require_ru_part=is_ru_part,
     )
@@ -812,7 +831,7 @@ def main() -> int:
         (result_dir / "causal_contract.json").write_text(
             json.dumps(contract, indent=2) + "\n", encoding="utf-8"
         )
-    if args.dataset_format == "ontogo-patio-high":
+    if args.dataset_format in {"ontogo-patio-high", "ontogo-corner"}:
         from puri_gs.ontogo import PROTOCOL_FILE, sha256_file
 
         protocol_path = data_dir / PROTOCOL_FILE

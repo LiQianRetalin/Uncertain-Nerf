@@ -1,0 +1,33 @@
+diff --git a/examples/simple_trainer.py b/examples/simple_trainer.py
+--- a/examples/simple_trainer.py
++++ b/examples/simple_trainer.py
+@@ -38,6 +38,7 @@ from puri_gs.responsibility import (
+ )
+ from puri_gs.semantic_mask import masked_photo_loss
+ from puri_gs.ontogo import OnTheGoPatioHighParser
++from puri_gs.ontogo_corner import OnTheGoCornerParser
+ 
+ from gsplat import export_splats
+ from gsplat.compression import PngCompression
+@@ -65,7 +66,7 @@ class Config:
+     # Downsample factor for the dataset
+     data_factor: int = 4
+     # Dataset parser contract; Patio-High is the only non-COLMAP option.
+-    dataset_format: Literal["colmap", "ontogo-patio-high"] = "colmap"
++    dataset_format: Literal["colmap", "ontogo-patio-high", "ontogo-corner"] = "colmap"
+     # Directory to save results
+     result_dir: str = "results/garden"
+     # Every N images there is a test image
+@@ -406,9 +407,9 @@ class Runner:
+ 
+         # Load data: Training data should contain initial points and colors.
+         parser_class = (
+-            Parser
+-            if cfg.dataset_format == "colmap"
+-            else OnTheGoPatioHighParser
++            Parser if cfg.dataset_format == "colmap" else
++            OnTheGoPatioHighParser if cfg.dataset_format == "ontogo-patio-high" else
++            OnTheGoCornerParser
+         )
+         self.parser = parser_class(
+             data_dir=cfg.data_dir,

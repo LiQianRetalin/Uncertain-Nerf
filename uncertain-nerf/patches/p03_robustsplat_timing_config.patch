@@ -1,0 +1,110 @@
+diff --git a/render.py b/render.py
+index e4be1c5..7086f56 100644
+--- a/render.py
++++ b/render.py
+@@ -40,6 +40,29 @@ def render_set(model_path, name, iteration, views, gaussians, pipeline, backgrou
+     if export_float:
+         makedirs(float_path, exist_ok=True)
+ 
++    if timing_repeats > 0 and views:
++        with torch.no_grad():
++            for index in range(timing_warmup):
++                render(views[index % len(views)], gaussians, pipeline, background, use_trained_exp=train_test_exp, separate_sh=separate_sh)["render"].clamp(0.0, 1.0)
++            torch.cuda.synchronize()
++            records = []
++            per_image = []
++            for repeat in range(timing_repeats):
++                total = 0.0
++                for image_index, view in enumerate(views):
++                    torch.cuda.synchronize()
++                    started = time.perf_counter()
++                    render(view, gaussians, pipeline, background, use_trained_exp=train_test_exp, separate_sh=separate_sh)["render"].clamp(0.0, 1.0)
++                    torch.cuda.synchronize()
++                    elapsed = time.perf_counter() - started
++                    total += elapsed
++                    per_image.append({"repeat": repeat + 1, "image_index": image_index, "image_name": os.path.basename(view.image_name), "seconds": elapsed})
++                records.append({"repeat": repeat + 1, "frames": len(views), "seconds": total, "fps": len(views) / total})
++        with open(os.path.join(model_path, name, "ours_{}".format(iteration), "p03_timing.json"), "w") as stream:
++            json.dump({"boundary": "per-view CUDA sync; native render plus clamp; no image write or metrics", "warmup": timing_warmup, "records": records, "per_image": per_image}, stream, indent=2)
++        if os.environ.get("P03_TIMING_ONLY", "0") == "1":
++            return
++
+     for idx, view in enumerate(tqdm(views, desc="Rendering progress")):
+         rendering = render(view, gaussians, pipeline, background, use_trained_exp=train_test_exp, separate_sh=separate_sh)["render"]
+         gt = view.original_image[0:3, :, :]
+@@ -55,22 +78,6 @@ def render_set(model_path, name, iteration, views, gaussians, pipeline, backgrou
+         torchvision.utils.save_image(rendering, os.path.join(render_path, '{0:05d}'.format(idx) + ".png"))
+         torchvision.utils.save_image(gt, os.path.join(gts_path, '{0:05d}'.format(idx) + ".png"))
+ 
+-    if timing_repeats > 0 and views:
+-        with torch.no_grad():
+-            for index in range(timing_warmup):
+-                render(views[index % len(views)], gaussians, pipeline, background, use_trained_exp=train_test_exp, separate_sh=separate_sh)["render"]
+-            torch.cuda.synchronize()
+-            records = []
+-            for repeat in range(timing_repeats):
+-                started = time.perf_counter()
+-                for view in views:
+-                    render(view, gaussians, pipeline, background, use_trained_exp=train_test_exp, separate_sh=separate_sh)["render"]
+-                torch.cuda.synchronize()
+-                elapsed = time.perf_counter() - started
+-                records.append({"repeat": repeat + 1, "frames": len(views), "seconds": elapsed, "fps": len(views) / elapsed})
+-        with open(os.path.join(model_path, name, "ours_{}".format(iteration), "p02_timing.json"), "w") as stream:
+-            json.dump({"boundary": "native render call; no image write or metrics", "warmup": timing_warmup, "records": records}, stream, indent=2)
+-
+ def render_sets(dataset : ModelParams, iteration : int, pipeline : PipelineParams, skip_train : bool, skip_test : bool, separate_sh: bool):
+     export_float = os.environ.get("P02_FLOAT_PREDICTIONS", "0") == "1"
+     timing_warmup = int(os.environ.get("P02_TIMING_WARMUP", "10"))
+@@ -78,6 +85,8 @@ def render_sets(dataset : ModelParams, iteration : int, pipeline : PipelineParam
+     with torch.no_grad():
+         gaussians = GaussianModel(dataset.sh_degree)
+         scene = Scene(dataset, gaussians, load_iteration=iteration, shuffle=False)
++        if os.environ.get("P03_MEASURE_MEMORY", "0") == "1":
++            torch.cuda.reset_peak_memory_stats()
+ 
+         bg_color = [1,1,1] if dataset.white_background else [0, 0, 0]
+         background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
+@@ -87,6 +96,9 @@ def render_sets(dataset : ModelParams, iteration : int, pipeline : PipelineParam
+ 
+         if not skip_test:
+              render_set(dataset.model_path, "test", scene.loaded_iter, scene.getTestCameras(), gaussians, pipeline, background, dataset.train_test_exp, separate_sh, export_float, timing_warmup, timing_repeats)
++        if os.environ.get("P03_MEASURE_MEMORY", "0") == "1":
++            with open(os.path.join(dataset.model_path, "p03_inference_memory.json"), "w") as stream:
++                json.dump({"boundary": "checkpoint loaded; peak reset immediately before native inference", "max_memory_allocated_bytes": torch.cuda.max_memory_allocated(), "max_memory_reserved_bytes": torch.cuda.max_memory_reserved()}, stream, indent=2)
+ 
+ if __name__ == "__main__":
+     # Set up command line argument parser
+diff --git a/train.py b/train.py
+index 0193c5c..29bfc23 100644
+--- a/train.py
++++ b/train.py
+@@ -9,6 +9,7 @@
+ # For inquiries contact  george.drettakis@inria.fr
+ #
+ 
++import json
+ import os
+ import torch
+ import torch.nn.functional as F
+@@ -175,6 +176,11 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
+             Ll1depth = 0
+ 
+         loss.backward()
++        if os.environ.get("P03_SMOKE_AUDIT", "0") == "1" and iteration == 1:
++            grads = [parameter.grad for group in gaussians.optimizer.param_groups for parameter in group["params"] if parameter.grad is not None]
++            if not torch.isfinite(loss).all() or not grads or not all(torch.isfinite(grad).all() for grad in grads):
++                raise RuntimeError("P03 smoke detected a non-finite loss or Gaussian gradient")
++            print("P03_SMOKE_FINITE_LOSS_GRADIENT=PASS loss={:.9g} gradient_tensors={}".format(loss.item(), len(grads)))
+ 
+         # MLP training
+         reset_start = iteration // opt.opacity_reset_interval * opt.opacity_reset_interval
+@@ -335,6 +341,9 @@ if __name__ == "__main__":
+     parser.add_argument("--start_checkpoint", type=str, default = None)
+     args = parser.parse_args(sys.argv[1:])
+     args.save_iterations.append(args.iterations)
++    os.makedirs(args.model_path, exist_ok=True)
++    with open(os.path.join(args.model_path, "p03_resolved_config.json"), "w") as stream:
++        json.dump(vars(args), stream, indent=2, sort_keys=True)
+     
+     print("Optimizing " + args.model_path)
+ 

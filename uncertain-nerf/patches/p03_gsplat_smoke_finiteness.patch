@@ -1,0 +1,16 @@
+diff --git a/examples/simple_trainer.py b/examples/simple_trainer.py
+--- a/examples/simple_trainer.py
++++ b/examples/simple_trainer.py
+@@ -979,6 +979,12 @@ class Runner:
+                     info=info,
+                 )
+             loss.backward()
++            if os.environ.get("P03_SMOKE_AUDIT", "0") == "1" and step == 0:
++                grads = [parameter.grad for parameter in self.splats.parameters() if parameter.grad is not None]
++                if not torch.isfinite(loss).all() or not grads or not all(torch.isfinite(grad).all() for grad in grads):
++                    raise RuntimeError("P03 smoke detected a non-finite loss or Gaussian gradient")
++                print(f"P03_SMOKE_FINITE_LOSS_GRADIENT=PASS loss={loss.item():.9g} gradient_tensors={len(grads)}")
++
+             if self.ru_training is not None and self.ru_training.ru_part is not None:
+                 self.ru_training.ru_part.note_gaussian_backward()
+             if ru_state is not None:

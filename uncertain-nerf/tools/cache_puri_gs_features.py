@@ -29,6 +29,7 @@ EXPECTED_TRAIN_COUNTS = {
     "room": 272,
     "garden": 161,
     "patio_high": 221,
+    "corner": 101,
 }
 
 
@@ -40,7 +41,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--data-factor", type=int, default=4)
     parser.add_argument(
         "--dataset-format",
-        choices=("colmap", "ontogo-patio-high"),
+        choices=("colmap", "ontogo-patio-high", "ontogo-corner"),
         default="colmap",
     )
     parser.add_argument("--output-dir", type=Path, required=True)
@@ -63,6 +64,10 @@ def _load_dataset_classes(gsplat_dir: Path, dataset_format: str):
         from puri_gs.ontogo import OnTheGoPatioHighParser
 
         Parser = OnTheGoPatioHighParser
+    elif dataset_format == "ontogo-corner":
+        from puri_gs.ontogo_corner import OnTheGoCornerParser
+
+        Parser = OnTheGoCornerParser
 
     return Parser, Dataset
 
@@ -71,7 +76,7 @@ def main() -> int:
     args = parse_args()
     if (args.train_keyword is None) != (args.test_keyword is None):
         raise ValueError("train-keyword and test-keyword must be provided together")
-    if args.scene in {"android", "patio_high"} and (
+    if args.scene in {"android", "patio_high", "corner"} and (
         args.train_keyword != "clutter" or args.test_keyword != "extra"
     ):
         raise ValueError(
@@ -95,11 +100,13 @@ def main() -> int:
     building_dir.parent.mkdir(parents=True, exist_ok=True)
     building_dir.mkdir()
 
-    if (args.scene == "patio_high") != (
-        args.dataset_format == "ontogo-patio-high"
-    ):
+    expected_format = {
+        "patio_high": "ontogo-patio-high",
+        "corner": "ontogo-corner",
+    }.get(args.scene, "colmap")
+    if args.dataset_format != expected_format:
         raise ValueError(
-            "patio_high must use --dataset-format ontogo-patio-high and no other scene may use it"
+            f"{args.scene} must use --dataset-format {expected_format}"
         )
 
     Parser, Dataset = _load_dataset_classes(args.gsplat_dir, args.dataset_format)
