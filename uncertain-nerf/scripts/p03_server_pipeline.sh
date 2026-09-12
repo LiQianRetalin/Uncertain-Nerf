@@ -46,6 +46,7 @@ smoke="$p03_root/smoke"
 features="$p03_root/features"
 views="$p03_root/dataset_views"
 gpu_cap_seconds=43200
+prior_gpu_ledger="${P03_PRIOR_GPU_LEDGER:-}"
 LAST_STAGE_EXIT=0
 
 fail_before_root() {
@@ -57,9 +58,19 @@ fail_before_root() {
 [[ -d "$code_root" ]] || fail_before_root "缺少uncertain-nerf代码目录"
 [[ "$p03_root" != "$repo_root" && "$p03_root" != "$repo_root/"* ]] || fail_before_root "P03_WORK_ROOT必须在仓库外"
 [[ ! -e "$p03_root" ]] || fail_before_root "P03_WORK_ROOT已存在；拒绝覆盖或隐式续跑"
+if [[ -n "$prior_gpu_ledger" ]]; then
+  [[ -f "$prior_gpu_ledger" ]] || fail_before_root "缺少历史GPU台账"
+  prior_gpu_ledger="$(realpath "$prior_gpu_ledger")"
+  [[ "$(head -n 1 "$prior_gpu_ledger")" == "stage,category,run_id,gpu,started_epoch,ended_epoch,elapsed_seconds,exit_code,timeout_seconds" ]] || \
+    fail_before_root "历史GPU台账表头不匹配"
+fi
 mkdir -p "$state" "$logs" "$report" "$outputs" "$smoke" "$features" "$views"
 
 printf 'stage,category,run_id,gpu,started_epoch,ended_epoch,elapsed_seconds,exit_code,timeout_seconds\n' > "$state/gpu_stage_events.csv"
+if [[ -n "$prior_gpu_ledger" ]]; then
+  tail -n +2 "$prior_gpu_ledger" >> "$state/gpu_stage_events.csv"
+  cp "$prior_gpu_ledger" "$report/prior_gpu_stage_events.csv"
+fi
 printf 'stage,category,run_id,gpu,epoch,memory_used_mib,utilization_percent\n' > "$state/gpu_memory_samples.csv"
 printf 'stage,category,run_id,gpu,started_epoch,ended_epoch,elapsed_seconds,exit_code,timeout_seconds\n' > "$state/stage_events.csv"
 printf 'run_id,attempt,status,budget_updates,actual_step,gpu,started_epoch,ended_epoch,exit_code,reason\n' > "$state/smoke_ledger.csv"
