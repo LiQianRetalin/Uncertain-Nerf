@@ -47,7 +47,39 @@ def main() -> int:
     formal = read_csv(work / "state/formal_ledger.csv")
     starts = [int(row["started_epoch"]) for row in formal if row["started_epoch"]]
     ends = [int(row["ended_epoch"]) for row in formal if row["ended_epoch"]]
-    commit_epoch = int(command("git", "show", "-s", "--format=%ct", head, cwd=repo))
+    if not starts or not ends:
+        raise RuntimeError("formal ledger has no complete timing boundary")
+    formal_started_epoch_min = min(starts)
+    formal_ended_epoch_max = max(ends)
+    audit_commit_epoch = int(command("git", "show", "-s", "--format=%ct", head, cwd=repo))
+
+    # The checked-out HEAD contains the P02-A audit tools, so it is expected to
+    # postdate the already completed P02 runs.  Recover the last first-parent
+    # repository commit that existed before the first formal run and then prove
+    # that every P02 execution-identity file is unchanged between that commit
+    # and the current audit commit.
+    runtime_commit = command(
+        "git", "rev-list", "--first-parent", "--max-count=1",
+        f"--before=@{formal_started_epoch_min + 1}", head, cwd=repo,
+    )
+    if not runtime_commit:
+        raise RuntimeError("cannot resolve a repository commit before formal training")
+    runtime_commit_epoch = int(command("git", "show", "-s", "--format=%ct", runtime_commit, cwd=repo))
+    p02_identity_files = [
+        "uncertain-nerf/scripts/p02_server_pipeline.sh",
+        "uncertain-nerf/patches/p02_robustsplat_seed_float_timing.patch",
+        "uncertain-nerf/patches/p02_robustsplat_pin_dinov2.patch",
+        "uncertain-nerf/patches/p02_spotless_seed_float_timing.patch",
+        "uncertain-nerf/tools/p02_extract_sls_features.py",
+        "uncertain-nerf/tools/p02_evaluate_predictions.py",
+        "uncertain-nerf/tools/p02_finalize_report.py",
+        "uncertain-nerf/tools/p02_select_gpu.py",
+        "uncertain-nerf/tools/p02_validate_common_inputs.py",
+    ]
+    changed_identity_files = command(
+        "git", "diff", "--name-only", f"{runtime_commit}..{head}", "--",
+        *p02_identity_files, cwd=repo,
+    ).splitlines()
     preflight = json.loads((work / "report/preflight.json").read_text(encoding="utf-8"))
     comparisons = []
     source_map = {"robustsplat": robust, "sls_mlp": spotless}
@@ -63,19 +95,31 @@ def main() -> int:
     result = {
         "schema": "puri-gs-p02a-repository-provenance-v1", "status": "PASS",
         "branch": branch, "head": head, "origin_ru_part": origin,
-        "head_commit_epoch": commit_epoch,
-        "formal_started_epoch_min": min(starts), "formal_ended_epoch_max": max(ends),
-        "head_predates_formal_runs": commit_epoch <= min(starts),
+        "audit_head_commit_epoch": audit_commit_epoch,
+        "audit_head_predates_formal_runs": audit_commit_epoch <= formal_started_epoch_min,
+        "formal_started_epoch_min": formal_started_epoch_min,
+        "formal_ended_epoch_max": formal_ended_epoch_max,
+        "p02_runtime_commit": runtime_commit,
+        "p02_runtime_commit_epoch": runtime_commit_epoch,
+        "p02_runtime_commit_predates_formal_runs": runtime_commit_epoch <= formal_started_epoch_min,
+        "p02_identity_files_checked": p02_identity_files,
+        "p02_identity_files_changed_after_runtime_commit": changed_identity_files,
+        "p02_identity_files_unchanged_since_runtime_commit": not changed_identity_files,
         "head_subject": command("git", "show", "-s", "--format=%s", head, cwd=repo),
+        "p02_runtime_commit_subject": command("git", "show", "-s", "--format=%s", runtime_commit, cwd=repo),
         "head_history": command("git", "log", "-8", "--pretty=format:%H|%ct|%s", cwd=repo).splitlines(),
         "p02_runner_sha256": sha256_file(repo / "uncertain-nerf/scripts/p02_server_pipeline.sh"),
         "robust_source_commit": command("git", "rev-parse", "HEAD", cwd=robust),
         "spotless_source_commit": command("git", "rev-parse", "HEAD", cwd=spotless),
         "preflight_current_file_hash_comparison": comparisons,
         "all_preflight_source_hashes_still_match": bool(comparisons) and all(row["match"] for row in comparisons),
-        "historical_scope": "formal ledger time is after the verified runtime commit; exact current external source hashes are compared to the frozen preflight",
+        "historical_scope": "the audit HEAD may postdate training; the last first-parent commit before formal start is accepted only when all P02 identity files stayed unchanged and exact current external source hashes match the frozen preflight",
     }
-    if not result["head_predates_formal_runs"] or not result["all_preflight_source_hashes_still_match"]:
+    if (
+        not result["p02_runtime_commit_predates_formal_runs"]
+        or not result["p02_identity_files_unchanged_since_runtime_commit"]
+        or not result["all_preflight_source_hashes_still_match"]
+    ):
         result["status"] = "FAIL"
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

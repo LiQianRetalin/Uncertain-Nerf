@@ -327,7 +327,7 @@ def main() -> int:
         raise RuntimeError("P02 must remain COMPLETE")
     head = subprocess.check_output(["git", "-C", str(repo), "rev-parse", "HEAD"], text=True).strip()
     if head != args.expected_runtime_commit:
-        raise RuntimeError(f"runtime commit mismatch: {head}")
+        raise RuntimeError(f"P02-A audit commit mismatch: {head}")
 
     summaries, per_image = build_quality(code, work, output)
     assets = build_assets(output)
@@ -378,7 +378,8 @@ def main() -> int:
     provenance = {
         "schema": "puri-gs-p02a-final-provenance-v1", "verified_utc": datetime.now(timezone.utc).isoformat(),
         "status": "PASS", "p02_historical_status_preserved": original_p02,
-        "runtime_repository": runtime, "expected_runtime_commit": args.expected_runtime_commit,
+        "runtime_repository": runtime, "expected_audit_commit": args.expected_runtime_commit,
+        "p02_runtime_commit": runtime["p02_runtime_commit"],
         "historical_correspondence_limit": "current source hashes are compared with frozen P02 preflight; current loader instantiation alone is not treated as proof of past behavior",
         "weights": weights,
         "evidence_sha256": {str(path.relative_to(output)): sha256_file(path) for path in provenance_files},
@@ -408,7 +409,7 @@ def main() -> int:
         "四套实际loader检查均PASS：两方法×两场景的train/test/excluded分别为Android 122/19/122、Patio-High 221/45/1；主输入1007×755、loader factor1、共同初始化点云匹配。SLS的343个训练特征逐名对应训练图，形状1280×50×50、float32、有限且逐文件有哈希；test/excluded没有进入特征拟合名单。", "",
         "SLS实际配方为robust loss、semantics MLP、no-cluster、no-UBP、30k、seed42；Android 0.5/0.9来自固定代码默认值，Patio 0.3/0.8来自固定上游benchmark脚本。镜像权重来源与实际文件哈希见features/weight_provenance.json；镜像commit不被冒充为与原仓库逐字节等价证明。DINO结构、固定源码提交与权重哈希同样登记。", "",
         "## Checkpoint与运行源码", "",
-        "8个现有checkpoint均只读加载通过，完整绝对路径、SHA-256、字节数、Gaussian数、格式和推理组件见asset_ledger.csv。运行时上游diff、子模块提交、保存配置、实际命令与文件hash位于runtime/。当前核验结合P02训练前preflight的文件hash；不会用当前loader实例化倒推过去必然正确。", "",
+        "8个现有checkpoint均只读加载通过，完整绝对路径、SHA-256、字节数、Gaussian数、格式和推理组件见asset_ledger.csv。运行时上游diff、子模块提交、保存配置、实际命令与文件hash位于runtime/。P02正式训练运行提交与当前P02-A审计提交分别登记；前者必须早于正式训练，且二者之间全部P02身份文件必须未改变。当前核验同时结合P02训练前preflight的外部源码文件hash；不会用当前loader实例化倒推过去必然正确。", "",
         "## 计时与成本", "",
         "旧P01/P02 FPS均保留。因为旧内部原始三遍记录及同期设备负载不能与P02完全闭合，本包按统一规则重计时8个既有模型，共24行；结果见timing_raw.csv，边界见timing_boundary.md。", "",
         "成本表明确保留组合边界：RobustSplat训练进程含DINO准备；SLS训练进程含eval和trajectory；Android SLS 11129秒含首次下载。不能用这些组合时间与内部不完整时间计算‘完整训练加速比’，未知值保持UNKNOWN。", "",
