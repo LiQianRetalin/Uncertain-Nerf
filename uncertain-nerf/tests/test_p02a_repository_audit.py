@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import csv
 import hashlib
+import importlib.util
 import json
 import os
 import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -131,3 +133,32 @@ def test_server_audit_uses_original_internal_eval_protocol_and_gpu_override() ->
     assert '"$android_internal_data" colmap' in script
     assert "P02A_GPU_OVERRIDE" in script
     assert 'data["selection_policy"] = "explicit_user_override_for_this_p02a_run"' in script
+
+
+def test_gpu_guard_waits_for_utilization_to_settle_without_competing_process(
+    tmp_path: Path,
+) -> None:
+    module_path = ROOT / "tools/p02a_gpu_guard.py"
+    spec = importlib.util.spec_from_file_location("p02a_gpu_guard_test", module_path)
+    assert spec is not None
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    inventory_busy_sample = [["4", "GPU-test", "NVIDIA L20", "16", "46068", "25"]]
+    inventory_idle_sample = [["4", "GPU-test", "NVIDIA L20", "16", "46068", "0"]]
+    output = tmp_path / "guard.jsonl"
+    argv = [
+        "p02a_gpu_guard.py", "--physical-gpu", "4", "--label", "settle-test",
+        "--append-jsonl", str(output), "--settle-timeout-seconds", "60",
+    ]
+    with (
+        patch.object(module, "query", side_effect=[inventory_busy_sample, [], inventory_idle_sample, []]),
+        patch.object(module.time, "sleep"),
+        patch.object(sys, "argv", argv),
+    ):
+        assert module.main() == 0
+    record = json.loads(output.read_text(encoding="utf-8"))
+    assert record["idle_pass"] is True
+    assert len(record["samples"]) == 2
+    assert record["samples"][0]["utilization_percent"] == 25
+    assert record["samples"][1]["utilization_percent"] == 0

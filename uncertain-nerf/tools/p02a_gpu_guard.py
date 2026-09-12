@@ -8,6 +8,7 @@ import csv
 import io
 import json
 import subprocess
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -22,18 +23,41 @@ def main() -> int:
     parser.add_argument("--physical-gpu", type=int, required=True)
     parser.add_argument("--label", required=True)
     parser.add_argument("--append-jsonl", type=Path, required=True)
+    parser.add_argument("--settle-timeout-seconds", type=float, default=60.0)
+    parser.add_argument("--poll-interval-seconds", type=float, default=2.0)
     args = parser.parse_args()
-    inventory = query(["nvidia-smi", "--query-gpu=index,uuid,name,memory.used,memory.total,utilization.gpu", "--format=csv,noheader,nounits"])
-    processes = query(["nvidia-smi", "--query-compute-apps=gpu_uuid,pid,used_memory", "--format=csv,noheader,nounits"])
-    row = next(item for item in inventory if int(item[0]) == args.physical_gpu)
-    uuid = row[1]
-    competing = [item for item in processes if item[0] == uuid]
+    if args.settle_timeout_seconds < 0 or args.poll_interval_seconds <= 0:
+        raise ValueError("GPU settle timing arguments are invalid")
+
+    started = time.monotonic()
+    samples = []
+    while True:
+        inventory = query(["nvidia-smi", "--query-gpu=index,uuid,name,memory.used,memory.total,utilization.gpu", "--format=csv,noheader,nounits"])
+        processes = query(["nvidia-smi", "--query-compute-apps=gpu_uuid,pid,used_memory", "--format=csv,noheader,nounits"])
+        row = next(item for item in inventory if int(item[0]) == args.physical_gpu)
+        uuid = row[1]
+        competing = [item for item in processes if item[0] == uuid]
+        idle = not competing and int(row[3]) <= 2048 and int(row[5]) <= 10
+        samples.append({
+            "checked_utc": datetime.now(timezone.utc).isoformat(),
+            "memory_used_mib": int(row[3]),
+            "utilization_percent": int(row[5]),
+            "compute_processes": competing,
+            "idle": idle,
+        })
+        elapsed = time.monotonic() - started
+        if idle or elapsed >= args.settle_timeout_seconds:
+            break
+        time.sleep(min(args.poll_interval_seconds, args.settle_timeout_seconds - elapsed))
+
     result = {
-        "checked_utc": datetime.now(timezone.utc).isoformat(), "label": args.label,
+        "checked_utc": samples[-1]["checked_utc"], "label": args.label,
         "physical_gpu": args.physical_gpu, "uuid": uuid, "name": row[2],
         "memory_used_mib": int(row[3]), "memory_total_mib": int(row[4]),
         "utilization_percent": int(row[5]), "compute_processes": competing,
-        "idle_pass": not competing and int(row[3]) <= 2048 and int(row[5]) <= 10,
+        "idle_pass": idle, "settle_wait_seconds": time.monotonic() - started,
+        "settle_timeout_seconds": args.settle_timeout_seconds,
+        "samples": samples,
     }
     args.append_jsonl.parent.mkdir(parents=True, exist_ok=True)
     with args.append_jsonl.open("a", encoding="utf-8") as stream:
