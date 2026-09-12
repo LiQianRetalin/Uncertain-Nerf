@@ -396,6 +396,7 @@ run_cpu_stage loader_sls loader_audit P03-corner-sls-mlp 1200 \
     --method sls-mlp --source "$spotless_src" --data-dir "$views/spotless/corner" --output "$report/loader_sls.json" || partial_stop loader_sls "SLS实际loader或训练特征集合核验失败"
 run_cpu_stage loader_combined loader_audit corner 900 \
   "$eval_python" "$code_root/tools/p03_loader_audit.py" --prepared-dir "$prepared" --common-dir "$common" \
+    --gsplat-dir "$gsplat_src" \
     --ru-feature-validation "$features/ru_validation.json" --robust-audit "$report/loader_robust.json" \
     --sls-audit "$report/loader_sls.json" --output "$report/loader_audit.json" || partial_stop loader_combined "三方法loader逐名统一核验失败"
 cp "$features/ru/manifest.json" "$report/ru_feature_generation_manifest.json"

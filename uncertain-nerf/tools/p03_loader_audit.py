@@ -28,6 +28,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--prepared-dir", type=Path, required=True)
     parser.add_argument("--common-dir", type=Path, required=True)
+    parser.add_argument("--gsplat-dir", type=Path, required=True)
     parser.add_argument("--ru-feature-validation", type=Path, required=True)
     parser.add_argument("--robust-audit", type=Path, required=True)
     parser.add_argument("--sls-audit", type=Path, required=True)
@@ -35,6 +36,12 @@ def main() -> int:
     args = parser.parse_args()
     prepared = args.prepared_dir.expanduser().resolve()
     common = args.common_dir.expanduser().resolve()
+    gsplat_examples = args.gsplat_dir.expanduser().resolve() / "examples"
+    normalize_module = gsplat_examples / "datasets" / "normalize.py"
+    if not normalize_module.is_file():
+        raise FileNotFoundError(f"missing gsplat normalization module: {normalize_module}")
+    if str(gsplat_examples) not in sys.path:
+        sys.path.insert(0, str(gsplat_examples))
     contract = validate_prepared_corner(prepared, verify_image_hashes=True)
     native = OnTheGoCornerParser(str(prepared), factor=4, normalize=True)
     common_protocol_path = common / "common_input_protocol.json"

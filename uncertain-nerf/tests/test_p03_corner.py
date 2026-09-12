@@ -188,3 +188,4 @@ def test_p03_patches_are_adapter_timing_and_accounting_only():
     assert "P03_COMPLETE_STOP" in pipeline
     assert "--loss_type robust --semantics --no-cluster --lower_bound 0.5 --upper_bound 0.9" in pipeline
     assert "--ubp" not in pipeline
+    assert '--gsplat-dir "$gsplat_src"' in pipeline
