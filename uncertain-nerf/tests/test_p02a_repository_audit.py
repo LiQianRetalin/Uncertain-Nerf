@@ -121,3 +121,13 @@ def test_audit_separates_pretraining_runtime_commit_from_later_audit_head(
     assert result["p02_runtime_commit_predates_formal_runs"] is True
     assert result["p02_identity_files_unchanged_since_runtime_commit"] is True
 
+
+def test_server_audit_uses_original_internal_eval_protocol_and_gpu_override() -> None:
+    script = (ROOT / "scripts/p02a_server_audit.sh").read_text(encoding="utf-8")
+    assert 'android_internal_data="$code_root/data/nerf_robustnerf/robustnerf/android"' in script
+    assert 'patio_internal_data="$code_root/data/nerf_on-the-go/patio_high_v1"' in script
+    assert '--data-dir "$data" --result-dir "$result" --gpu "$gpu" --data-factor 4' in script
+    assert '"$patio_internal_data" ontogo-patio-high' in script
+    assert '"$android_internal_data" colmap' in script
+    assert "P02A_GPU_OVERRIDE" in script
+    assert 'data["selection_policy"] = "explicit_user_override_for_this_p02a_run"' in script

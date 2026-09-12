@@ -21,6 +21,8 @@ spotless_source="$work_root/sources/SpotLessSplats-$spotless_commit"
 robust_env="$work_root/envs/robustsplat"
 spotless_env="$work_root/envs/spotless"
 eval_env="$code_root/.venv-gsplat153"
+android_internal_data="$code_root/data/nerf_robustnerf/robustnerf/android"
+patio_internal_data="$code_root/data/nerf_on-the-go/patio_high_v1"
 log="$work_root/p02a-launcher.log"
 state="$work_root/p02a-state.json"
 
@@ -54,6 +56,8 @@ trap fail_trap ERR
 [[ -f "$work_root/report/status.json" ]] || { echo "缺少P02最终报告" >&2; exit 3; }
 [[ ! -e "$output" ]] || { echo "拒绝覆盖现有P02-A目录: $output" >&2; exit 4; }
 [[ -x "$robust_env/bin/python" && -x "$spotless_env/bin/python" && -x "$eval_env/bin/python" ]] || { echo "缺少既有隔离环境" >&2; exit 3; }
+[[ -d "$android_internal_data/images_4" && -d "$android_internal_data/sparse/0" ]] || { echo "缺少P01 Android原评测数据" >&2; exit 3; }
+[[ -d "$patio_internal_data/images_4" && -f "$patio_internal_data/puri_gs_protocol.json" ]] || { echo "缺少P01 Patio-High原评测数据" >&2; exit 3; }
 
 mkdir -p "$output"/{runtime,loader,features,checkpoints,representatives,timing,logs,historical/p01,historical/p02,saved_configs}
 write_state "preflight" "RUNNING" "只读核对P01/P02与边界" 3
@@ -173,11 +177,36 @@ write_state "representatives" "RUNNING" "导出共同首中末与Patio固定诊�
 
 write_state "gpu_selection" "RUNNING" "按6→7→0→1→2→3→4→5选择单一空闲L20" 50
 gpu="$($eval_env/bin/python "$code_root/tools/p02_select_gpu.py" --output "$output/runtime/gpu_selection.json")"
+if [[ -n "${P02A_GPU_OVERRIDE:-}" ]]; then
+  gpu="$($eval_env/bin/python - "$output/runtime/gpu_selection.json" "$P02A_GPU_OVERRIDE" <<'PY'
+import json, sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+try:
+    requested = int(sys.argv[2])
+except ValueError as exc:
+    raise SystemExit("P02A_GPU_OVERRIDE must be an integer from 0 through 7") from exc
+if requested not in range(8):
+    raise SystemExit("P02A_GPU_OVERRIDE must be an integer from 0 through 7")
+data = json.loads(path.read_text(encoding="utf-8"))
+selected = next((row for row in data["inventory"] if row["physical_index"] == requested), None)
+if selected is None or not selected["idle"]:
+    raise SystemExit(f"requested P02-A GPU is not idle: {selected}")
+data["default_priority_selected"] = data["selected"]
+data["selected"] = selected
+data["selection_policy"] = "explicit_user_override_for_this_p02a_run"
+data["requested_physical_gpu"] = requested
+path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+print(requested)
+PY
+)"
+fi
 [[ "$gpu" =~ ^[0-7]$ ]] || { echo "没有空闲GPU: $gpu" >&2; exit 5; }
 nvidia-smi --query-gpu=index,uuid,name,memory.used,memory.total,utilization.gpu --format=csv,noheader > "$output/runtime/gpu-before-timing.csv"
 
 retime_internal() {
-  local scene="$1" method="$2" config="$3" checkpoint="$4" data="$5"
+  local scene="$1" method="$2" config="$3" checkpoint="$4" data="$5" dataset_format="$6"
   local rid="P02A-$scene-$method"
   for repeat in 1 2 3; do
     local result="$output/timing/$rid/repeat-$repeat"
@@ -185,17 +214,18 @@ retime_internal() {
     "$eval_env/bin/python" "$code_root/tools/p02a_gpu_guard.py" --physical-gpu "$gpu" --label "$rid-repeat-$repeat" --append-jsonl "$output/runtime/gpu-guard.jsonl" >> "$output/logs/gpu-guard.log" 2>&1
     "$eval_env/bin/python" "$code_root/run_puri_gs.py" \
       --config "$code_root/configs/$config" --gsplat-dir "$code_root/external/gsplat-v1.5.3-ru" \
-      --data-dir "$data" --result-dir "$result" --gpu "$gpu" --data-factor 1 \
+      --data-dir "$data" --result-dir "$result" --gpu "$gpu" --data-factor 4 \
+      --dataset-format "$dataset_format" \
       --checkpoint "$checkpoint" --eval-warmup-renders 10 --eval-disable-image-save \
       --train-keyword clutter --test-keyword extra > "$output/logs/timing-$scene-$method-repeat-$repeat.log" 2>&1
   done
 }
 
 write_state "timing_internal" "RUNNING" "B1/RU四模型各3遍" 54
-retime_internal android b1 puri_gs_b1_full30k.yaml "$code_root/logs-puri/ru-generalization-rerun-9e292309/android_b1_30k/ckpts/ckpt_29999_rank0.pt" "$android_data"
-retime_internal android ru puri_gs_ru_full30k.yaml "$code_root/logs-puri/ru-generalization-rerun-9e292309/android_ru_30k/ckpts/ckpt_29999_rank0.pt" "$android_data"
-retime_internal patio_high b1 puri_gs_b1_full30k.yaml "$code_root/logs-puri/ru-generalization-ontogo-749d584b/patio_high_b1_30k/ckpts/ckpt_29999_rank0.pt" "$patio_data"
-retime_internal patio_high ru puri_gs_ru_full30k.yaml "$code_root/logs-puri/ru-generalization-ontogo-749d584b/patio_high_ru_30k/ckpts/ckpt_29999_rank0.pt" "$patio_data"
+retime_internal android b1 puri_gs_b1_full30k.yaml "$code_root/logs-puri/ru-generalization-rerun-9e292309/android_b1_30k/ckpts/ckpt_29999_rank0.pt" "$android_internal_data" colmap
+retime_internal android ru puri_gs_ru_full30k.yaml "$code_root/logs-puri/ru-generalization-rerun-9e292309/android_ru_30k/ckpts/ckpt_29999_rank0.pt" "$android_internal_data" colmap
+retime_internal patio_high b1 puri_gs_b1_full30k.yaml "$code_root/logs-puri/ru-generalization-ontogo-749d584b/patio_high_b1_30k/ckpts/ckpt_29999_rank0.pt" "$patio_internal_data" ontogo-patio-high
+retime_internal patio_high ru puri_gs_ru_full30k.yaml "$code_root/logs-puri/ru-generalization-ontogo-749d584b/patio_high_ru_30k/ckpts/ckpt_29999_rank0.pt" "$patio_internal_data" ontogo-patio-high
 
 write_state "timing_external" "RUNNING" "RobustSplat/SLS四模型各3遍" 72
 for scene in android patio_high; do
