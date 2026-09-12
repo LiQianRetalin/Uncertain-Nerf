@@ -34,6 +34,8 @@ spotless_src="$p02_root/sources/SpotLessSplats-$spotless_commit"
 robust_env="$p02_root/envs/robustsplat"
 spotless_env="$p02_root/envs/spotless"
 conda_exe="$HOME/miniconda3/bin/conda"
+hf_home="$p02_root/hf-home"
+sd_snapshot="$hf_home/hub/models--sd2-community--stable-diffusion-2-1/snapshots/bb2154823665391b4fb29b0b9cf82a198964ee05"
 dino_src="$code_root/external/dinov2"
 dino_weight="$code_root/data/PURI-GS-assets/dinov2/dinov2_vits14_reg4_pretrain.pth"
 state="$p03_root/state"
@@ -207,7 +209,7 @@ stage_ru_features() {
 stage_sls_features() {
   local gpu="$1" allowed="$2"
   timeout --signal=TERM --kill-after=30s "${allowed}s" env CUDA_VISIBLE_DEVICES="$gpu" \
-    HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 DIFFUSERS_OFFLINE=1 \
+    HF_HOME="$hf_home" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 DIFFUSERS_OFFLINE=1 \
     "$conda_exe" run --prefix "$spotless_env" python "$code_root/tools/p02_extract_sls_features.py" \
       --spotless-source "$spotless_src" --data-dir "$views/spotless/corner" \
       --feature-dir "$views/spotless/corner/SD" --output-status "$features/sls_generation.json" --seed 42
@@ -237,7 +239,7 @@ train_robust() {
 train_sls() {
   local gpu="$1" allowed="$2" destination="$3" steps="$4" smoke_mode="$5"
   local -a command=(env CUDA_VISIBLE_DEVICES="$gpu" P03_SMOKE_AUDIT="$smoke_mode" \
-    HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 DIFFUSERS_OFFLINE=1 P03_SKIP_TRAJECTORY=1 \
+    HF_HOME="$hf_home" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 DIFFUSERS_OFFLINE=1 P03_SKIP_TRAJECTORY=1 \
     "$conda_exe" run --prefix "$spotless_env" python "$spotless_src/examples/spotless_trainer.py" \
     --data_dir "$views/spotless/corner" --data_factor 1 --result_dir "$destination" \
     --loss_type robust --semantics --no-cluster --lower_bound 0.5 --upper_bound 0.9 \
@@ -269,7 +271,7 @@ render_sls() {
   local gpu="$1" allowed="$2" destination="$3" step="$4" timing="$5" memory="$6"
   local max_steps=$((step+1))
   timeout --signal=TERM --kill-after=30s "${allowed}s" env CUDA_VISIBLE_DEVICES="$gpu" \
-    HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 DIFFUSERS_OFFLINE=1 P03_SKIP_TRAJECTORY=1 \
+    HF_HOME="$hf_home" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 DIFFUSERS_OFFLINE=1 P03_SKIP_TRAJECTORY=1 \
     P02_FLOAT_PREDICTIONS="$([[ "$timing" == 0 ]] && echo 1 || echo 0)" \
     P02_TIMING_WARMUP=10 P02_TIMING_REPEATS="$timing" \
     P03_TIMING_ONLY="$([[ "$timing" == 3 ]] && echo 1 || echo 0)" P03_MEASURE_MEMORY="$memory" \
@@ -296,7 +298,8 @@ independent_eval() {
 git -C "$repo_root" fetch origin ru-part > "$logs/git_fetch.log" 2>&1
 [[ "$(git -C "$repo_root" rev-parse origin/ru-part)" == "$expected_commit" ]] || fail_before_root "origin/ru-part不是P03运行提交"
 [[ -z "$(git -C "$repo_root" status --porcelain)" ]] || fail_before_root "服务器主仓库工作区不干净"
-[[ -x "$eval_python" && -x "$robust_env/bin/python" && -x "$spotless_env/bin/python" && -x "$conda_exe" ]] || fail_before_root "P02已验证环境或Conda入口不完整"
+[[ -x "$eval_python" && -x "$robust_env/bin/python" && -x "$spotless_env/bin/python" && -x "$conda_exe" && -d "$hf_home" ]] || fail_before_root "P02已验证环境、Conda入口或固定HF缓存不完整"
+[[ -r "$sd_snapshot/model_index.json" && -r "$sd_snapshot/text_encoder/pytorch_model.bin" && -r "$sd_snapshot/unet/diffusion_pytorch_model.bin" && -r "$sd_snapshot/vae/diffusion_pytorch_model.bin" ]] || fail_before_root "P02固定SD2.1快照不完整"
 [[ "$(git -C "$robust_src" rev-parse HEAD)" == "$robust_commit" ]] || fail_before_root "RobustSplat固定提交不匹配"
 [[ "$(git -C "$spotless_src" rev-parse HEAD)" == "$spotless_commit" ]] || fail_before_root "SpotLessSplats固定提交不匹配"
 [[ "$(git -C "$dino_src" rev-parse HEAD)" == "7764ea0f912e53c92e82eb78a2a1631e92725fc8" ]] || fail_before_root "内部DINOv2源码提交不匹配"
@@ -330,6 +333,8 @@ cp "$common/common_input_validation.json" "$report/common_input_validation.json"
 
 nvidia-smi -L > "$report/environment/nvidia_smi_L.txt"
 nvidia-smi --query-gpu=index,uuid,name,driver_version,memory.total --format=csv > "$report/environment/gpu_inventory.csv"
+printf 'conda_exe=%s\nhf_home=%s\nsd_snapshot=%s\n' "$conda_exe" "$hf_home" "$sd_snapshot" > "$report/environment/runtime_paths.txt"
+cp "$p02_root/p02a/features/weight_provenance.json" "$report/environment/p02a_weight_provenance.json"
 "$eval_python" -m pip freeze > "$report/environment/internal_pip_freeze.txt"
 "$conda_exe" run --prefix "$robust_env" python -m pip freeze > "$report/environment/robustsplat_pip_freeze.txt"
 "$conda_exe" run --prefix "$spotless_env" python -m pip freeze > "$report/environment/spotless_pip_freeze.txt"
@@ -373,7 +378,7 @@ if ! run_gpu_stage features_sls features P03-corner-sls-mlp 3600 stage_sls_featu
   exit 1
 fi
 if ! run_cpu_stage validate_features_sls feature_validation P03-corner-sls-mlp 1200 env \
-  HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 DIFFUSERS_OFFLINE=1 \
+  HF_HOME="$hf_home" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 DIFFUSERS_OFFLINE=1 \
   "$conda_exe" run --prefix "$spotless_env" python "$code_root/tools/p02_extract_sls_features.py" \
     --spotless-source "$spotless_src" --data-dir "$views/spotless/corner" \
     --feature-dir "$views/spotless/corner/SD" --output-status "$features/sls_validation.json" --seed 42 --validate-only
