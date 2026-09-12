@@ -33,6 +33,7 @@ robust_src="$p02_root/sources/RobustSplat-$robust_commit"
 spotless_src="$p02_root/sources/SpotLessSplats-$spotless_commit"
 robust_env="$p02_root/envs/robustsplat"
 spotless_env="$p02_root/envs/spotless"
+conda_exe="$HOME/miniconda3/bin/conda"
 dino_src="$code_root/external/dinov2"
 dino_weight="$code_root/data/PURI-GS-assets/dinov2/dinov2_vits14_reg4_pretrain.pth"
 state="$p03_root/state"
@@ -188,9 +189,9 @@ stage_cuda_precheck() {
   timeout --signal=TERM --kill-after=30s "${per_check}s" env CUDA_VISIBLE_DEVICES="$gpu" \
     "$eval_python" -c "import torch; assert torch.cuda.is_available(); x=torch.ones(1,device='cuda'); assert x.item()==1; print(torch.cuda.get_device_name(0)); print('P03_EVAL_CUDA_FORWARD=PASS')"
   timeout --signal=TERM --kill-after=30s "${per_check}s" env CUDA_VISIBLE_DEVICES="$gpu" \
-    conda run --prefix "$robust_env" python -c "import torch; assert torch.cuda.is_available(); print(torch.cuda.get_device_name(0)); print('P03_ROBUST_CUDA_FORWARD=PASS')"
+    "$conda_exe" run --prefix "$robust_env" python -c "import torch; assert torch.cuda.is_available(); print(torch.cuda.get_device_name(0)); print('P03_ROBUST_CUDA_FORWARD=PASS')"
   timeout --signal=TERM --kill-after=30s "${per_check}s" env CUDA_VISIBLE_DEVICES="$gpu" \
-    conda run --prefix "$spotless_env" python -c "import torch; assert torch.cuda.is_available(); print(torch.cuda.get_device_name(0)); print('P03_SPOTLESS_CUDA_FORWARD=PASS')"
+    "$conda_exe" run --prefix "$spotless_env" python -c "import torch; assert torch.cuda.is_available(); print(torch.cuda.get_device_name(0)); print('P03_SPOTLESS_CUDA_FORWARD=PASS')"
 }
 
 stage_ru_features() {
@@ -207,7 +208,7 @@ stage_sls_features() {
   local gpu="$1" allowed="$2"
   timeout --signal=TERM --kill-after=30s "${allowed}s" env CUDA_VISIBLE_DEVICES="$gpu" \
     HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 DIFFUSERS_OFFLINE=1 \
-    conda run --prefix "$spotless_env" python "$code_root/tools/p02_extract_sls_features.py" \
+    "$conda_exe" run --prefix "$spotless_env" python "$code_root/tools/p02_extract_sls_features.py" \
       --spotless-source "$spotless_src" --data-dir "$views/spotless/corner" \
       --feature-dir "$views/spotless/corner/SD" --output-status "$features/sls_generation.json" --seed 42
 }
@@ -225,7 +226,7 @@ train_internal() {
 train_robust() {
   local gpu="$1" allowed="$2" destination="$3" steps="$4" smoke_mode="$5"
   local -a command=(env CUDA_VISIBLE_DEVICES="$gpu" P03_SMOKE_AUDIT="$smoke_mode" \
-    conda run --prefix "$robust_env" python "$robust_src/train.py" \
+    "$conda_exe" run --prefix "$robust_env" python "$robust_src/train.py" \
     -s "$views/robustsplat/corner" -m "$destination" --iterations "$steps" --seed 42 \
     --resolution 1 --eval --disable_viewer --test_iterations "$steps" --save_iterations "$steps" \
     --checkpoint_iterations "$steps" --quiet)
@@ -237,7 +238,7 @@ train_sls() {
   local gpu="$1" allowed="$2" destination="$3" steps="$4" smoke_mode="$5"
   local -a command=(env CUDA_VISIBLE_DEVICES="$gpu" P03_SMOKE_AUDIT="$smoke_mode" \
     HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 DIFFUSERS_OFFLINE=1 P03_SKIP_TRAJECTORY=1 \
-    conda run --prefix "$spotless_env" python "$spotless_src/examples/spotless_trainer.py" \
+    "$conda_exe" run --prefix "$spotless_env" python "$spotless_src/examples/spotless_trainer.py" \
     --data_dir "$views/spotless/corner" --data_factor 1 --result_dir "$destination" \
     --loss_type robust --semantics --no-cluster --lower_bound 0.5 --upper_bound 0.9 \
     --train_keyword clutter --test_keyword extra --seed 42 --max_steps "$steps" \
@@ -260,7 +261,7 @@ render_robust() {
     P02_FLOAT_PREDICTIONS="$([[ "$timing" == 0 ]] && echo 1 || echo 0)" \
     P02_TIMING_WARMUP=10 P02_TIMING_REPEATS="$timing" \
     P03_TIMING_ONLY="$([[ "$timing" == 3 ]] && echo 1 || echo 0)" P03_MEASURE_MEMORY="$memory" \
-    conda run --prefix "$robust_env" python "$robust_src/render.py" \
+    "$conda_exe" run --prefix "$robust_env" python "$robust_src/render.py" \
       -m "$destination" --iteration "$iteration" --skip_train --quiet
 }
 
@@ -272,7 +273,7 @@ render_sls() {
     P02_FLOAT_PREDICTIONS="$([[ "$timing" == 0 ]] && echo 1 || echo 0)" \
     P02_TIMING_WARMUP=10 P02_TIMING_REPEATS="$timing" \
     P03_TIMING_ONLY="$([[ "$timing" == 3 ]] && echo 1 || echo 0)" P03_MEASURE_MEMORY="$memory" \
-    conda run --prefix "$spotless_env" python "$spotless_src/examples/spotless_trainer.py" \
+    "$conda_exe" run --prefix "$spotless_env" python "$spotless_src/examples/spotless_trainer.py" \
       --data_dir "$views/spotless/corner" --data_factor 1 --result_dir "$destination" \
       --loss_type robust --semantics --no-cluster --lower_bound 0.5 --upper_bound 0.9 \
       --train_keyword clutter --test_keyword extra --seed 42 --max_steps "$max_steps" \
@@ -295,7 +296,7 @@ independent_eval() {
 git -C "$repo_root" fetch origin ru-part > "$logs/git_fetch.log" 2>&1
 [[ "$(git -C "$repo_root" rev-parse origin/ru-part)" == "$expected_commit" ]] || fail_before_root "origin/ru-part不是P03运行提交"
 [[ -z "$(git -C "$repo_root" status --porcelain)" ]] || fail_before_root "服务器主仓库工作区不干净"
-[[ -x "$eval_python" && -x "$robust_env/bin/python" && -x "$spotless_env/bin/python" ]] || fail_before_root "P02已验证环境不完整"
+[[ -x "$eval_python" && -x "$robust_env/bin/python" && -x "$spotless_env/bin/python" && -x "$conda_exe" ]] || fail_before_root "P02已验证环境或Conda入口不完整"
 [[ "$(git -C "$robust_src" rev-parse HEAD)" == "$robust_commit" ]] || fail_before_root "RobustSplat固定提交不匹配"
 [[ "$(git -C "$spotless_src" rev-parse HEAD)" == "$spotless_commit" ]] || fail_before_root "SpotLessSplats固定提交不匹配"
 [[ "$(git -C "$dino_src" rev-parse HEAD)" == "7764ea0f912e53c92e82eb78a2a1631e92725fc8" ]] || fail_before_root "内部DINOv2源码提交不匹配"
@@ -330,8 +331,8 @@ cp "$common/common_input_validation.json" "$report/common_input_validation.json"
 nvidia-smi -L > "$report/environment/nvidia_smi_L.txt"
 nvidia-smi --query-gpu=index,uuid,name,driver_version,memory.total --format=csv > "$report/environment/gpu_inventory.csv"
 "$eval_python" -m pip freeze > "$report/environment/internal_pip_freeze.txt"
-conda run --prefix "$robust_env" python -m pip freeze > "$report/environment/robustsplat_pip_freeze.txt"
-conda run --prefix "$spotless_env" python -m pip freeze > "$report/environment/spotless_pip_freeze.txt"
+"$conda_exe" run --prefix "$robust_env" python -m pip freeze > "$report/environment/robustsplat_pip_freeze.txt"
+"$conda_exe" run --prefix "$spotless_env" python -m pip freeze > "$report/environment/spotless_pip_freeze.txt"
 printf 'repo_commit=%s\nrobust_commit=%s\nspotless_commit=%s\ndino_commit=%s\n' \
   "$expected_commit" "$robust_commit" "$spotless_commit" "$(git -C "$dino_src" rev-parse HEAD)" > "$report/environment/source_commits.txt"
 
@@ -341,7 +342,8 @@ if ! run_gpu_stage cuda_precheck preflight corner 600 stage_cuda_precheck; then
 fi
 
 make_view() {
-  local method="$1" view="$views/$method/corner"
+  local method="$1"
+  local view="$views/$method/corner"
   mkdir -p "$view/sparse/0"
   ln -s "$common/images" "$view/images"
   for name in cameras.bin images.bin points3D.bin; do ln -s "$common/sparse/0/$name" "$view/sparse/0/$name"; done
@@ -372,7 +374,7 @@ if ! run_gpu_stage features_sls features P03-corner-sls-mlp 3600 stage_sls_featu
 fi
 if ! run_cpu_stage validate_features_sls feature_validation P03-corner-sls-mlp 1200 env \
   HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 DIFFUSERS_OFFLINE=1 \
-  conda run --prefix "$spotless_env" python "$code_root/tools/p02_extract_sls_features.py" \
+  "$conda_exe" run --prefix "$spotless_env" python "$code_root/tools/p02_extract_sls_features.py" \
     --spotless-source "$spotless_src" --data-dir "$views/spotless/corner" \
     --feature-dir "$views/spotless/corner/SD" --output-status "$features/sls_validation.json" --seed 42 --validate-only
 then
@@ -382,10 +384,10 @@ then
 fi
 
 run_cpu_stage loader_robust loader_audit P03-corner-robustsplat 900 \
-  conda run --prefix "$robust_env" python "$code_root/tools/p02a_loader_audit.py" \
+  "$conda_exe" run --prefix "$robust_env" python "$code_root/tools/p02a_loader_audit.py" \
     --method robustsplat --source "$robust_src" --data-dir "$views/robustsplat/corner" --output "$report/loader_robust.json" || partial_stop loader_robust "RobustSplat实际loader核验失败"
 run_cpu_stage loader_sls loader_audit P03-corner-sls-mlp 1200 \
-  conda run --prefix "$spotless_env" python "$code_root/tools/p02a_loader_audit.py" \
+  "$conda_exe" run --prefix "$spotless_env" python "$code_root/tools/p02a_loader_audit.py" \
     --method sls-mlp --source "$spotless_src" --data-dir "$views/spotless/corner" --output "$report/loader_sls.json" || partial_stop loader_sls "SLS实际loader或训练特征集合核验失败"
 run_cpu_stage loader_combined loader_audit corner 900 \
   "$eval_python" "$code_root/tools/p03_loader_audit.py" --prepared-dir "$prepared" --common-dir "$common" \
@@ -428,7 +430,7 @@ for run_id in "${run_ids[@]}"; do
     checkpoint="$destination/chkpnt100.pth"; family=robustsplat
     if ! run_gpu_stage "smoke_render_$run_id" smoke_render "$run_id" 300 render_robust "$destination" 100 0 0; then end_epoch="$(date +%s)"; printf '%s,1,FAILED,100,100,%s,%s,%s,%s,smoke checkpoint render failed\n' "$run_id" "$gpu" "$start_epoch" "$end_epoch" "$LAST_STAGE_EXIT" >> "$state/smoke_ledger.csv"; smoke_failed=1; continue; fi
     prediction="$destination/test/ours_100/float_predictions"; actual_step=100
-    audit_python=(conda run --prefix "$robust_env" python)
+    audit_python=("$conda_exe" run --prefix "$robust_env" python)
   else
     checkpoint="$destination/ckpts/ckpt_99.pt"; family=sls-mlp
     if ! run_gpu_stage "smoke_render_$run_id" smoke_render "$run_id" 300 render_sls "$destination" 99 0 0; then end_epoch="$(date +%s)"; printf '%s,1,FAILED,100,99,%s,%s,%s,%s,smoke checkpoint render failed\n' "$run_id" "$gpu" "$start_epoch" "$end_epoch" "$LAST_STAGE_EXIT" >> "$state/smoke_ledger.csv"; smoke_failed=1; continue; fi
@@ -475,7 +477,7 @@ for run_id in "${run_ids[@]}"; do
   fi
   gpu="$(cat "$state/current_gpu.txt")"
   if [[ "$run_id" == "P03-corner-ru" ]]; then checkpoint="$destination/ckpts/ckpt_29999_rank0.pt"; actual_step=29999; audit_python=("$eval_python")
-  elif [[ "$run_id" == "P03-corner-robustsplat" ]]; then checkpoint="$destination/chkpnt30000.pth"; actual_step=30000; audit_python=(conda run --prefix "$robust_env" python)
+  elif [[ "$run_id" == "P03-corner-robustsplat" ]]; then checkpoint="$destination/chkpnt30000.pth"; actual_step=30000; audit_python=("$conda_exe" run --prefix "$robust_env" python)
   else checkpoint="$destination/ckpts/ckpt_29999.pt"; actual_step=29999; audit_python=("$eval_python"); fi
   if ! run_cpu_stage "checkpoint_$run_id" checkpoint_audit "$run_id" 900 \
     "${audit_python[@]}" "$code_root/tools/p02a_checkpoint_audit.py" --checkpoint "$checkpoint" --family "$family" \
