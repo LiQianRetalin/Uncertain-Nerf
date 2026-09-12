@@ -197,3 +197,5 @@ def test_p03_patches_are_adapter_timing_and_accounting_only():
     assert 'test_keyword="extra"' in internal_eval
     robust_patch = (ROOT / "patches" / "p03_robustsplat_timing_config.patch").read_text(encoding="utf-8")
     assert "file=sys.stderr, flush=True" in robust_patch
+    finalizer = (ROOT / "tools" / "p03_finalize_report.py").read_text(encoding="utf-8")
+    assert '"float_predictions" in path.parts' in finalizer

@@ -481,6 +481,8 @@ def main() -> int:
     for directory, prefix in ((report, "report"), (state, "state"), (root / "logs", "logs")):
         for path in sorted(directory.rglob("*")):
             if path.is_file():
+                if directory == report and "float_predictions" in path.parts:
+                    continue
                 included.append((path, Path("P03-final") / prefix / path.relative_to(directory)))
     for directory, prefix in ((root / "outputs", "attempt_metadata/formal"), (root / "smoke", "attempt_metadata/smoke")):
         for path in sorted(directory.rglob("*")):
