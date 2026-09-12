@@ -187,6 +187,13 @@ def test_p03_patches_are_adapter_timing_and_accounting_only():
     )
     assert "P03_COMPLETE_STOP" in pipeline
     assert "P03_PRIOR_GPU_LEDGER" in pipeline
+    assert "P03_PRIOR_SMOKE_LEDGER" in pipeline
     assert "--loss_type robust --semantics --no-cluster --lower_bound 0.5 --upper_bound 0.9" in pipeline
     assert "--ubp" not in pipeline
     assert '--gsplat-dir "$gsplat_src"' in pipeline
+
+    internal_eval = (ROOT / "tools" / "p03_internal_eval.py").read_text(encoding="utf-8")
+    assert 'train_keyword="clutter"' in internal_eval
+    assert 'test_keyword="extra"' in internal_eval
+    robust_patch = (ROOT / "patches" / "p03_robustsplat_timing_config.patch").read_text(encoding="utf-8")
+    assert "file=sys.stderr, flush=True" in robust_patch

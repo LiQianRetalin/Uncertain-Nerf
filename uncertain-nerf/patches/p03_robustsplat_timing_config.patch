@@ -94,7 +94,7 @@ index 0193c5c..29bfc23 100644
 +            grads = [parameter.grad for group in gaussians.optimizer.param_groups for parameter in group["params"] if parameter.grad is not None]
 +            if not torch.isfinite(loss).all() or not grads or not all(torch.isfinite(grad).all() for grad in grads):
 +                raise RuntimeError("P03 smoke detected a non-finite loss or Gaussian gradient")
-+            print("P03_SMOKE_FINITE_LOSS_GRADIENT=PASS loss={:.9g} gradient_tensors={}".format(loss.item(), len(grads)))
++            print("P03_SMOKE_FINITE_LOSS_GRADIENT=PASS loss={:.9g} gradient_tensors={}".format(loss.item(), len(grads)), file=sys.stderr, flush=True)
  
          # MLP training
          reset_start = iteration // opt.opacity_reset_interval * opt.opacity_reset_interval

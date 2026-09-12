@@ -47,6 +47,7 @@ features="$p03_root/features"
 views="$p03_root/dataset_views"
 gpu_cap_seconds=43200
 prior_gpu_ledger="${P03_PRIOR_GPU_LEDGER:-}"
+prior_smoke_ledger="${P03_PRIOR_SMOKE_LEDGER:-}"
 LAST_STAGE_EXIT=0
 
 fail_before_root() {
@@ -64,6 +65,12 @@ if [[ -n "$prior_gpu_ledger" ]]; then
   [[ "$(head -n 1 "$prior_gpu_ledger")" == "stage,category,run_id,gpu,started_epoch,ended_epoch,elapsed_seconds,exit_code,timeout_seconds" ]] || \
     fail_before_root "历史GPU台账表头不匹配"
 fi
+if [[ -n "$prior_smoke_ledger" ]]; then
+  [[ -f "$prior_smoke_ledger" ]] || fail_before_root "缺少历史smoke台账"
+  prior_smoke_ledger="$(realpath "$prior_smoke_ledger")"
+  [[ "$(head -n 1 "$prior_smoke_ledger")" == "run_id,attempt,status,budget_updates,actual_step,gpu,started_epoch,ended_epoch,exit_code,reason" ]] || \
+    fail_before_root "历史smoke台账表头不匹配"
+fi
 mkdir -p "$state" "$logs" "$report" "$outputs" "$smoke" "$features" "$views"
 
 printf 'stage,category,run_id,gpu,started_epoch,ended_epoch,elapsed_seconds,exit_code,timeout_seconds\n' > "$state/gpu_stage_events.csv"
@@ -74,6 +81,10 @@ fi
 printf 'stage,category,run_id,gpu,epoch,memory_used_mib,utilization_percent\n' > "$state/gpu_memory_samples.csv"
 printf 'stage,category,run_id,gpu,started_epoch,ended_epoch,elapsed_seconds,exit_code,timeout_seconds\n' > "$state/stage_events.csv"
 printf 'run_id,attempt,status,budget_updates,actual_step,gpu,started_epoch,ended_epoch,exit_code,reason\n' > "$state/smoke_ledger.csv"
+if [[ -n "$prior_smoke_ledger" ]]; then
+  tail -n +2 "$prior_smoke_ledger" >> "$state/smoke_ledger.csv"
+  cp "$prior_smoke_ledger" "$report/prior_smoke_ledger.csv"
+fi
 printf 'run_id,attempt,status,seed,configured_updates,actual_step,gpu,started_epoch,ended_epoch,exit_code,reason\n' > "$state/formal_ledger.csv"
 
 json_string() {
@@ -418,7 +429,17 @@ cp "$features/sls_validation.json" "$report/sls_feature_validation.json"
 declare -a run_ids=(P03-corner-ru P03-corner-robustsplat P03-corner-sls-mlp)
 smoke_failed=0
 for run_id in "${run_ids[@]}"; do
-  destination="$smoke/$run_id/attempt_1"
+  prior_smoke_status="$(awk -F, -v run_id="$run_id" 'NR > 1 && $1 == run_id {status=$3} END {print status}' "$state/smoke_ledger.csv")"
+  prior_smoke_attempts="$(awk -F, -v run_id="$run_id" 'NR > 1 && $1 == run_id {count++} END {print count+0}' "$state/smoke_ledger.csv")"
+  if [[ "$prior_smoke_status" == "PASS" ]]; then
+    continue
+  fi
+  if [[ "$prior_smoke_attempts" -ge 2 ]]; then
+    smoke_failed=1
+    continue
+  fi
+  smoke_attempt=$((prior_smoke_attempts+1))
+  destination="$smoke/$run_id/attempt_$smoke_attempt"
   start_epoch="$(date +%s)"
   printf '%s\n' "$run_id" > "$state/current_run_id.txt"
   if [[ "$run_id" == "P03-corner-ru" ]]; then
@@ -430,42 +451,42 @@ for run_id in "${run_ids[@]}"; do
   fi
   if ! run_gpu_stage "smoke_train_$run_id" smoke "$run_id" 600 "$callback" "$destination" 100 1; then
     exit_code="$LAST_STAGE_EXIT"; gpu="$(cat "$state/current_gpu.txt")"; end_epoch="$(date +%s)"
-    printf '%s,1,FAILED,100,UNKNOWN,%s,%s,%s,%s,training failed; attempt consumed\n' "$run_id" "$gpu" "$start_epoch" "$end_epoch" "$exit_code" >> "$state/smoke_ledger.csv"
+    printf '%s,%s,FAILED,100,UNKNOWN,%s,%s,%s,%s,training failed; attempt consumed\n' "$run_id" "$smoke_attempt" "$gpu" "$start_epoch" "$end_epoch" "$exit_code" >> "$state/smoke_ledger.csv"
     smoke_failed=1
     continue
   fi
   gpu="$(cat "$state/current_gpu.txt")"
   if ! grep -q 'P03_SMOKE_FINITE_LOSS_GRADIENT=PASS' "$logs/smoke_train_$run_id.log"; then
-    end_epoch="$(date +%s)"; printf '%s,1,FAILED,100,UNKNOWN,%s,%s,%s,90,finite loss/gradient evidence missing\n' "$run_id" "$gpu" "$start_epoch" "$end_epoch" >> "$state/smoke_ledger.csv"; smoke_failed=1; continue
+    end_epoch="$(date +%s)"; printf '%s,%s,FAILED,100,UNKNOWN,%s,%s,%s,90,finite loss/gradient evidence missing\n' "$run_id" "$smoke_attempt" "$gpu" "$start_epoch" "$end_epoch" >> "$state/smoke_ledger.csv"; smoke_failed=1; continue
   fi
   if [[ "$run_id" == "P03-corner-ru" ]]; then
     checkpoint="$destination/ckpts/ckpt_99_rank0.pt"; family=internal
-    if ! run_gpu_stage "smoke_render_$run_id" smoke_render "$run_id" 300 render_internal "$checkpoint" "$report/smoke_native/$run_id" 99 quality; then end_epoch="$(date +%s)"; printf '%s,1,FAILED,100,99,%s,%s,%s,%s,smoke checkpoint render failed\n' "$run_id" "$gpu" "$start_epoch" "$end_epoch" "$LAST_STAGE_EXIT" >> "$state/smoke_ledger.csv"; smoke_failed=1; continue; fi
+    if ! run_gpu_stage "smoke_render_$run_id" smoke_render "$run_id" 300 render_internal "$checkpoint" "$report/smoke_native/$run_id" 99 quality; then end_epoch="$(date +%s)"; printf '%s,%s,FAILED,100,99,%s,%s,%s,%s,smoke checkpoint render failed\n' "$run_id" "$smoke_attempt" "$gpu" "$start_epoch" "$end_epoch" "$LAST_STAGE_EXIT" >> "$state/smoke_ledger.csv"; smoke_failed=1; continue; fi
     prediction="$report/smoke_native/$run_id/float_predictions"; actual_step=99
     audit_python=("$eval_python")
   elif [[ "$run_id" == "P03-corner-robustsplat" ]]; then
     checkpoint="$destination/chkpnt100.pth"; family=robustsplat
-    if ! run_gpu_stage "smoke_render_$run_id" smoke_render "$run_id" 300 render_robust "$destination" 100 0 0; then end_epoch="$(date +%s)"; printf '%s,1,FAILED,100,100,%s,%s,%s,%s,smoke checkpoint render failed\n' "$run_id" "$gpu" "$start_epoch" "$end_epoch" "$LAST_STAGE_EXIT" >> "$state/smoke_ledger.csv"; smoke_failed=1; continue; fi
+    if ! run_gpu_stage "smoke_render_$run_id" smoke_render "$run_id" 300 render_robust "$destination" 100 0 0; then end_epoch="$(date +%s)"; printf '%s,%s,FAILED,100,100,%s,%s,%s,%s,smoke checkpoint render failed\n' "$run_id" "$smoke_attempt" "$gpu" "$start_epoch" "$end_epoch" "$LAST_STAGE_EXIT" >> "$state/smoke_ledger.csv"; smoke_failed=1; continue; fi
     prediction="$destination/test/ours_100/float_predictions"; actual_step=100
     audit_python=("$conda_exe" run --prefix "$robust_env" python)
   else
     checkpoint="$destination/ckpts/ckpt_99.pt"; family=sls-mlp
-    if ! run_gpu_stage "smoke_render_$run_id" smoke_render "$run_id" 300 render_sls "$destination" 99 0 0; then end_epoch="$(date +%s)"; printf '%s,1,FAILED,100,99,%s,%s,%s,%s,smoke checkpoint render failed\n' "$run_id" "$gpu" "$start_epoch" "$end_epoch" "$LAST_STAGE_EXIT" >> "$state/smoke_ledger.csv"; smoke_failed=1; continue; fi
+    if ! run_gpu_stage "smoke_render_$run_id" smoke_render "$run_id" 300 render_sls "$destination" 99 0 0; then end_epoch="$(date +%s)"; printf '%s,%s,FAILED,100,99,%s,%s,%s,%s,smoke checkpoint render failed\n' "$run_id" "$smoke_attempt" "$gpu" "$start_epoch" "$end_epoch" "$LAST_STAGE_EXIT" >> "$state/smoke_ledger.csv"; smoke_failed=1; continue; fi
     prediction="$destination/renders/float_step0099"; actual_step=99
     audit_python=("$eval_python")
   fi
   if ! run_cpu_stage "smoke_checkpoint_$run_id" smoke_validation "$run_id" 600 \
     "${audit_python[@]}" "$code_root/tools/p02a_checkpoint_audit.py" --checkpoint "$checkpoint" --family "$family" \
-      --run-id "$run_id-smoke1" --output "$report/smoke_checkpoints/$run_id.json"; then
-    end_epoch="$(date +%s)"; printf '%s,1,FAILED,100,%s,%s,%s,%s,%s,smoke checkpoint reload audit failed\n' "$run_id" "$actual_step" "$gpu" "$start_epoch" "$end_epoch" "$LAST_STAGE_EXIT" >> "$state/smoke_ledger.csv"; smoke_failed=1; continue
+      --run-id "$run_id-smoke$smoke_attempt" --output "$report/smoke_checkpoints/$run_id.json"; then
+    end_epoch="$(date +%s)"; printf '%s,%s,FAILED,100,%s,%s,%s,%s,%s,smoke checkpoint reload audit failed\n' "$run_id" "$smoke_attempt" "$actual_step" "$gpu" "$start_epoch" "$end_epoch" "$LAST_STAGE_EXIT" >> "$state/smoke_ledger.csv"; smoke_failed=1; continue
   fi
   if ! run_cpu_stage "smoke_prediction_$run_id" smoke_validation "$run_id" 600 \
     "$eval_python" "$code_root/tools/p03_prediction_audit.py" --data-dir "$common" --prediction-dir "$prediction" \
-      --run-id "$run_id-smoke1" --output "$report/smoke_predictions/$run_id.json"; then
-    end_epoch="$(date +%s)"; printf '%s,1,FAILED,100,%s,%s,%s,%s,%s,frozen-view size or finiteness audit failed\n' "$run_id" "$actual_step" "$gpu" "$start_epoch" "$end_epoch" "$LAST_STAGE_EXIT" >> "$state/smoke_ledger.csv"; smoke_failed=1; continue
+      --run-id "$run_id-smoke$smoke_attempt" --output "$report/smoke_predictions/$run_id.json"; then
+    end_epoch="$(date +%s)"; printf '%s,%s,FAILED,100,%s,%s,%s,%s,%s,frozen-view size or finiteness audit failed\n' "$run_id" "$smoke_attempt" "$actual_step" "$gpu" "$start_epoch" "$end_epoch" "$LAST_STAGE_EXIT" >> "$state/smoke_ledger.csv"; smoke_failed=1; continue
   fi
   end_epoch="$(date +%s)"
-  printf '%s,1,PASS,100,%s,%s,%s,%s,0,finite loss/gradient; checkpoint reload; 20 frozen views correct\n' "$run_id" "$actual_step" "$gpu" "$start_epoch" "$end_epoch" >> "$state/smoke_ledger.csv"
+  printf '%s,%s,PASS,100,%s,%s,%s,%s,0,finite loss/gradient; checkpoint reload; 20 frozen views correct\n' "$run_id" "$smoke_attempt" "$actual_step" "$gpu" "$start_epoch" "$end_epoch" >> "$state/smoke_ledger.csv"
 done
 
 if [[ "$smoke_failed" -ne 0 ]]; then

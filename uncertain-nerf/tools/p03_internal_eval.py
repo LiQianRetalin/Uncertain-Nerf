@@ -62,6 +62,8 @@ def main() -> int:
         test_every=8,
         val_every=0,
         eval_split="test",
+        train_keyword="clutter",
+        test_keyword="extra",
         sh_degree=3,
         ssim_lambda=0.2,
         tb_every=0,
