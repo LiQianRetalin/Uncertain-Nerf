@@ -1,7 +1,7 @@
 diff --git a/examples/simple_trainer.py b/examples/simple_trainer.py
 --- a/examples/simple_trainer.py
 +++ b/examples/simple_trainer.py
-@@ -979,6 +979,12 @@ class Runner:
+@@ -948,6 +948,12 @@ class Runner:
                      info=info,
                  )
              loss.backward()
@@ -11,6 +11,6 @@ diff --git a/examples/simple_trainer.py b/examples/simple_trainer.py
 +                    raise RuntimeError("P03 smoke detected a non-finite loss or Gaussian gradient")
 +                print(f"P03_SMOKE_FINITE_LOSS_GRADIENT=PASS loss={loss.item():.9g} gradient_tensors={len(grads)}")
 +
-             if self.ru_training is not None and self.ru_training.ru_part is not None:
-                 self.ru_training.ru_part.note_gaussian_backward()
              if ru_state is not None:
+                 self.ru_training.assert_photo_gradient_isolation()
+                 self.ru_training.complete_mask_supervision(
