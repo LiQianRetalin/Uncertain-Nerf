@@ -1,0 +1,22 @@
+{
+  "step": 19999,
+  "sha256": "a4320304bfad75a68e819d97a3aa17c1cb248b09d4c996c6aa139b59a2435eff",
+  "bytes": 397773475,
+  "keys": [
+    "cfg_sha256",
+    "completed_step",
+    "feature_manifest_sha256",
+    "gaussian_optimizers",
+    "next_step",
+    "rng",
+    "ru_state",
+    "sampler",
+    "schedulers",
+    "selected_ids",
+    "sh_degree_next",
+    "shadow_rows",
+    "splats",
+    "strategy_state"
+  ],
+  "boundary": "after all original updates; before next forward/head update"
+}

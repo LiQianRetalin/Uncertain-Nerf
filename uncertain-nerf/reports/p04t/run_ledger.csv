@@ -1,0 +1,3 @@
+attempt,phase,status,updates,extra_calls,reason,seconds
+0,preflight,PASS_WITH_TWO_FIXTURE_FAILURES,0,17,synthetic reference PASS; real-state D isolation PASS; fixture missing _region/camera_model corrected without changing tolerances,
+1,formal_parent_training,COMPLETE,20000,241,normal stop at step19999,416.364

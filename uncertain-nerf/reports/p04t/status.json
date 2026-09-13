@@ -1,0 +1,17 @@
+{
+  "package": "P04-T",
+  "run_id": "P04T-android-ru-seed42-evidence-20k",
+  "execution": "COMPLETE_VALIDATED",
+  "research_recommendation": "INCONCLUSIVE_STOP",
+  "normal_parent_updates": 20000,
+  "formal_training_attempts": 1,
+  "extra_diagnostic_calls_charged": 254,
+  "extra_diagnostic_calls_limit": 300,
+  "gpu_wall_upper_bound_seconds": 509.72,
+  "gpu_wall_limit_seconds": 7200,
+  "W1_event_alignment": "PASS",
+  "W2_event_alignment": "PASS",
+  "snapshot_readback_and_sha": "PASS",
+  "reason": "OAC has a nonuniform, interpretable ranking effect but the fixed D moments affected zero low-evidence probes and did not establish an advantage over G0 or the simple a*u control.",
+  "next_action": "Return P04-T evidence to the scheme assistant; do not start P05, R, another P04 supplement, or a 30k extension."
+}

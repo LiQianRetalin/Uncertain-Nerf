@@ -1,0 +1,11 @@
+{
+  "status": "P04T_REAL_STATE_D_ISOLATION_PASS",
+  "source": "historical Android RU step29999; pretraining verification only",
+  "image_name": "2clutter019.JPG",
+  "sampled_gaussians": 512,
+  "A_projected_count": 129,
+  "D_region_pixels": 38140,
+  "D_region_contribution_positive": 13,
+  "live_state_sha256_before_after": "47bef10fd4917961c7107e3ebe60a35e7f448740714bec4d6b263b3b5574271c",
+  "charged_extra_calls_total": 17
+}

@@ -1,0 +1,96 @@
+{
+  "status": "P04T_PREFLIGHT_PASS",
+  "tolerance_frozen_before_gpu_result": {
+    "attribution_abs": 0.0002,
+    "attribution_rel": 0.0002,
+    "gradient_abs": 2e-06
+  },
+  "independent_attribution": {
+    "max_abs_by_channel": [
+      3.258082770685178e-06,
+      3.258082770685178e-06,
+      0.0,
+      1.2424948501177369e-06,
+      0.0
+    ],
+    "alpha_max_abs": 1.243554330621066e-07,
+    "cases": {
+      "overlap": 256,
+      "alpha_skip": 258,
+      "negative_sigma": 255,
+      "early_stop": 9,
+      "full_accept": 256,
+      "full_reject": 256
+    }
+  },
+  "original_gradient_and_G0": {
+    "original_screen_gradient": 19.525623321533203,
+    "original_count": [
+      1.0,
+      0.0
+    ],
+    "G0": [
+      3.0,
+      6.0
+    ],
+    "opportunity": [
+      1.5,
+      0.25
+    ]
+  },
+  "sampler_first_3_epochs": [
+    15,
+    6,
+    8,
+    2,
+    13,
+    9,
+    0,
+    10,
+    4,
+    16,
+    3,
+    5,
+    7,
+    14,
+    11,
+    12,
+    1,
+    15,
+    16,
+    1,
+    6,
+    7,
+    0,
+    9,
+    13,
+    3,
+    8,
+    5,
+    10,
+    4,
+    2,
+    12,
+    14,
+    11,
+    6,
+    4,
+    16,
+    10,
+    1,
+    12,
+    14,
+    8,
+    15,
+    7,
+    9,
+    11,
+    13,
+    0,
+    2,
+    3,
+    5
+  ],
+  "gpu_elapsed_ms": 1159.1744384765625,
+  "charged_extra_calls": 1
+}

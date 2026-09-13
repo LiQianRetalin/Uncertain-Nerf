@@ -1,0 +1,56 @@
+{
+  "status": "P04T_TIMING_PASS",
+  "terminal_state_only": true,
+  "image_name": "2clutter019.JPG",
+  "sample_count": 3,
+  "warmup_count": 1,
+  "charged_extra_calls_this_stage": 13,
+  "charged_extra_calls_total": 254,
+  "base_median_ms": 3.0368550214916468,
+  "base_plus_probe_median_ms": 5.11511811055243,
+  "paired_increment_median_ms": 2.1151448599994183,
+  "base_incremental_peak_bytes_median": 187844608,
+  "pair_incremental_peak_bytes_median": 187844608,
+  "memory_interpretation": "compare incremental peaks only; allocator-cache artifacts remain possible",
+  "timing_includes": "render, probe selection-map creation, GPU-to-CPU probe transfer and synchronization",
+  "timing_excludes": "DINO/head, photometric backward, optimizer, topology and data preparation",
+  "stage_wall_seconds": 3.3521138969808817,
+  "samples": [
+    {
+      "repeat": 0,
+      "warmup": true,
+      "base_seconds": 0.30761244986206293,
+      "base_plus_probe_seconds": 0.49935471802018583,
+      "base_incremental_peak_bytes": 187685888,
+      "pair_incremental_peak_bytes": 187685888,
+      "probe_nonzero": 250
+    },
+    {
+      "repeat": 1,
+      "warmup": false,
+      "base_seconds": 0.0031371950171887875,
+      "base_plus_probe_seconds": 0.005252339877188206,
+      "base_incremental_peak_bytes": 187844608,
+      "pair_incremental_peak_bytes": 187844608,
+      "probe_nonzero": 250
+    },
+    {
+      "repeat": 2,
+      "warmup": false,
+      "base_seconds": 0.0030368550214916468,
+      "base_plus_probe_seconds": 0.00511511811055243,
+      "base_incremental_peak_bytes": 189189120,
+      "pair_incremental_peak_bytes": 189189120,
+      "probe_nonzero": 250
+    },
+    {
+      "repeat": 3,
+      "warmup": false,
+      "base_seconds": 0.0028264671564102173,
+      "base_plus_probe_seconds": 0.005112710176035762,
+      "base_incremental_peak_bytes": 187193344,
+      "pair_incremental_peak_bytes": 187193344,
+      "probe_nonzero": 250
+    }
+  ]
+}

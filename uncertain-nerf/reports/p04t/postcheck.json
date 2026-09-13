@@ -1,0 +1,104 @@
+{
+  "status": "P04T_POSTCHECK_PASS",
+  "normal_updates": 20000,
+  "training_attempts": 1,
+  "charged_extra_calls": 241,
+  "call_kinds": {
+    "independent_reference_gpu_probe": 1,
+    "real_state_mask_head_forward": 3,
+    "real_state_A_render_forward": 3,
+    "real_state_A_photo_backward": 3,
+    "real_state_A_exact_probe_forward": 3,
+    "real_state_D_clone_render_forward": 2,
+    "real_state_D_clone_photo_backward": 1,
+    "real_state_D_and_R_exact_probe_forward": 1,
+    "A_exact_probe_forward": 200,
+    "D_clone_render_forward": 8,
+    "D_clone_photo_backward": 8,
+    "D_and_R_exact_probe_forward": 8
+  },
+  "gpu_wall_upper_bound_seconds": 500.096,
+  "snapshots": [
+    {
+      "completed_step": 10999,
+      "path_server": "/home/chenglong/P04T-work/states/complete_after_step10999.pt",
+      "sha256": "757e2c945118d2622f0cae73cc6a73249de2363cbceff6c6e4a852d34a071927",
+      "bytes": 200614307,
+      "gaussians": 278522,
+      "sh_degree_next": 3,
+      "sampler_next_step": 11000,
+      "keys_complete": true,
+      "readback": "PASS"
+    },
+    {
+      "completed_step": 18999,
+      "path_server": "/home/chenglong/P04T-work/states/complete_after_step18999.pt",
+      "sha256": "8c2f6371a67604ea16fabeb8c383c8438d37022af774c63145771029fb96c7d2",
+      "bytes": 384792163,
+      "gaussians": 535767,
+      "sh_degree_next": 3,
+      "sampler_next_step": 19000,
+      "keys_complete": true,
+      "readback": "PASS"
+    },
+    {
+      "completed_step": 19999,
+      "path_server": "/home/chenglong/P04T-work/states/complete_after_step19999.pt",
+      "sha256": "a4320304bfad75a68e819d97a3aa17c1cb248b09d4c996c6aa139b59a2435eff",
+      "bytes": 397773475,
+      "gaussians": 555336,
+      "sh_degree_next": 3,
+      "sampler_next_step": 20000,
+      "keys_complete": true,
+      "readback": "PASS"
+    }
+  ],
+  "windows": {
+    "W1": {
+      "step_start": 10901,
+      "event_step": 11000,
+      "A_probe_steps": 100,
+      "D_moments": [
+        10901,
+        10934,
+        10967,
+        11000
+      ],
+      "probe_ids": 512,
+      "data_sha256": "1ca8e932eef5df7ee0d7eca5ed30436c4f13876cb7e76b2c3bcb8e2ce41c7b41",
+      "alignment": {
+        "event_step": 11000,
+        "read_point": "after original _update_state, before grow/prune/clear",
+        "count_max_abs": 0.0,
+        "grad_max_abs": 0.0,
+        "grad_max_relative": 0.0,
+        "count_exact": true,
+        "grad_tolerance_pre_registered": "abs<=2e-5 or relative<=2e-4",
+        "grad_pass": true
+      }
+    },
+    "W2": {
+      "step_start": 18901,
+      "event_step": 19000,
+      "A_probe_steps": 100,
+      "D_moments": [
+        18901,
+        18934,
+        18967,
+        19000
+      ],
+      "probe_ids": 512,
+      "data_sha256": "39b6c5ec9eee230c4b7af2357abc6642906ba472d13d56d514feba876321896e",
+      "alignment": {
+        "event_step": 19000,
+        "read_point": "after original _update_state, before grow/prune/clear",
+        "count_max_abs": 0.0,
+        "grad_max_abs": 0.0,
+        "grad_max_relative": 0.0,
+        "count_exact": true,
+        "grad_tolerance_pre_registered": "abs<=2e-5 or relative<=2e-4",
+        "grad_pass": true
+      }
+    }
+  }
+}

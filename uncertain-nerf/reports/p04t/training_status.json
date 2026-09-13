@@ -1,0 +1,10 @@
+{
+  "run_id": "P04T-android-ru-seed42-evidence-20k",
+  "stage": "COMPLETE",
+  "attempt": 1,
+  "completed_step": 19999,
+  "cumulative_updates": 20000,
+  "charged_extra_calls": 241,
+  "wall_seconds_this_attempt": 410.096,
+  "gpu_wall_upper_bound_seconds": 500.096
+}

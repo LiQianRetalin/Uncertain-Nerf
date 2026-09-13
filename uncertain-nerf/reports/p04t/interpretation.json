@@ -1,0 +1,312 @@
+{
+  "W1": {
+    "same_K": 52,
+    "topK_overlap": {
+      "OAC_G0": 45,
+      "OAC_G0x2": 45,
+      "simple_G0": 29,
+      "OAC_simple": 34,
+      "OAC_pixel": 40,
+      "OAC_react": 33
+    },
+    "oac_only_vs_simple": {
+      "count": 18,
+      "n_minus_c": {
+        "median": 0.0,
+        "max": 11.0
+      },
+      "c_minus_A": {
+        "median": 0.554217579244753,
+        "max": 16.70174269122669
+      },
+      "visibility_factor": {
+        "median": 1.0,
+        "max": 1.1492537313432836
+      },
+      "rejection_factor": {
+        "median": 1.0220867924366674,
+        "max": 1.2595818018106764
+      },
+      "G0": {
+        "median": 0.0005292692181321401,
+        "max": 0.0008433726070506964
+      },
+      "oac": {
+        "median": 0.0005901861460968745,
+        "max": 0.0008433726070506964
+      },
+      "simple": {
+        "median": 0.0006780827170917824,
+        "max": 0.0007955460194783912
+      }
+    },
+    "simple_only_vs_oac": {
+      "count": 18,
+      "n_minus_c": {
+        "median": 5.0,
+        "max": 21.0
+      },
+      "c_minus_A": {
+        "median": 4.975084915682089,
+        "max": 18.419642846112552
+      },
+      "visibility_factor": {
+        "median": 1.1027517564402811,
+        "max": 1.4444444444444444
+      },
+      "rejection_factor": {
+        "median": 1.0813418170585853,
+        "max": 3.998920508017671
+      },
+      "G0": {
+        "median": 0.00028554182733539165,
+        "max": 0.00042241548205185
+      },
+      "oac": {
+        "median": 0.00033260787619612424,
+        "max": 0.0005350525001295855
+      },
+      "simple": {
+        "median": 0.0015443415752850352,
+        "max": 0.0028815160129349524
+      }
+    },
+    "affected_count": 68,
+    "affected_low_evidence_A_lt_1": 0,
+    "delta": {
+      "G0": {
+        "affected_abs": {
+          "median": 4.040575576430066e-07,
+          "max": 1.926362671403456e-05
+        },
+        "low_evidence_affected_abs": {
+          "median": null,
+          "max": null
+        },
+        "affected_positive_count": 10,
+        "affected_negative_count": 58
+      },
+      "simple": {
+        "affected_abs": {
+          "median": 5.218541347082101e-07,
+          "max": 7.170442347308832e-05
+        },
+        "low_evidence_affected_abs": {
+          "median": null,
+          "max": null
+        },
+        "affected_positive_count": 4,
+        "affected_negative_count": 64
+      },
+      "oac": {
+        "affected_abs": {
+          "median": 7.034658457947903e-07,
+          "max": 2.1547628998164117e-05
+        },
+        "low_evidence_affected_abs": {
+          "median": null,
+          "max": null
+        },
+        "affected_positive_count": 6,
+        "affected_negative_count": 62
+      },
+      "OAC_minus_G0_extra": {
+        "affected_abs": {
+          "median": 1.5515616298193038e-07,
+          "max": 9.949735252467507e-06
+        },
+        "low_evidence_affected_abs": {
+          "median": null,
+          "max": null
+        }
+      }
+    },
+    "top5_abs_extra_ids": [
+      {
+        "id": 75723,
+        "delta_OAC_minus_delta_G0": -9.949735252467507e-06,
+        "delta_OAC": -8.960786054125133e-06,
+        "delta_G0": 9.88949198342374e-07
+      },
+      {
+        "id": 59223,
+        "delta_OAC_minus_delta_G0": -8.364555149304419e-06,
+        "delta_OAC": -8.856961462077933e-06,
+        "delta_G0": -4.924063127735145e-07
+      },
+      {
+        "id": 49883,
+        "delta_OAC_minus_delta_G0": -8.297556072071573e-06,
+        "delta_OAC": -8.603033982028494e-06,
+        "delta_G0": -3.054779099569203e-07
+      },
+      {
+        "id": 94426,
+        "delta_OAC_minus_delta_G0": -5.9951459065676026e-06,
+        "delta_OAC": -2.1547628998164117e-05,
+        "delta_G0": -1.5552483091596514e-05
+      },
+      {
+        "id": 53260,
+        "delta_OAC_minus_delta_G0": -5.196019418026007e-06,
+        "delta_OAC": -1.9480109407073295e-05,
+        "delta_G0": -1.4284089989047288e-05
+      }
+    ]
+  },
+  "W2": {
+    "same_K": 52,
+    "topK_overlap": {
+      "OAC_G0": 40,
+      "OAC_G0x2": 40,
+      "simple_G0": 29,
+      "OAC_simple": 38,
+      "OAC_pixel": 37,
+      "OAC_react": 37
+    },
+    "oac_only_vs_simple": {
+      "count": 14,
+      "n_minus_c": {
+        "median": 0.5,
+        "max": 14.0
+      },
+      "c_minus_A": {
+        "median": 1.8208590629304044,
+        "max": 12.752577014137806
+      },
+      "visibility_factor": {
+        "median": 1.0217391304347827,
+        "max": 1.3125
+      },
+      "rejection_factor": {
+        "median": 1.0913778354127317,
+        "max": 2.1587659405969357
+      },
+      "G0": {
+        "median": 0.00035390673450213703,
+        "max": 0.0005090869123126719
+      },
+      "oac": {
+        "median": 0.00041896265806261985,
+        "max": 0.0005090869123126719
+      },
+      "simple": {
+        "median": 0.0005301013599719657,
+        "max": 0.0005771210597449776
+      }
+    },
+    "simple_only_vs_oac": {
+      "count": 14,
+      "n_minus_c": {
+        "median": 9.5,
+        "max": 30.0
+      },
+      "c_minus_A": {
+        "median": 3.5,
+        "max": 21.365915236354226
+      },
+      "visibility_factor": {
+        "median": 1.19375,
+        "max": 1.6666666666666667
+      },
+      "rejection_factor": {
+        "median": 1.0806880888475223,
+        "max": 3.02653101789171
+      },
+      "G0": {
+        "median": 0.00019747408082643655,
+        "max": 0.0003045040919606176
+      },
+      "oac": {
+        "median": 0.0002684559778253035,
+        "max": 0.000363163297263893
+      },
+      "simple": {
+        "median": 0.0007064179801661009,
+        "max": 0.0016284710369087545
+      }
+    },
+    "affected_count": 66,
+    "affected_low_evidence_A_lt_1": 0,
+    "delta": {
+      "G0": {
+        "affected_abs": {
+          "median": 2.727597113392725e-07,
+          "max": 2.7460666024126134e-05
+        },
+        "low_evidence_affected_abs": {
+          "median": null,
+          "max": null
+        },
+        "affected_positive_count": 19,
+        "affected_negative_count": 47
+      },
+      "simple": {
+        "affected_abs": {
+          "median": 6.780463151459909e-07,
+          "max": 0.00014911022390580973
+        },
+        "low_evidence_affected_abs": {
+          "median": null,
+          "max": null
+        },
+        "affected_positive_count": 3,
+        "affected_negative_count": 63
+      },
+      "oac": {
+        "affected_abs": {
+          "median": 5.493524810578482e-07,
+          "max": 4.1168461872362794e-05
+        },
+        "low_evidence_affected_abs": {
+          "median": null,
+          "max": null
+        },
+        "affected_positive_count": 7,
+        "affected_negative_count": 59
+      },
+      "OAC_minus_G0_extra": {
+        "affected_abs": {
+          "median": 9.029299704347112e-08,
+          "max": 2.7377779127288977e-05
+        },
+        "low_evidence_affected_abs": {
+          "median": null,
+          "max": null
+        }
+      }
+    },
+    "top5_abs_extra_ids": [
+      {
+        "id": 518717,
+        "delta_OAC_minus_delta_G0": -2.7377779127288977e-05,
+        "delta_OAC": -1.7425652351472486e-05,
+        "delta_G0": 9.952126775816491e-06
+      },
+      {
+        "id": 394383,
+        "delta_OAC_minus_delta_G0": -2.0584230936181397e-05,
+        "delta_OAC": -4.1168461872362794e-05,
+        "delta_G0": -2.0584230936181397e-05
+      },
+      {
+        "id": 129458,
+        "delta_OAC_minus_delta_G0": 1.380464527755976e-05,
+        "delta_OAC": 2.760929055511952e-05,
+        "delta_G0": 1.380464527755976e-05
+      },
+      {
+        "id": 264700,
+        "delta_OAC_minus_delta_G0": 9.30343121536748e-06,
+        "delta_OAC": 3.190231950061861e-05,
+        "delta_G0": 2.259888828525113e-05
+      },
+      {
+        "id": 461775,
+        "delta_OAC_minus_delta_G0": -8.908477355787131e-06,
+        "delta_OAC": -6.693598760863426e-06,
+        "delta_G0": 2.2148785949237053e-06
+      }
+    ]
+  }
+}

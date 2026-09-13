@@ -1,0 +1,376 @@
+{
+  "W1": {
+    "steps": [
+      10901,
+      11000
+    ],
+    "probe_count": 512,
+    "eligible_count": 512,
+    "same_K": 52,
+    "camera_count_distinct": 85,
+    "A_n_quantiles": [
+      1.0,
+      9.0,
+      14.0,
+      26.0,
+      77.0,
+      96.90000000000003,
+      100.0
+    ],
+    "A_opportunity_quantiles": [
+      0.0,
+      7.100000000000001,
+      12.0,
+      22.353590021681164,
+      57.980949888599554,
+      66.58379761428058,
+      90.25290428902204
+    ],
+    "A_n_over_A_quantiles": [
+      1.0,
+      1.0,
+      1.0625,
+      1.2104954254714855,
+      1.3594523971623649,
+      1.5893592454596266,
+      8776.700430398198
+    ],
+    "projection_no_contribution_total": 2694,
+    "contribution_rejected_total": 2782.397786535669,
+    "support_gate_pass_A": 491,
+    "cap_active_A": 8,
+    "oac_over_G0_quantiles": [
+      1.0,
+      1.0,
+      1.0328213478415744,
+      1.1766429259666578,
+      1.3033223120539348,
+      1.4598882008029535,
+      2.0
+    ],
+    "oac_equals_G0x2_count": 8,
+    "raw_u_over_one_max": 1.574341383925315e-07,
+    "u_clipped": false,
+    "d_region_pixels_each": [
+      38140,
+      38139,
+      37977,
+      38052
+    ],
+    "d_region_gaussians_positive_each": [
+      28,
+      16,
+      25,
+      13
+    ],
+    "d_region_total_contribution_each": [
+      30.98419189453125,
+      32.66995620727539,
+      18.192398071289062,
+      42.12544631958008
+    ],
+    "truly_affected_probe_count": 68,
+    "affected_projected_probe_count": 68,
+    "threshold": {
+      "G0": {
+        "A_above": 26,
+        "shadow_above": 26,
+        "enter": 0,
+        "exit": 0,
+        "near_A_above": 16
+      },
+      "pixel": {
+        "A_above": 75,
+        "shadow_above": 75,
+        "enter": 0,
+        "exit": 0,
+        "near_A_above": 36
+      },
+      "react": {
+        "A_above": 70,
+        "shadow_above": 70,
+        "enter": 0,
+        "exit": 0,
+        "near_A_above": 32
+      },
+      "simple": {
+        "A_above": 86,
+        "shadow_above": 86,
+        "enter": 0,
+        "exit": 0,
+        "near_A_above": 35
+      },
+      "oac": {
+        "A_above": 40,
+        "shadow_above": 39,
+        "enter": 0,
+        "exit": 1,
+        "near_A_above": 28
+      },
+      "G0x2": {
+        "A_above": 111,
+        "shadow_above": 111,
+        "enter": 0,
+        "exit": 0,
+        "near_A_above": 45
+      }
+    },
+    "topK_A_to_shadow": {
+      "G0": {
+        "overlap": 52,
+        "enter": 0,
+        "affected_enter": 0
+      },
+      "pixel": {
+        "overlap": 51,
+        "enter": 1,
+        "affected_enter": 1
+      },
+      "react": {
+        "overlap": 52,
+        "enter": 0,
+        "affected_enter": 0
+      },
+      "simple": {
+        "overlap": 52,
+        "enter": 0,
+        "affected_enter": 0
+      },
+      "oac": {
+        "overlap": 52,
+        "enter": 0,
+        "affected_enter": 0
+      },
+      "G0x2": {
+        "overlap": 52,
+        "enter": 0,
+        "affected_enter": 0
+      }
+    },
+    "OAC_vs_simple_A_topK_overlap": 34,
+    "OAC_vs_simple_shadow_topK_overlap": 34,
+    "OAC_only_A_top_ids": [
+      11703,
+      12496,
+      13694,
+      20391,
+      39126,
+      39868,
+      40902,
+      63417,
+      69717,
+      70271,
+      75723,
+      130858,
+      139193,
+      139231,
+      181460,
+      202030,
+      274107,
+      274548
+    ],
+    "OAC_only_shadow_top_ids": [
+      11703,
+      12496,
+      13694,
+      20391,
+      39126,
+      39868,
+      40902,
+      63417,
+      69717,
+      70271,
+      75723,
+      130858,
+      139193,
+      139231,
+      181460,
+      202030,
+      274107,
+      274548
+    ]
+  },
+  "W2": {
+    "steps": [
+      18901,
+      19000
+    ],
+    "probe_count": 512,
+    "eligible_count": 511,
+    "same_K": 52,
+    "camera_count_distinct": 94,
+    "A_n_quantiles": [
+      1.0,
+      8.0,
+      10.5,
+      21.0,
+      73.5,
+      94.0,
+      100.0
+    ],
+    "A_opportunity_quantiles": [
+      1.0,
+      6.030433781656409,
+      9.0,
+      17.808814040056387,
+      56.01961309715868,
+      65.09937523481966,
+      91.01060672203067
+    ],
+    "A_n_over_A_quantiles": [
+      1.0,
+      1.0,
+      1.0555555555555556,
+      1.229754734718246,
+      1.415198756469048,
+      1.756555136717656,
+      9.0
+    ],
+    "projection_no_contribution_total": 2571,
+    "contribution_rejected_total": 2234.4712435248043,
+    "support_gate_pass_A": 497,
+    "cap_active_A": 11,
+    "oac_over_G0_quantiles": [
+      1.0,
+      1.0,
+      1.0402077277390198,
+      1.1901265110841515,
+      1.3379324570628928,
+      1.586206896551724,
+      2.0
+    ],
+    "oac_equals_G0x2_count": 11,
+    "raw_u_over_one_max": 1.0986491338904614e-07,
+    "u_clipped": false,
+    "d_region_pixels_each": [
+      38052,
+      38001,
+      38165,
+      37826
+    ],
+    "d_region_gaussians_positive_each": [
+      19,
+      13,
+      24,
+      16
+    ],
+    "d_region_total_contribution_each": [
+      69.63116455078125,
+      25.013614654541016,
+      11.919402122497559,
+      94.89991760253906
+    ],
+    "truly_affected_probe_count": 66,
+    "affected_projected_probe_count": 66,
+    "threshold": {
+      "G0": {
+        "A_above": 0,
+        "shadow_above": 0,
+        "enter": 0,
+        "exit": 0,
+        "near_A_above": 0
+      },
+      "pixel": {
+        "A_above": 36,
+        "shadow_above": 36,
+        "enter": 0,
+        "exit": 0,
+        "near_A_above": 9
+      },
+      "react": {
+        "A_above": 35,
+        "shadow_above": 35,
+        "enter": 0,
+        "exit": 0,
+        "near_A_above": 11
+      },
+      "simple": {
+        "A_above": 49,
+        "shadow_above": 49,
+        "enter": 0,
+        "exit": 0,
+        "near_A_above": 11
+      },
+      "oac": {
+        "A_above": 9,
+        "shadow_above": 9,
+        "enter": 0,
+        "exit": 0,
+        "near_A_above": 6
+      },
+      "G0x2": {
+        "A_above": 50,
+        "shadow_above": 50,
+        "enter": 0,
+        "exit": 0,
+        "near_A_above": 12
+      }
+    },
+    "topK_A_to_shadow": {
+      "G0": {
+        "overlap": 52,
+        "enter": 0,
+        "affected_enter": 0
+      },
+      "pixel": {
+        "overlap": 52,
+        "enter": 0,
+        "affected_enter": 0
+      },
+      "react": {
+        "overlap": 50,
+        "enter": 2,
+        "affected_enter": 0
+      },
+      "simple": {
+        "overlap": 52,
+        "enter": 0,
+        "affected_enter": 0
+      },
+      "oac": {
+        "overlap": 52,
+        "enter": 0,
+        "affected_enter": 0
+      },
+      "G0x2": {
+        "overlap": 52,
+        "enter": 0,
+        "affected_enter": 0
+      }
+    },
+    "OAC_vs_simple_A_topK_overlap": 38,
+    "OAC_vs_simple_shadow_topK_overlap": 38,
+    "OAC_only_A_top_ids": [
+      12284,
+      40673,
+      54208,
+      130367,
+      142963,
+      164266,
+      214041,
+      257735,
+      292579,
+      322038,
+      344855,
+      371845,
+      439336,
+      523783
+    ],
+    "OAC_only_shadow_top_ids": [
+      12284,
+      40673,
+      54208,
+      130367,
+      142963,
+      164266,
+      214041,
+      257735,
+      292579,
+      322038,
+      344855,
+      371845,
+      439336,
+      523783
+    ]
+  }
+}

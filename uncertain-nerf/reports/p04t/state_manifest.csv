@@ -1,0 +1,4 @@
+completed_step,path_server,sha256,bytes,gaussians,sh_degree_next,sampler_next_step,keys_complete,readback
+10999,/home/chenglong/P04T-work/states/complete_after_step10999.pt,757e2c945118d2622f0cae73cc6a73249de2363cbceff6c6e4a852d34a071927,200614307,278522,3,11000,True,PASS
+18999,/home/chenglong/P04T-work/states/complete_after_step18999.pt,8c2f6371a67604ea16fabeb8c383c8438d37022af774c63145771029fb96c7d2,384792163,535767,3,19000,True,PASS
+19999,/home/chenglong/P04T-work/states/complete_after_step19999.pt,a4320304bfad75a68e819d97a3aa17c1cb248b09d4c996c6aa139b59a2435eff,397773475,555336,3,20000,True,PASS
