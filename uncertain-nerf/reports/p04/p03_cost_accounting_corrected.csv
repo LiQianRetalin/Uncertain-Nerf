@@ -1,0 +1,4 @@
+run_id,method,original_complete_model_build_seconds,project_all_attempt_seconds_excluding_shared_preflight,shared_preflight_seconds_unallocated,matched_success_feature_stage_seconds,matched_success_feature_internal_seconds_nonadditive,formal_process_wall_seconds,formal_ancillary_separable_seconds,unified_necessary_build_seconds,evidence
+P03-corner-ru,puri-gs-ru,706,761,42,8,4.001458582933992,673,UNKNOWN,UNKNOWN,"P03-work/state/gpu_stage_events.csv; report/ru_feature_generation_manifest.json; report/method_cost_summary.csv"
+P03-corner-robustsplat,robustsplat,1129,1239,42,0,UNKNOWN,1129,UNKNOWN,UNKNOWN,"P03-work/state/gpu_stage_events.csv; report/method_cost_summary.csv; formal command/log"
+P03-corner-sls-mlp,sls-mlp-no-ubp,2779,2934,42,214,211.90751433372498,1988,UNKNOWN,UNKNOWN,"P03-work/state/gpu_stage_events.csv; report/sls_feature_generation_manifest.json; report/method_cost_summary.csv"

@@ -1,0 +1,20 @@
+{
+  "date": "2026-09-13",
+  "branch": "ru-part",
+  "audit_head_before_p04_commit": "41a50f5f3ba7429b9b41ea771e13a8ebc9a42780",
+  "server": "lc-NF5468-M7-A0-R0-00",
+  "device": "CUDA_VISIBLE_DEVICES=7; NVIDIA L20",
+  "python": "3.10.20",
+  "torch": "2.4.0+cu121",
+  "cuda": "12.1",
+  "gsplat": "1.5.3+pt24cu121",
+  "gsplat_source_commit": "937e29912570c372bed6747a5c9bf85fed877bae",
+  "triton": "3.0.0",
+  "diagnostic_script_sha256": "d7689442e70121d3b708e7911ddb47bb7e611c6ec2e111d458f722d6c6d61e06",
+  "postcheck_script_sha256": "3cd20b07510549636c2c640105c69ca944cd349d590a502e426f4fae975d7154",
+  "analysis_script_sha256": "3023519644e165b0baed00c915e85cdf7db801398bd7af14d2515898320bee47",
+  "gpu_forward_backward_charged": 231,
+  "gpu_forward_backward_cap": 300,
+  "optimizer_updates": 0,
+  "topology_updates": 0
+}

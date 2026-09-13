@@ -1,0 +1,8 @@
+{
+  "stage": "COMPLETE_LIMITED",
+  "charged_calls": 231,
+  "remaining_calls": 69,
+  "training_runs": 0,
+  "parameter_updates": 0,
+  "next_checkpoint": "STOP_AFTER_P04; return to planning assistant for next-package decision"
+}

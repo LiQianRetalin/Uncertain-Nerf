@@ -1,0 +1,24 @@
+[
+  {
+    "scene": "android",
+    "gaussian_tensor_before": "33d01e2324ce8a28571274fe819f5ab5cf1fdd819bebc777780493d5693b96b1",
+    "gaussian_tensor_after": "33d01e2324ce8a28571274fe819f5ab5cf1fdd819bebc777780493d5693b96b1",
+    "checkpoint_sha256_after": "11737109e7742872ca28f9d32591d0252bb6339aa8fc77c41ba314ee3656f73a",
+    "mask_head_sha256_after": "7ec411a094d8e510491933236feeab8058d12c1f5a651056ec353d5b0704725d",
+    "residual_hist_sha256_after": "5776b415917914fa7a24c2cfc601637e629489da82276bb8707bc7d45f711031",
+    "checkpoint_unchanged": true,
+    "mask_head_unchanged": true,
+    "residual_hist_unchanged": true
+  },
+  {
+    "scene": "room",
+    "gaussian_tensor_before": "d2bfcd776b3da743e48088964a27d2c8bdac6d7810a7e409b025956745a962b4",
+    "gaussian_tensor_after": "d2bfcd776b3da743e48088964a27d2c8bdac6d7810a7e409b025956745a962b4",
+    "checkpoint_sha256_after": "fc3cf97b677b58520d2c28dd2eaa716a6b729794c21c98a86c1ff524f9d529d6",
+    "mask_head_sha256_after": "2fb8e7c3477ef0282307dbc3f903f75b4f0b8a1ff6e934f8c3295d728bc5924f",
+    "residual_hist_sha256_after": "bdaaef2926cf6bd8b79bdd0ec68e2f2544151e76abf5152ed1fcf9ea42c9c40f",
+    "checkpoint_unchanged": true,
+    "mask_head_unchanged": true,
+    "residual_hist_unchanged": true
+  }
+]

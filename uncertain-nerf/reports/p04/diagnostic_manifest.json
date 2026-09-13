@@ -1,0 +1,224 @@
+{
+  "schema": "p04-oac-terminal-probe-v1",
+  "status": "DIAGNOSTIC_COMPLETE",
+  "seed": 42,
+  "diagnostic_code_sha256": "d7689442e70121d3b708e7911ddb47bb7e611c6ec2e111d458f722d6c6d61e06",
+  "frozen_count_per_scene": 8,
+  "probe_size": 512,
+  "selection_rule": "floor(j*(N-1)/(count-1)); sorted TRAIN filenames",
+  "probe_rule": "first selected view: projected radii>0, 512 evenly spaced IDs",
+  "conditions": {
+    "A": "actual terminal RU hard Mask",
+    "B": "all accepted",
+    "C": "A times 8x8 checkerboard, parity SHA256(seed42+filename)",
+    "D": "C plus central 20% x 20% A-accepted C-deleted pixels on first view; RGB magenta"
+  },
+  "score": {
+    "kappa": 4,
+    "cap": 2,
+    "min_distinct_cameras": 3,
+    "b_threshold": 1e-06,
+    "u_threshold": 0.05,
+    "zero_weight_fallback": "G0",
+    "top_fraction": 0.1
+  },
+  "max_forward_backward_calls": 300,
+  "new_training": 0,
+  "parameter_updates": 0,
+  "scenes": [
+    {
+      "scene": "android",
+      "source_run": "/home/chenglong/Uncertain-Nerf/uncertain-nerf/logs-puri/ru-generalization-rerun-9e292309/android_ru_30k",
+      "data_dir": "/home/chenglong/Uncertain-Nerf/uncertain-nerf/data/nerf_robustnerf/robustnerf/android",
+      "feature_cache": "/home/chenglong/Uncertain-Nerf/uncertain-nerf/data/PURI-GS-derived/semantic_features/android",
+      "source_step": 29999,
+      "state_grade": "MATCHED_TERMINAL_STATE",
+      "checkpoint_sha256": "11737109e7742872ca28f9d32591d0252bb6339aa8fc77c41ba314ee3656f73a",
+      "mask_head_sha256": "7ec411a094d8e510491933236feeab8058d12c1f5a651056ec353d5b0704725d",
+      "residual_hist_sha256": "5776b415917914fa7a24c2cfc601637e629489da82276bb8707bc7d45f711031",
+      "cfg_sha256": "c6db05e0a36f5b91493ed25682d83ce685bfe2a1df52148d96b3187e1f977c6f",
+      "split_sha256": "fb28243aa4889881c03e148321498f32c68e22a08c94d58da1d553789cf09a02",
+      "selected": [
+        {
+          "sorted_train_index": 0,
+          "image_name": "2clutter019.JPG",
+          "image_sha256": "c4cd69690e672eb1169e7ab797972f794f07d401d7b58a55bede55ffafce0463",
+          "real_mask_accept_fraction": 0.769284,
+          "d_injected_pixels": 13857,
+          "exact_probe_alpha_max_error": 0.0010247230529785156,
+          "exact_probe_alpha_outliers_over_2e4": 1
+        },
+        {
+          "sorted_train_index": 17,
+          "image_name": "2clutter036.JPG",
+          "image_sha256": "fbf5951c98f94f14d4a805dc290f8f61404a8243c9a078fd937f050bec61fdd2",
+          "real_mask_accept_fraction": 0.900823,
+          "d_injected_pixels": 0,
+          "exact_probe_alpha_max_error": 6.020069122314453e-06,
+          "exact_probe_alpha_outliers_over_2e4": 0
+        },
+        {
+          "sorted_train_index": 34,
+          "image_name": "2clutter053.JPG",
+          "image_sha256": "961e30b2c73f5e435e4f95ae7d4a0a89f3613a3910f7b79669be75c2c08dbdde",
+          "real_mask_accept_fraction": 0.915958,
+          "d_injected_pixels": 0,
+          "exact_probe_alpha_max_error": 2.390146255493164e-05,
+          "exact_probe_alpha_outliers_over_2e4": 0
+        },
+        {
+          "sorted_train_index": 51,
+          "image_name": "2clutter070.JPG",
+          "image_sha256": "b92e5415a619dd91739e1d4f8abfae58d22731fc38018f3043db58e09df67f43",
+          "real_mask_accept_fraction": 0.979392,
+          "d_injected_pixels": 0,
+          "exact_probe_alpha_max_error": 1.8477439880371094e-06,
+          "exact_probe_alpha_outliers_over_2e4": 0
+        },
+        {
+          "sorted_train_index": 69,
+          "image_name": "2clutter088.JPG",
+          "image_sha256": "7da9ca5782d37dd260e0d84597a132178bd6a85287c15f1ca0fd787e7e398fa1",
+          "real_mask_accept_fraction": 0.777865,
+          "d_injected_pixels": 0,
+          "exact_probe_alpha_max_error": 2.485513687133789e-05,
+          "exact_probe_alpha_outliers_over_2e4": 0
+        },
+        {
+          "sorted_train_index": 86,
+          "image_name": "2clutter105.JPG",
+          "image_sha256": "02c0866b07d7027461fcbcd6a9a106f1ab83ac9af11e9da0257e1852135f064e",
+          "real_mask_accept_fraction": 0.945217,
+          "d_injected_pixels": 0,
+          "exact_probe_alpha_max_error": 8.225440979003906e-06,
+          "exact_probe_alpha_outliers_over_2e4": 0
+        },
+        {
+          "sorted_train_index": 103,
+          "image_name": "2clutter122.JPG",
+          "image_sha256": "8e43b2b90f025df2a8f6a24d3fce27510376b1846d888b5429c4c6d26279ab1a",
+          "real_mask_accept_fraction": 0.976611,
+          "d_injected_pixels": 0,
+          "exact_probe_alpha_max_error": 2.950429916381836e-05,
+          "exact_probe_alpha_outliers_over_2e4": 0
+        },
+        {
+          "sorted_train_index": 121,
+          "image_name": "2clutter140.JPG",
+          "image_sha256": "cc8f0633e45dd2533ae9f8bac3562ee1638206b797aa1a27916c237ffc7b4932",
+          "real_mask_accept_fraction": 0.942887,
+          "d_injected_pixels": 0,
+          "exact_probe_alpha_max_error": 1.0132789611816406e-05,
+          "exact_probe_alpha_outliers_over_2e4": 0
+        }
+      ],
+      "train_count": 122,
+      "probe_ids_sha256": "d5b13f7aa5321f4a68a081f1df448dc569fc731beafa1581f22e142cedaca736",
+      "parameter_tensor_sha256_before": "33d01e2324ce8a28571274fe819f5ab5cf1fdd819bebc777780493d5693b96b1",
+      "parameter_tensor_sha256_after": "33d01e2324ce8a28571274fe819f5ab5cf1fdd819bebc777780493d5693b96b1",
+      "exact_probe_scope": "512 IDs projected in first selected TRAIN view; all front occluders scanned",
+      "top_k": 52
+    },
+    {
+      "scene": "room",
+      "source_run": "/home/chenglong/Uncertain-Nerf/uncertain-nerf/logs-puri/phase_r/room_ru_30k",
+      "data_dir": "/home/chenglong/Uncertain-Nerf/uncertain-nerf/data/mipnerf360/360_v2/room",
+      "feature_cache": "/home/chenglong/Uncertain-Nerf/uncertain-nerf/data/PURI-GS-derived/semantic_features/room",
+      "source_step": 29999,
+      "state_grade": "MATCHED_TERMINAL_STATE",
+      "checkpoint_sha256": "fc3cf97b677b58520d2c28dd2eaa716a6b729794c21c98a86c1ff524f9d529d6",
+      "mask_head_sha256": "2fb8e7c3477ef0282307dbc3f903f75b4f0b8a1ff6e934f8c3295d728bc5924f",
+      "residual_hist_sha256": "bdaaef2926cf6bd8b79bdd0ec68e2f2544151e76abf5152ed1fcf9ea42c9c40f",
+      "cfg_sha256": "56eea014910c259870c7fee2055320d46277b7fb4581a66878db8eb5c83ded55",
+      "split_sha256": "5faafabf3e7254cec988fcf06253a2d88faf62e10903641d4ec2e2953ab08b0e",
+      "selected": [
+        {
+          "sorted_train_index": 0,
+          "image_name": "DSCF4668.JPG",
+          "image_sha256": "6d1d3edb950c138ade55398cfee8d4cd955da9e7462c579d574cb2e01833d17e",
+          "real_mask_accept_fraction": 1.0,
+          "d_injected_pixels": 8059,
+          "exact_probe_alpha_max_error": 4.410743713378906e-06,
+          "exact_probe_alpha_outliers_over_2e4": 0
+        },
+        {
+          "sorted_train_index": 38,
+          "image_name": "DSCF4711.JPG",
+          "image_sha256": "d11882dcc8316d5c895380b46a1ad7bcf2420d847f597ddc50fb2549488cede8",
+          "real_mask_accept_fraction": 0.961137,
+          "d_injected_pixels": 0,
+          "exact_probe_alpha_max_error": 3.2782554626464844e-06,
+          "exact_probe_alpha_outliers_over_2e4": 0
+        },
+        {
+          "sorted_train_index": 77,
+          "image_name": "DSCF4756.JPG",
+          "image_sha256": "ed7890a3f5bbd96b88f218e2f487fd5582aa1f8d55004b0c4f06cf2ac49189c1",
+          "real_mask_accept_fraction": 1.0,
+          "d_injected_pixels": 0,
+          "exact_probe_alpha_max_error": 2.086162567138672e-05,
+          "exact_probe_alpha_outliers_over_2e4": 0
+        },
+        {
+          "sorted_train_index": 116,
+          "image_name": "DSCF4800.JPG",
+          "image_sha256": "31cee836fd3ebce315956982bc0fff31b36f31f162994e650932389a1af285c3",
+          "real_mask_accept_fraction": 1.0,
+          "d_injected_pixels": 0,
+          "exact_probe_alpha_max_error": 4.76837158203125e-06,
+          "exact_probe_alpha_outliers_over_2e4": 0
+        },
+        {
+          "sorted_train_index": 154,
+          "image_name": "DSCF4844.JPG",
+          "image_sha256": "8926a0018a1428ff309ecbe098522903db592c619b693236d83d9a879053ccac",
+          "real_mask_accept_fraction": 1.0,
+          "d_injected_pixels": 0,
+          "exact_probe_alpha_max_error": 2.9146671295166016e-05,
+          "exact_probe_alpha_outliers_over_2e4": 0
+        },
+        {
+          "sorted_train_index": 193,
+          "image_name": "DSCF4888.JPG",
+          "image_sha256": "0e834b45e80ad064f3581d864f2ce8894ef8e248b92c0e45da17ccf2cf7ef750",
+          "real_mask_accept_fraction": 1.0,
+          "d_injected_pixels": 0,
+          "exact_probe_alpha_max_error": 5.4836273193359375e-06,
+          "exact_probe_alpha_outliers_over_2e4": 0
+        },
+        {
+          "sorted_train_index": 232,
+          "image_name": "DSCF4933.JPG",
+          "image_sha256": "7d6d89001015e97f60482b76ded71930ceb81ad442b18c082107cc7aa0ab3bcf",
+          "real_mask_accept_fraction": 0.959097,
+          "d_injected_pixels": 0,
+          "exact_probe_alpha_max_error": 7.271766662597656e-06,
+          "exact_probe_alpha_outliers_over_2e4": 0
+        },
+        {
+          "sorted_train_index": 271,
+          "image_name": "DSCF4977.JPG",
+          "image_sha256": "63b3627bb11aac9461a70dc8d08d9cfeb0c6bed4c310e262070d1ddb2e8e2e9a",
+          "real_mask_accept_fraction": 1.0,
+          "d_injected_pixels": 0,
+          "exact_probe_alpha_max_error": 6.431341171264648e-05,
+          "exact_probe_alpha_outliers_over_2e4": 0
+        }
+      ],
+      "train_count": 272,
+      "probe_ids_sha256": "3480f0857e4d14e54fa2a87ed0e6ec3049e1854d064c534f335c5b38ad9eec12",
+      "parameter_tensor_sha256_before": "d2bfcd776b3da743e48088964a27d2c8bdac6d7810a7e409b025956745a962b4",
+      "parameter_tensor_sha256_after": "d2bfcd776b3da743e48088964a27d2c8bdac6d7810a7e409b025956745a962b4",
+      "exact_probe_scope": "512 IDs projected in first selected TRAIN view; all front occluders scanned",
+      "top_k": 52
+    }
+  ],
+  "diagnostic_code_revisions": [
+    "8f4655ae46226ae529d8c368d6207f26cebe89854f0b22088824d37509c335ec",
+    "0411438dc338c4f84ed1e0a890fd7b6b2812abdecedbfe09b3843790937dd3ef",
+    "afe2ed492db3036ca1e083b808b3ae3b297be84d8418f4dc227f8958b673a0a4",
+    "a172db73327cfdde99d42712c2072d2523cf137bf5c18d6d30ed3e60ebf7368d",
+    "d7689442e70121d3b708e7911ddb47bb7e611c6ec2e111d458f722d6c6d61e06"
+  ],
+  "pre_render_technical_failure_charged_calls": 11
+}

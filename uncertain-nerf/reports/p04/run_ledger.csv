@@ -1,0 +1,11 @@
+phase,scene,device,attempt,call_seq_inclusive,charged_calls,status,reason_or_scope
+branch_and_asset_preflight,android+room,none,1,none,0,COMPLETE,"ru-part clean; matched terminal checkpoints/head/hist; split and sparse hashes checked"
+manifest_freeze,android+room,none,1,none,0,COMPLETE,"8 sorted TRAIN views per scene frozen before diagnostic scores"
+main_probe,android,L20-7,1,1-2,2,TECHNICAL_FAILURE_CHARGED,"temporary gsplat source path lacked GLM; first fine forward failed"
+main_probe,android,L20-7,2,3-5,3,TECHNICAL_FAILURE_CHARGED,"installed gsplat restored; Triton break syntax unsupported"
+main_probe,android,L20-7,3,6-8,3,VALIDATION_STOP_CHARGED,"one alpha boundary pixel exceeded initial bit-strict tolerance; distribution recorded"
+main_probe,android+room,L20-7,4,9-171,163,COMPLETE,"same frozen manifest; numerical agreement threshold recorded; four conditions on 16 TRAIN views"
+postcheck,android,L20-7,1,172-180,9,VALIDATION_STOP_CHARGED,"render/loss exact; absgrad 1.09e-11 nonzero under bitwise assertion"
+postcheck,android,L20-7,2,181-189,9,VALIDATION_STOP_CHARGED,"saved error magnitude before strict assertion; no state mutation"
+postcheck,android+room,L20-7,3,190-231,42,COMPLETE,"64x64/64 reference; diagnostics-off equality; warmup+3 paired overhead repeats per scene"
+cached_analysis,android+room,CPU,1,none,0,COMPLETE,"score arithmetic/rank/top-K/risk summary only"
